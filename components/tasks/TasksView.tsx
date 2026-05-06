@@ -43,6 +43,7 @@ import {
   MessageSquare,
   PanelRight,
   X,
+  Pencil,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 
@@ -216,14 +217,17 @@ interface RowProps {
   onMove: (id: string, weeks: number) => void
   onDelete: (id: string) => void
   onOpenPanel: (id: string, section: 'notes' | 'comments') => void
+  onEditDescription: (id: string, description: string) => void
   isDragMode: boolean
   isHighlighted: boolean
 }
 
 function SortableTaskRow(props: RowProps) {
-  const { task, visibleWeekIndices, onToggleComplete, onToggleFlag, onMove, onDelete, onOpenPanel, isDragMode, isHighlighted } = props
+  const { task, visibleWeekIndices, onToggleComplete, onToggleFlag, onMove, onDelete, onOpenPanel, onEditDescription, isDragMode, isHighlighted } = props
   const [showMoveDropdown, setShowMoveDropdown] = useState(false)
   const [showMoveBackDropdown, setShowMoveBackDropdown] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState('')
   const taskWeekIndex = dateStringToWeekIndex(task.week_start_date)
   const bg = taskBg(task)
   const dc = descClass(task)
@@ -302,10 +306,38 @@ function SortableTaskRow(props: RowProps) {
                 </button>
 
                 {/* Description */}
-                <span className={`flex-1 min-w-0 truncate ${dc}`}>{task.description}</span>
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={() => {
+                      const trimmed = editValue.trim()
+                      if (trimmed && trimmed !== task.description) onEditDescription(task.id, trimmed)
+                      setIsEditing(false)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.currentTarget.blur()
+                      if (e.key === 'Escape') { setIsEditing(false) }
+                    }}
+                    className="flex-1 min-w-0 text-[13px] bg-transparent border-b border-[#38308F] outline-none text-[#19153F] placeholder:text-[#797979]"
+                  />
+                ) : (
+                  <span className={`flex-1 min-w-0 truncate ${dc}`}>{task.description}</span>
+                )}
 
-                {/* Row actions — on hover */}
+                {/* Row actions — on hover, hidden while editing */}
+                {!isEditing && (
                 <div className="mt-0.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity relative">
+                  {/* Edit */}
+                  <button
+                    onClick={() => { setEditValue(task.description); setIsEditing(true) }}
+                    className="p-1 rounded text-[#797979] hover:text-[#19153F] hover:bg-[#F2F2F2] transition-colors"
+                    title="Edit task"
+                  >
+                    <Pencil size={14} />
+                  </button>
+
                   {/* Flag */}
                   <button
                     onClick={() => onToggleFlag(task.id)}
@@ -380,6 +412,7 @@ function SortableTaskRow(props: RowProps) {
                     <Trash2 size={14} />
                   </button>
                 </div>
+                )}
               </div>
             )}
           </td>
@@ -677,6 +710,7 @@ interface TaskTableProps {
   onMove: (id: string, weeks: number) => void
   onDelete: (id: string) => void
   onOpenPanel: (id: string, section: 'notes' | 'comments') => void
+  onEditDescription: (id: string, description: string) => void
   onAddTaskInWeek: (weekIndex: number) => void
   onReorder: (orderedIds: string[], weekDateStr: string) => void
 }
@@ -692,6 +726,7 @@ function TaskTable({
   onMove,
   onDelete,
   onOpenPanel,
+  onEditDescription,
   onAddTaskInWeek,
   onReorder,
 }: TaskTableProps) {
@@ -819,6 +854,7 @@ function TaskTable({
                   onMove={onMove}
                   onDelete={onDelete}
                   onOpenPanel={onOpenPanel}
+                  onEditDescription={onEditDescription}
                   isDragMode={sortMode === 'drag'}
                   isHighlighted={task.id === highlightedTaskId}
                 />
@@ -1114,6 +1150,18 @@ export default function TasksView() {
     }
   }, [tasks, addToast, userId])
 
+  const handleEditDescription = useCallback(async (id: string, description: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, description } : t)))
+    const { error } = await supabase
+      .from('tasks')
+      .update({ description, updated_at: new Date().toISOString(), updated_by: userId })
+      .eq('id', id)
+    if (error) {
+      addToast('Failed to update task.', 'error')
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, description: t.description } : t)))
+    }
+  }, [addToast, userId])
+
   const handleDeleteRequest = useCallback((id: string) => {
     setDeleteTaskId(id)
   }, [])
@@ -1217,6 +1265,7 @@ export default function TasksView() {
           onMove={handleMove}
           onDelete={handleDeleteRequest}
           onOpenPanel={handleOpenPanel}
+          onEditDescription={handleEditDescription}
           onAddTaskInWeek={(wi) => setAddModalWeekIndex(wi)}
           onReorder={handleReorder}
         />
