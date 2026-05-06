@@ -22,7 +22,6 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { dateStringToWeekIndex, formatWeekHeader } from '@/lib/weeks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -994,7 +993,7 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
       const rows = tasks.map((task) => {
         const proj = task.projects as { name: string } | null
         return [
-          formatWeekHeader(dateStringToWeekIndex(task.week_start_date)),
+          task.week_start_date,
           task.product,
           proj?.name ?? '',
           task.description,
