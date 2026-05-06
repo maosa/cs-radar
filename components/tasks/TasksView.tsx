@@ -247,7 +247,8 @@ function SortableTaskRow(props: RowProps) {
     <tr ref={setNodeRef} style={style} className="group">
       {/* Product — sticky, with drag handle */}
       <td
-        className="sticky left-0 z-10 border-b border-l border-r border-[#DADADA] px-3 py-2.5 bg-white"
+        className="sticky left-0 z-10 border-l border-r border-[#DADADA] px-3 py-2.5 bg-white"
+        style={{ boxShadow: 'inset 0 -1px 0 0 #DADADA' }}
       >
         <div className="flex items-center gap-1.5">
           {isDragMode && (
@@ -266,8 +267,8 @@ function SortableTaskRow(props: RowProps) {
 
       {/* Project — sticky */}
       <td
-        className="sticky z-10 border-b border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[130px]"
-        style={{ left: 110, backgroundColor: '#FFFFFF', boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
+        className="sticky z-10 border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[130px]"
+        style={{ left: 110, backgroundColor: '#FFFFFF', boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
       >
         {projectName(task)}
       </td>
@@ -826,10 +827,10 @@ function TaskTable({
 
             {/* "Add task" footer row per week */}
             <tr className="group">
-              <td className="sticky left-0 z-10 bg-white border-b border-l border-r border-[#DADADA]" />
+              <td className="sticky left-0 z-10 bg-white border-l border-r border-[#DADADA]" style={{ boxShadow: 'inset 0 -1px 0 0 #DADADA' }} />
               <td
-                className="sticky z-10 bg-white border-b border-r border-[#DADADA]"
-                style={{ left: 110, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
+                className="sticky z-10 bg-white border-r border-[#DADADA]"
+                style={{ left: 110, boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
               />
               {visibleWeekIndices.map((wi) => (
                 <td key={wi} className="border-b border-r border-[#DADADA] px-3 py-2">

@@ -56,14 +56,14 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
   return (
     <tr style={bg} className="group">
       {/* Product — sticky */}
-      <td className="sticky left-0 z-10 border-b border-l border-r border-[#DADADA] px-3 py-2.5" style={bg}>
+      <td className="sticky left-0 z-10 border-l border-r border-[#DADADA] px-3 py-2.5" style={{ ...bg, boxShadow: 'inset 0 -1px 0 0 #DADADA' }}>
         <ProductBadge product={task.product} />
       </td>
 
       {/* Project — sticky */}
       <td
-        className="sticky z-10 border-b border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[130px]"
-        style={{ left: 110, ...bg, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
+        className="sticky z-10 border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[130px]"
+        style={{ left: 110, ...bg, boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
       >
         {projectName(task)}
       </td>
