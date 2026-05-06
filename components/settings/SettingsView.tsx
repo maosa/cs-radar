@@ -654,9 +654,9 @@ function personLabel(
   return name ? `${name} (${email})` : email
 }
 
-const GreenDot = () => <span className="w-2 h-2 rounded-full bg-[#1B8C7A] flex-shrink-0 inline-block mt-[3px]" />
-const AmberDot = () => <span className="w-2 h-2 rounded-full bg-[#B38600] flex-shrink-0 inline-block mt-[3px]" />
-const RedDot = () => <span className="w-2 h-2 rounded-full bg-[#CC0015] opacity-60 flex-shrink-0 inline-block mt-[3px]" />
+const GreenDot = () => <span className="w-2 h-2 rounded-full bg-[#1B8C7A] flex-shrink-0 mt-[6px]" />
+const AmberDot = () => <span className="w-2 h-2 rounded-full bg-[#B38600] flex-shrink-0 mt-[6px]" />
+const RedDot = () => <span className="w-2 h-2 rounded-full bg-[#CC0015] opacity-60 flex-shrink-0 mt-[6px]" />
 
 function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
   const { userId } = useAuth()
