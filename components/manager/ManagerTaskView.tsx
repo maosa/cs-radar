@@ -20,7 +20,7 @@ type ViewMode = 'focused' | 'expanded'
 type SortMode = 'drag' | 'product' | 'project'
 type AnyTask = TaskWithProject
 
-const PRODUCT_ORDER: Record<string, number> = { AH: 0, EH: 1, NURO: 2 }
+const PRODUCT_ORDER: Record<string, number> = { AH: 0, EH: 1, NURO: 2, 'N/A': 3 }
 
 function taskBg(t: AnyTask): React.CSSProperties {
   if (t.status === 'complete') return { backgroundColor: '#C3FFF8' }
@@ -267,7 +267,7 @@ function Toolbar({
 
 // ─── Filter bar ───────────────────────────────────────────────────────────────
 
-const PRODUCT_LABELS: Record<string, string> = { AH: 'Access Hub', EH: 'Evidence Hub', NURO: 'NURO' }
+const PRODUCT_LABELS: Record<string, string> = { AH: 'Access Hub', EH: 'Evidence Hub', NURO: 'NURO', 'N/A': 'N/A' }
 
 interface FilterBarProps {
   uniqueProjects: { id: string; name: string }[]
@@ -286,7 +286,7 @@ function FilterBar({ uniqueProjects, filterProducts, filterProjects, sortMode, o
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-[#DADADA] flex-shrink-0 flex-wrap">
-      {(['AH', 'EH', 'NURO'] as const).map((p) => (
+      {(['AH', 'EH', 'NURO', 'N/A'] as const).map((p) => (
         <button
           key={p}
           onClick={() => onToggleProduct(p)}

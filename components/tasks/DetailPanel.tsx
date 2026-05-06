@@ -334,7 +334,7 @@ export default function DetailPanel({
         <div className="flex items-start gap-3 p-4 border-b border-[#DADADA] flex-shrink-0">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
-              <ProductBadge product={taskProduct as 'AH' | 'EH' | 'NURO'} />
+              <ProductBadge product={taskProduct as 'AH' | 'EH' | 'NURO' | 'N/A'} />
               {taskProjectName && (
                 <span className="text-[12px] text-[#797979] truncate">{taskProjectName}</span>
               )}

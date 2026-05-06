@@ -96,7 +96,7 @@ create index if not exists manager_relationships_manager_idx on public.manager_r
 create table if not exists public.tasks (
   id             uuid primary key default uuid_generate_v4(),
   admin_user_id  uuid not null references public.users(id) on delete cascade,
-  product        text not null check (product in ('AH', 'NURO', 'EH')),
+  product        text not null check (product in ('AH', 'NURO', 'EH', 'N/A')),
   project_id     uuid references public.projects(id) on delete set null,
   description    text not null,
   week_start_date date not null,

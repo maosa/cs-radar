@@ -31,7 +31,7 @@ export interface TaskWithProject extends TaskRow {
   project_name: string | null
 }
 
-export type Product = 'AH' | 'NURO' | 'EH'
+export type Product = 'AH' | 'NURO' | 'EH' | 'N/A'
 export type TaskStatus = 'open' | 'complete'
 export type RelationshipStatus = 'pending' | 'accepted' | 'archived'
 export type DefaultLanding = 'task_list' | 'manager_view'

@@ -10,6 +10,7 @@ const PRODUCTS: { value: Product; label: string }[] = [
   { value: 'AH', label: 'Access Hub (AH)' },
   { value: 'NURO', label: 'NURO' },
   { value: 'EH', label: 'Evidence Hub (EH)' },
+  { value: 'N/A', label: 'N/A (Not Applicable)' },
 ]
 
 interface Props {
