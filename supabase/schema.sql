@@ -177,6 +177,8 @@ create policy "mgr_rel: admin insert" on public.manager_relationships for insert
   with check (auth.uid() = admin_user_id);
 create policy "mgr_rel: admin update" on public.manager_relationships for update
   using (auth.uid() = admin_user_id or auth.uid() = manager_user_id);
+create policy "mgr_rel: delete" on public.manager_relationships for delete
+  using (auth.uid() = admin_user_id or auth.uid() = manager_user_id);
 
 -- Tasks: owner full access; accepted managers read-only
 create policy "tasks: owner full" on public.tasks for all
