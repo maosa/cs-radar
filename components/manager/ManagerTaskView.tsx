@@ -56,13 +56,13 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
   return (
     <tr style={bg} className="group">
       {/* Product — sticky */}
-      <td className="sticky left-0 z-10 border-t border-r border-[#DADADA] px-3 py-2.5" style={bg}>
+      <td className="sticky left-0 z-10 border-b border-l border-r border-[#DADADA] px-3 py-2.5" style={bg}>
         <ProductBadge product={task.product} />
       </td>
 
       {/* Project — sticky */}
       <td
-        className="sticky z-10 border-t border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[130px]"
+        className="sticky z-10 border-b border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[130px]"
         style={{ left: 110, ...bg, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
       >
         {projectName(task)}
@@ -392,11 +392,11 @@ function TaskTable({ tasks, visibleWeekIndices, currentWeekIndex, sortMode, high
         </colgroup>
         <thead>
           <tr>
-            <th className="sticky left-0 z-20 bg-[#F2F2F2] border-r border-[#DADADA] px-3 py-2 text-left text-[11px] font-medium text-[#797979] uppercase tracking-wide">
+            <th className="sticky left-0 z-20 bg-[#F2F2F2] border-t border-b border-l border-r border-[#DADADA] px-3 py-2 text-left text-[11px] font-medium text-[#797979] uppercase tracking-wide">
               Product
             </th>
             <th
-              className="sticky z-20 bg-[#F2F2F2] border-r border-[#DADADA] px-3 py-2 text-left text-[11px] font-medium text-[#797979] uppercase tracking-wide"
+              className="sticky z-20 bg-[#F2F2F2] border-t border-b border-r border-[#DADADA] px-3 py-2 text-left text-[11px] font-medium text-[#797979] uppercase tracking-wide"
               style={{ left: 110, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
             >
               Project
@@ -404,7 +404,7 @@ function TaskTable({ tasks, visibleWeekIndices, currentWeekIndex, sortMode, high
             {visibleWeekIndices.map((wi) => {
               const isCurrent = wi === currentWeekIndex
               return (
-                <th key={wi} className="border-b border-r border-[#DADADA] px-3 py-2 text-left text-[13px] font-medium text-[#19153F] bg-[#F2F2F2]">
+                <th key={wi} className="border-t border-b border-r border-[#DADADA] px-3 py-2 text-left text-[13px] font-medium text-[#19153F] bg-[#F2F2F2]">
                   <div className="flex items-center gap-2">
                     <span className={isCurrent ? 'pb-0.5 border-b-2 border-[#00D1BA]' : ''}>{formatWeekHeader(wi)}</span>
                     {isCurrent && (
