@@ -6,7 +6,7 @@ import ProductBadge from '@/components/tasks/ProductBadge'
 import DetailPanel from '@/components/tasks/DetailPanel'
 import { supabase } from '@/lib/supabase/client'
 import type { TaskWithProject } from '@/lib/supabase/types'
-import { ChevronLeft, ChevronRight, Search, PanelRight, MessageSquare, ArrowLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, PanelRight, MessageSquare, ArrowLeft, Flag } from 'lucide-react'
 import {
   getCurrentWeekIndex,
   weekIndexToDateString,
@@ -83,25 +83,15 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
                   isHighlighted ? 'ring-2 ring-[#38308F] ring-offset-1' : ''
                 }`}
               >
-                {/* Checkbox — display only */}
-                <span
-                  className={`flex-shrink-0 w-[15px] h-[15px] rounded-[3px] border flex items-center justify-center ${
-                    task.status === 'complete'
-                      ? 'bg-[#00D1BA] border-[#00D1BA]'
-                      : 'border-[#DADADA] bg-white'
-                  }`}
-                >
-                  {task.status === 'complete' && (
-                    <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-                      <path d="M1 3l2.5 2.5L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </span>
-
                 {/* Description */}
                 <span className={`flex-1 min-w-0 truncate ${dc}`}>{task.description}</span>
 
-                {/* Comments icon only */}
+                {/* Flag icon — always visible for flagged tasks */}
+                {task.is_flagged && (
+                  <Flag size={13} className="flex-shrink-0 text-[#CC0015]" />
+                )}
+
+                {/* Comments icon — visible on hover */}
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity">
                   <button
                     onClick={() => onOpenPanel(task.id, 'comments')}
