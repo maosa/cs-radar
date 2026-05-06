@@ -38,6 +38,14 @@ begin
     now()
   )
   on conflict (id) do nothing;
+
+  -- Link any pending invitations sent to this email before the user registered.
+  update public.manager_relationships
+  set manager_user_id = new.id
+  where manager_email = new.email
+    and status = 'pending'
+    and manager_user_id is null;
+
   return new;
 end;
 $$;
@@ -150,9 +158,11 @@ alter table public.tasks               enable row level security;
 alter table public.task_notes          enable row level security;
 alter table public.task_comments       enable row level security;
 
--- Users: each user can see and edit only their own row
-create policy "users: self read"   on public.users for select using (auth.uid() = id);
-create policy "users: self update" on public.users for update using (auth.uid() = id);
+-- Users: each user can see and edit only their own row; any authenticated user
+-- can read basic profile info (needed to resolve admin names in pending invitations)
+create policy "users: self read"          on public.users for select using (auth.uid() = id);
+create policy "users: authenticated read" on public.users for select using (auth.uid() is not null);
+create policy "users: self update"        on public.users for update using (auth.uid() = id);
 
 -- Projects: owner full access
 create policy "projects: owner read"   on public.projects for select using (auth.uid() = admin_user_id);

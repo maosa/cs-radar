@@ -20,6 +20,7 @@ export default function Sidebar() {
   const [expanded, setExpanded] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [hasManagerRelationships, setHasManagerRelationships] = useState(false)
+  const [pendingInviteCount, setPendingInviteCount] = useState(0)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -38,6 +39,14 @@ export default function Sidebar() {
       .limit(1)
       .then(({ data }) => {
         setHasManagerRelationships(Array.isArray(data) && data.length > 0)
+      })
+    supabase
+      .from('manager_relationships')
+      .select('id', { count: 'exact', head: true })
+      .eq('manager_user_id', userId)
+      .eq('status', 'pending')
+      .then(({ count }) => {
+        setPendingInviteCount(count ?? 0)
       })
   }, [userId])
 
@@ -103,6 +112,7 @@ export default function Sidebar() {
           item={{ href: '/settings', label: 'Settings', icon: <Settings size={20} /> }}
           expanded={isExpanded}
           active={isActive('/settings')}
+          badge={pendingInviteCount}
         />
       </div>
     </aside>
@@ -113,10 +123,12 @@ function NavLink({
   item,
   expanded,
   active,
+  badge,
 }: {
   item: NavItem
   expanded: boolean
   active: boolean
+  badge?: number
 }) {
   return (
     <Link
@@ -127,8 +139,13 @@ function NavLink({
         ${active ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}
       `}
     >
-      <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+      <span className="relative flex-shrink-0 w-5 h-5 flex items-center justify-center">
         {item.icon}
+        {badge && badge > 0 ? (
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#CC0015] text-white text-[8px] font-bold flex items-center justify-center leading-none">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        ) : null}
       </span>
       {expanded && (
         <span className="whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span>

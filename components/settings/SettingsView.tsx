@@ -600,6 +600,115 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
   )
 }
 
+// ─── Incoming Invitations Section ─────────────────────────────────────────────
+
+interface IncomingInviteRow {
+  id: string
+  admin_user_id: string
+  manager_email: string
+  invited_at: string
+  admin: { first_name: string | null; last_name: string | null; email: string } | null
+}
+
+function IncomingInvitationsSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
+  const { userId } = useAuth()
+  const [invites, setInvites] = useState<IncomingInviteRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [acting, setActing] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadInvites()
+  }, [userId])
+
+  async function loadInvites() {
+    if (!userId) { setLoading(false); return }
+    const { data } = await supabase
+      .from('manager_relationships')
+      .select('id, admin_user_id, manager_email, invited_at, admin:users!admin_user_id(first_name, last_name, email)')
+      .eq('manager_user_id', userId)
+      .eq('status', 'pending')
+      .order('invited_at', { ascending: false })
+    setInvites((data as unknown as IncomingInviteRow[]) ?? [])
+    setLoading(false)
+  }
+
+  async function handleAccept(id: string) {
+    setActing(id)
+    const { error } = await supabase
+      .from('manager_relationships')
+      .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+      .eq('id', id)
+    setActing(null)
+    if (error) {
+      onToast('Failed to accept invitation.', 'error')
+    } else {
+      setInvites((prev) => prev.filter((i) => i.id !== id))
+      onToast('Invitation accepted.')
+    }
+  }
+
+  async function handleDecline(id: string) {
+    setActing(id)
+    const { error } = await supabase
+      .from('manager_relationships')
+      .update({ status: 'archived' })
+      .eq('id', id)
+    setActing(null)
+    if (error) {
+      onToast('Failed to decline invitation.', 'error')
+    } else {
+      setInvites((prev) => prev.filter((i) => i.id !== id))
+      onToast('Invitation declined.')
+    }
+  }
+
+  function adminLabel(invite: IncomingInviteRow) {
+    const a = invite.admin
+    if (!a) return invite.admin_user_id
+    const name = [a.first_name, a.last_name].filter(Boolean).join(' ')
+    return name ? `${name} (${a.email})` : a.email
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {loading ? (
+        <p className="text-[13px] text-[#797979]">Loading…</p>
+      ) : invites.length === 0 ? (
+        <p className="text-[13px] text-[#797979]">No pending invitations.</p>
+      ) : (
+        <div className="flex flex-col divide-y divide-[#F2F2F2]">
+          {invites.map((invite) => (
+            <div key={invite.id} className="flex items-center justify-between py-2.5 gap-4">
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-[13px] text-[#19153F] truncate">{adminLabel(invite)}</span>
+                <span className="text-[11px] text-[#797979]">
+                  Invited {new Date(invite.invited_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => handleAccept(invite.id)}
+                  disabled={acting === invite.id}
+                  className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium bg-[#19153F] text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleDecline(invite.id)}
+                  disabled={acting === invite.id}
+                  className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-[#797979] border border-[#DADADA] bg-white hover:border-[#FF0522] hover:text-[#CC0015] disabled:opacity-50"
+                >
+                  Decline
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Manager Section ──────────────────────────────────────────────────────────
 
 type ValidationState = 'idle' | 'found' | 'not_found'
@@ -624,8 +733,8 @@ function ManagerSection({ onToast }: { onToast: (msg: string, type?: 'success' |
       .from('manager_relationships')
       .select('*')
       .eq('admin_user_id', userId)
-      .eq('status', 'accepted')
-      .order('accepted_at', { ascending: false })
+      .neq('status', 'archived')
+      .order('invited_at', { ascending: false })
     setManagers((data as ManagerRelRow[]) ?? [])
     setLoadingManagers(false)
   }
@@ -657,7 +766,7 @@ function ManagerSection({ onToast }: { onToast: (msg: string, type?: 'success' |
 
     const existing = managers.find((m) => m.manager_email.toLowerCase() === email.toLowerCase())
     if (existing) {
-      onToast('This person already has an active manager relationship.', 'error')
+      onToast('A relationship or pending invitation already exists for this email.', 'error')
       return
     }
 
@@ -676,16 +785,15 @@ function ManagerSection({ onToast }: { onToast: (msg: string, type?: 'success' |
       admin_user_id: userId,
       manager_email: email,
       manager_user_id: managerUserId,
-      status: 'accepted',
+      status: 'pending',
       invited_at: now,
-      accepted_at: now,
     })
     setSending(false)
 
     if (error) {
-      onToast('Failed to add manager.', 'error')
+      onToast('Failed to send invitation.', 'error')
     } else {
-      onToast('Manager added.')
+      onToast('Invitation sent.')
       setInviteEmail('')
       setValidation('idle')
       loadManagers()
@@ -711,7 +819,9 @@ function ManagerSection({ onToast }: { onToast: (msg: string, type?: 'success' |
     <>
       {removeTarget && (
         <ConfirmDialog
-          message={`Remove ${removeTarget.manager_email} as a manager? They will no longer have access to your task list.`}
+          message={removeTarget.status === 'pending'
+            ? `Cancel the invitation to ${removeTarget.manager_email}?`
+            : `Remove ${removeTarget.manager_email} as a manager? They will no longer have access to your task list.`}
           confirmLabel="Remove"
           dangerous
           onConfirm={confirmRemove}
@@ -734,10 +844,10 @@ function ManagerSection({ onToast }: { onToast: (msg: string, type?: 'success' |
                 className="px-3 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F] placeholder:text-[#797979]"
               />
               {validation === 'found' && (
-                <p className="text-[12px] text-[#1B8C7A]">✓ Registered user — relationship will be established immediately.</p>
+                <p className="text-[12px] text-[#1B8C7A]">✓ Registered user — invitation will be sent and they can accept it in Settings.</p>
               )}
               {validation === 'not_found' && (
-                <p className="text-[12px] text-[#B38600]">User not found. You can still add this email — the relationship will activate once they register.</p>
+                <p className="text-[12px] text-[#B38600]">User not found. You can still invite this email — the invitation will appear once they register.</p>
               )}
             </div>
             <button
@@ -745,13 +855,13 @@ function ManagerSection({ onToast }: { onToast: (msg: string, type?: 'success' |
               disabled={sending || !inviteEmail.trim()}
               className="self-start px-4 py-2 rounded-[6px] text-[13px] font-medium bg-[#19153F] text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
             >
-              {sending ? 'Adding…' : 'Add manager'}
+              {sending ? 'Sending…' : 'Invite manager'}
             </button>
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-[12px] font-medium text-[#595959]">Current managers</p>
+          <p className="text-[12px] font-medium text-[#595959]">Manager relationships</p>
           {loadingManagers ? (
             <p className="text-[13px] text-[#797979]">Loading…</p>
           ) : managers.length === 0 ? (
@@ -762,10 +872,13 @@ function ManagerSection({ onToast }: { onToast: (msg: string, type?: 'success' |
                 <div key={m.id} className="flex items-center justify-between py-2.5">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-[13px] text-[#19153F]">{m.manager_email}</span>
-                    {m.accepted_at && (
+                    {m.status === 'accepted' && m.accepted_at && (
                       <span className="text-[11px] text-[#797979]">
                         Accepted {new Date(m.accepted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
+                    )}
+                    {m.status === 'pending' && (
+                      <span className="text-[11px] font-medium text-[#B38600]">Pending — awaiting acceptance</span>
                     )}
                   </div>
                   <button
@@ -807,6 +920,9 @@ export default function SettingsView() {
       </SectionCard>
       <SectionCard title="Projects">
         <ProjectsSection onToast={addToast} />
+      </SectionCard>
+      <SectionCard title="Incoming invitations">
+        <IncomingInvitationsSection onToast={addToast} />
       </SectionCard>
       <SectionCard title="Manager relationships">
         <ManagerSection onToast={addToast} />
