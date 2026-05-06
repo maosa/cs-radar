@@ -946,7 +946,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                         <div className="flex flex-col gap-0.5 min-w-0">
                           {row.direction === 'incoming' ? (
                             <span className="text-[13px] text-[#19153F]">
-                              {[row.admin?.first_name, row.admin?.last_name].filter(Boolean).join(' ') || row.admin?.email || row.admin_user_id} wants you to manage their tasks
+                              {personLabel(row.admin?.first_name, row.admin?.last_name, row.admin?.email ?? row.admin_user_id)} wants you to manage their tasks
                             </span>
                           ) : (
                             <span className="text-[13px] text-[#19153F] truncate">{row.manager_email}</span>
