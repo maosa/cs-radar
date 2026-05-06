@@ -22,6 +22,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { dateStringToWeekIndex, formatWeekHeader } from '@/lib/weeks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -897,6 +898,152 @@ function ManagerSection({ onToast }: { onToast: (msg: string, type?: 'success' |
   )
 }
 
+// ─── CSV helpers ─────────────────────────────────────────────────────────────
+
+function csvEscape(value: string): string {
+  const s = String(value ?? '')
+  if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+    return '"' + s.replace(/"/g, '""') + '"'
+  }
+  return s
+}
+
+function formatExportDate(ts: string): string {
+  const d = new Date(ts)
+  return (
+    d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) +
+    ' at ' +
+    d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  )
+}
+
+// ─── Export section ───────────────────────────────────────────────────────────
+
+function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
+  const { userId } = useAuth()
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = async () => {
+    if (!userId) return
+    setExporting(true)
+    try {
+      // 1. Fetch all tasks with project names
+      const { data: tasksRaw, error: tasksErr } = await supabase
+        .from('tasks')
+        .select('*, projects(name)')
+        .eq('admin_user_id', userId)
+        .order('week_start_date')
+        .order('sort_order')
+      if (tasksErr) throw tasksErr
+      const tasks = tasksRaw ?? []
+      const taskIds = tasks.map((t) => t.id)
+
+      if (taskIds.length === 0) {
+        // No tasks — still produce a headers-only CSV
+        const csv = '﻿' + ['Week', 'Product', 'Project', 'Task Description', 'Notes', 'Comments', 'Status', 'Flagged'].join(',')
+        triggerDownload(csv)
+        return
+      }
+
+      // 2. Parallel fetch notes + comments
+      const [notesRes, commentsRes] = await Promise.all([
+        supabase.from('task_notes').select('*').in('task_id', taskIds),
+        supabase.from('task_comments').select('*').in('task_id', taskIds).order('created_at'),
+      ])
+      if (notesRes.error) throw notesRes.error
+      if (commentsRes.error) throw commentsRes.error
+      const notes = notesRes.data ?? []
+      const comments = commentsRes.data ?? []
+
+      // 3. Resolve user names for comment authors
+      const authorIds = new Set<string>()
+      comments.forEach((c) => {
+        authorIds.add(c.created_by)
+        if (c.updated_by) authorIds.add(c.updated_by)
+      })
+      const nameMap: Record<string, string> = {}
+      if (authorIds.size > 0) {
+        const { data: users } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .in('id', [...authorIds])
+        if (users) {
+          users.forEach((u) => {
+            nameMap[u.id] = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Unknown'
+          })
+        }
+      }
+
+      // 4. Build lookup maps
+      const notesMap: Record<string, string> = {}
+      notes.forEach((n) => { notesMap[n.task_id] = n.content })
+
+      const commentsMap: Record<string, string> = {}
+      comments.forEach((c) => {
+        const authorId = c.updated_by ?? c.created_by
+        const timestamp = c.updated_at ?? c.created_at
+        const name = nameMap[authorId] ?? 'Unknown'
+        const date = formatExportDate(timestamp)
+        const text = c.content.trimEnd()
+        const entry = `[${name} on ${date}] ${text}${text.endsWith('.') ? '' : '.'}`
+        commentsMap[c.task_id] = commentsMap[c.task_id] ? `${commentsMap[c.task_id]} ${entry}` : entry
+      })
+
+      // 5. Build rows
+      const headers = ['Week', 'Product', 'Project', 'Task Description', 'Notes', 'Comments', 'Status', 'Flagged']
+      const rows = tasks.map((task) => {
+        const proj = task.projects as { name: string } | null
+        return [
+          formatWeekHeader(dateStringToWeekIndex(task.week_start_date)),
+          task.product,
+          proj?.name ?? '',
+          task.description,
+          notesMap[task.id] ?? '',
+          commentsMap[task.id] ?? '',
+          task.status === 'complete' ? 'Complete' : 'Open',
+          task.is_flagged ? 'Yes' : 'No',
+        ]
+      })
+
+      // 6. Serialise + download (BOM for Excel UTF-8 compatibility)
+      const csv = '﻿' + [headers, ...rows].map((row) => row.map(csvEscape).join(',')).join('\n')
+      triggerDownload(csv)
+      onToast('Export downloaded.')
+    } catch {
+      onToast('Export failed. Please try again.', 'error')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  function triggerDownload(csv: string) {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `tasks_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div>
+      <p className="text-[13px] text-[#595959] mb-4">
+        Download all your tasks, notes, and comments as a CSV file.
+      </p>
+      <button
+        onClick={handleExport}
+        disabled={exporting}
+        className="px-4 py-2 text-[13px] font-medium bg-[#19153F] text-white rounded-[6px] border border-transparent hover:bg-[#2a2460] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {exporting ? 'Exporting…' : 'Export to CSV'}
+      </button>
+    </div>
+  )
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function SettingsView() {
@@ -926,6 +1073,9 @@ export default function SettingsView() {
       </SectionCard>
       <SectionCard title="Manager relationships">
         <ManagerSection onToast={addToast} />
+      </SectionCard>
+      <SectionCard title="Export data">
+        <ExportSection onToast={addToast} />
       </SectionCard>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
