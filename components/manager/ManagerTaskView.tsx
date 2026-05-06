@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import ProductBadge from '@/components/tasks/ProductBadge'
 import DetailPanel from '@/components/tasks/DetailPanel'
 import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth-context'
 import type { TaskWithProject } from '@/lib/supabase/types'
 import { ChevronLeft, ChevronRight, Search, PanelRight, MessageSquare, ArrowLeft, Flag } from 'lucide-react'
 import {
@@ -431,6 +433,8 @@ interface ManagerTaskViewProps {
 }
 
 export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
+  const { userId } = useAuth()
+  const router = useRouter()
   const todayWeekIndex = getCurrentWeekIndex()
   const [viewMode, setViewMode] = useState<ViewMode>('focused')
   const [centerWeekIndex, setCenterWeekIndex] = useState(todayWeekIndex)
@@ -452,9 +456,10 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
 
   // Fetch tasks and admin name
   useEffect(() => {
+    if (!userId) return
     const loadData = async () => {
       setLoading(true)
-      const [tasksRes, userRes] = await Promise.all([
+      const [tasksRes, userRes, relRes] = await Promise.all([
         supabase
           .from('tasks')
           .select('*, projects(name)')
@@ -466,7 +471,18 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
           .select('first_name, last_name')
           .eq('id', adminUserId)
           .maybeSingle(),
+        supabase
+          .from('manager_relationships')
+          .select('id', { count: 'exact', head: true })
+          .eq('manager_user_id', userId)
+          .eq('status', 'accepted'),
       ])
+
+      if ((relRes.count ?? 0) === 0) {
+        await supabase.from('users').update({ default_landing: 'task_list' }).eq('id', userId)
+        router.replace('/tasks')
+        return
+      }
 
       if (tasksRes.data) {
         const mapped: TaskWithProject[] = tasksRes.data.map((row) => {
@@ -486,7 +502,7 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
       setLoading(false)
     }
     loadData()
-  }, [adminUserId])
+  }, [adminUserId, userId, router])
 
   // Debounced search
   useEffect(() => {
