@@ -41,7 +41,6 @@ import {
   GripVertical,
   FileText,
   MessageSquare,
-  PanelRight,
   X,
   Pencil,
 } from 'lucide-react'
@@ -444,9 +443,6 @@ interface ToolbarProps {
   showSearchDropdown: boolean
   onSearchResultClick: (task: AnyTask) => void
   onSearchClose: () => void
-  panelOpen: boolean
-  hasPanelTask: boolean
-  onTogglePanel: () => void
 }
 
 function Toolbar({
@@ -464,9 +460,6 @@ function Toolbar({
   showSearchDropdown,
   onSearchResultClick,
   onSearchClose,
-  panelOpen,
-  hasPanelTask,
-  onTogglePanel,
 }: ToolbarProps) {
   const isAtCurrentWeek = centerWeekIndex === currentWeekIndex
   const searchRef = useRef<HTMLDivElement>(null)
@@ -541,20 +534,6 @@ function Toolbar({
           </button>
         ))}
       </div>
-
-      {/* Panel toggle */}
-      <button
-        onClick={onTogglePanel}
-        disabled={!hasPanelTask}
-        title={panelOpen ? 'Close detail panel' : 'Open detail panel'}
-        className={`flex items-center justify-center w-7 h-7 rounded border transition-colors ${
-          panelOpen
-            ? 'bg-[#19153F] text-white border-[#19153F]'
-            : 'bg-white text-[#595959] border-[#DADADA] hover:border-[#aaa] hover:text-[#19153F] disabled:opacity-30 disabled:cursor-not-allowed'
-        }`}
-      >
-        <PanelRight size={14} />
-      </button>
 
       {/* Search */}
       <div ref={searchRef} className="relative flex items-center">
@@ -1080,10 +1059,6 @@ export default function TasksView() {
     setPanelOpen(false)
   }, [])
 
-  const handleTogglePanel = useCallback(() => {
-    setPanelOpen((prev) => !prev)
-  }, [])
-
   // ── CRUD handlers ──────────────────────────────────────────────────────────
 
   const handleToggleComplete = useCallback(async (id: string) => {
@@ -1233,9 +1208,6 @@ export default function TasksView() {
         showSearchDropdown={showSearchDropdown}
         onSearchResultClick={handleSearchResultClick}
         onSearchClose={handleSearchClose}
-        panelOpen={panelOpen}
-        hasPanelTask={panelTask !== null}
-        onTogglePanel={handleTogglePanel}
       />
 
       <FilterBar

@@ -8,7 +8,7 @@ import DetailPanel from '@/components/tasks/DetailPanel'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import type { TaskWithProject } from '@/lib/supabase/types'
-import { ChevronLeft, ChevronRight, Search, PanelRight, MessageSquare, ArrowLeft, Flag } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, MessageSquare, ArrowLeft, Flag } from 'lucide-react'
 import {
   getCurrentWeekIndex,
   weekIndexToDateString,
@@ -131,9 +131,6 @@ interface ToolbarProps {
   showSearchDropdown: boolean
   onSearchResultClick: (t: AnyTask) => void
   onSearchClose: () => void
-  panelOpen: boolean
-  hasPanelTask: boolean
-  onTogglePanel: () => void
 }
 
 function Toolbar({
@@ -151,9 +148,6 @@ function Toolbar({
   showSearchDropdown,
   onSearchResultClick,
   onSearchClose,
-  panelOpen,
-  hasPanelTask,
-  onTogglePanel,
 }: ToolbarProps) {
   const isAtCurrentWeek = centerWeekIndex === currentWeekIndex
   const searchRef = useRef<HTMLDivElement>(null)
@@ -232,20 +226,6 @@ function Toolbar({
           </button>
         ))}
       </div>
-
-      {/* Panel toggle */}
-      <button
-        onClick={onTogglePanel}
-        disabled={!hasPanelTask}
-        title={panelOpen ? 'Close detail panel' : 'Open detail panel'}
-        className={`flex items-center justify-center w-7 h-7 rounded border transition-colors ${
-          panelOpen
-            ? 'bg-[#19153F] text-white border-[#19153F]'
-            : 'bg-white text-[#595959] border-[#DADADA] hover:border-[#aaa] hover:text-[#19153F] disabled:opacity-30 disabled:cursor-not-allowed'
-        }`}
-      >
-        <PanelRight size={14} />
-      </button>
 
       {/* Search */}
       <div ref={searchRef} className="relative flex items-center">
@@ -604,9 +584,6 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
         showSearchDropdown={showSearchDropdown}
         onSearchResultClick={handleSearchResultClick}
         onSearchClose={() => setShowSearchDropdown(false)}
-        panelOpen={panelOpen}
-        hasPanelTask={panelTask !== null}
-        onTogglePanel={() => setPanelOpen((v) => !v)}
       />
       <FilterBar
         uniqueProjects={uniqueProjects}
