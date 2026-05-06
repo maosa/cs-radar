@@ -31,23 +31,30 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (!userId) return
-    supabase
-      .from('manager_relationships')
-      .select('id')
-      .eq('manager_user_id', userId)
-      .eq('status', 'accepted')
-      .limit(1)
-      .then(({ data }) => {
-        setHasManagerRelationships(Array.isArray(data) && data.length > 0)
-      })
-    supabase
-      .from('manager_relationships')
-      .select('id', { count: 'exact', head: true })
-      .eq('manager_user_id', userId)
-      .eq('status', 'pending')
-      .then(({ count }) => {
-        setPendingInviteCount(count ?? 0)
-      })
+
+    const fetchRelationshipData = () => {
+      supabase
+        .from('manager_relationships')
+        .select('id')
+        .eq('manager_user_id', userId)
+        .eq('status', 'accepted')
+        .limit(1)
+        .then(({ data }) => {
+          setHasManagerRelationships(Array.isArray(data) && data.length > 0)
+        })
+      supabase
+        .from('manager_relationships')
+        .select('id', { count: 'exact', head: true })
+        .eq('manager_user_id', userId)
+        .eq('status', 'pending')
+        .then(({ count }) => {
+          setPendingInviteCount(count ?? 0)
+        })
+    }
+
+    fetchRelationshipData()
+    window.addEventListener('sidebar:refresh', fetchRelationshipData)
+    return () => window.removeEventListener('sidebar:refresh', fetchRelationshipData)
   }, [userId])
 
   const toggle = () => {

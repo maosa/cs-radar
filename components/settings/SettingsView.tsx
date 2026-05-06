@@ -644,6 +644,7 @@ function IncomingInvitationsSection({ onToast }: { onToast: (msg: string, type?:
     } else {
       setInvites((prev) => prev.filter((i) => i.id !== id))
       onToast('Invitation accepted.')
+      window.dispatchEvent(new Event('sidebar:refresh'))
     }
   }
 
@@ -659,6 +660,7 @@ function IncomingInvitationsSection({ onToast }: { onToast: (msg: string, type?:
     } else {
       setInvites((prev) => prev.filter((i) => i.id !== id))
       onToast('Invitation declined.')
+      window.dispatchEvent(new Event('sidebar:refresh'))
     }
   }
 
