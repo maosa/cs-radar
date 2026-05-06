@@ -165,7 +165,7 @@ function Toolbar({
       {/* Back */}
       <Link
         href="/manager"
-        className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium border border-[#DADADA] rounded-[6px] text-[#595959] hover:border-[#aaa] hover:text-[#19153F] bg-white transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1 text-[13px] font-medium border border-[#DADADA] rounded-[6px] text-[#595959] hover:border-[#aaa] hover:text-[#19153F] bg-white transition-colors"
       >
         <ArrowLeft size={14} />
         Back
@@ -240,7 +240,7 @@ function Toolbar({
             if (e.key === 'Escape') { onSearchClose(); (e.target as HTMLInputElement).blur() }
           }}
           placeholder="Search tasks…"
-          className="pl-7 pr-3 py-1.5 text-[13px] border border-[#DADADA] rounded-[6px] w-48 placeholder:text-[#797979] focus:outline-none focus:border-[#38308F] bg-white"
+          className="pl-7 pr-3 h-7 text-[13px] border border-[#DADADA] rounded-[6px] w-48 placeholder:text-[#797979] focus:outline-none focus:border-[#38308F] bg-white"
         />
         {showSearchDropdown && searchResults.length > 0 && (
           <div className="absolute top-full right-0 mt-1 z-40 bg-white border border-[#DADADA] rounded-[6px] shadow-lg w-80 py-1 overflow-hidden">
