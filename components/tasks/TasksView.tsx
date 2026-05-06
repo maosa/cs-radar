@@ -301,7 +301,7 @@ function SortableTaskRow(props: RowProps) {
                 </button>
 
                 {/* Description */}
-                <span className={`flex-1 min-w-0 break-words ${dc}`}>{task.description}</span>
+                <span className={`flex-1 min-w-0 truncate ${dc}`}>{task.description}</span>
 
                 {/* Row actions — on hover */}
                 <div className="mt-0.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity relative">
