@@ -166,6 +166,15 @@ create policy "users: self update"        on public.users for update using (auth
 
 -- Projects: owner full access
 create policy "projects: owner read"   on public.projects for select using (auth.uid() = admin_user_id);
+create policy "projects: manager read" on public.projects for select
+  using (
+    exists (
+      select 1 from public.manager_relationships mr
+      where mr.admin_user_id = projects.admin_user_id
+        and mr.manager_user_id = auth.uid()
+        and mr.status = 'accepted'
+    )
+  );
 create policy "projects: owner insert" on public.projects for insert with check (auth.uid() = admin_user_id);
 create policy "projects: owner update" on public.projects for update using (auth.uid() = admin_user_id);
 create policy "projects: owner delete" on public.projects for delete using (auth.uid() = admin_user_id);
