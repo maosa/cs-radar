@@ -182,6 +182,22 @@ function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' |
     load()
   }, [userId])
 
+  // Re-check manager role whenever an invitation is accepted or declined
+  useEffect(() => {
+    const refresh = async () => {
+      if (!userId) return
+      const { data } = await supabase
+        .from('manager_relationships')
+        .select('id')
+        .eq('manager_user_id', userId)
+        .eq('status', 'accepted')
+        .limit(1)
+      setHasManagerRole(Array.isArray(data) && data.length > 0)
+    }
+    window.addEventListener('sidebar:refresh', refresh)
+    return () => window.removeEventListener('sidebar:refresh', refresh)
+  }, [userId])
+
   const handleSave = async () => {
     if (!userId) return
     setSaving(true)
