@@ -799,7 +799,7 @@ function TaskTable({
                         {formatWeekHeader(wi)}
                       </span>
                       {isCurrent && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#00D1BA] text-[#19153F] leading-none">
+                        <span className="inline-flex items-center justify-center px-1.5 py-[3px] rounded text-[10px] font-medium bg-[#00D1BA] text-[#19153F]">
                           current
                         </span>
                       )}
