@@ -88,7 +88,7 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
 
                 {/* Flag icon — always visible for flagged tasks */}
                 {task.is_flagged && (
-                  <Flag size={13} className="flex-shrink-0 text-[#CC0015]" />
+                  <Flag size={14} className="flex-shrink-0 text-[#FF0522] fill-[#FF0522]" />
                 )}
 
                 {/* Comments icon — visible on hover */}
