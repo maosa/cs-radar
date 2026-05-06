@@ -6,7 +6,7 @@ import ProductBadge from '@/components/tasks/ProductBadge'
 import DetailPanel from '@/components/tasks/DetailPanel'
 import { supabase } from '@/lib/supabase/client'
 import type { TaskWithProject } from '@/lib/supabase/types'
-import { ChevronLeft, ChevronRight, Search, PanelRight, FileText, MessageSquare, ArrowLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, PanelRight, MessageSquare, ArrowLeft } from 'lucide-react'
 import {
   getCurrentWeekIndex,
   weekIndexToDateString,
@@ -101,15 +101,8 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
                 {/* Description */}
                 <span className={`flex-1 min-w-0 truncate ${dc}`}>{task.description}</span>
 
-                {/* Notes + Comments icons only */}
+                {/* Comments icon only */}
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity">
-                  <button
-                    onClick={() => onOpenPanel(task.id, 'notes')}
-                    className="p-1 rounded text-[#797979] hover:text-[#38308F] hover:bg-[#F2F2F2] transition-colors"
-                    title="View notes"
-                  >
-                    <FileText size={14} />
-                  </button>
                   <button
                     onClick={() => onOpenPanel(task.id, 'comments')}
                     className="p-1 rounded text-[#797979] hover:text-[#38308F] hover:bg-[#F2F2F2] transition-colors"
