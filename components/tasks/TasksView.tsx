@@ -323,7 +323,7 @@ function SortableTaskRow(props: RowProps) {
                     className="flex-1 min-w-0 text-[13px] bg-transparent border-b border-[#38308F] outline-none text-[#19153F] placeholder:text-[#797979]"
                   />
                 ) : (
-                  <span className={`flex-1 min-w-0 truncate ${dc}`}>{task.description}</span>
+                  <span className={`flex-1 min-w-0 break-words ${dc}`}>{task.description}</span>
                 )}
 
                 {/* Row actions — on hover, hidden while editing */}
