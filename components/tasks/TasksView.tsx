@@ -286,11 +286,11 @@ function SortableTaskRow(props: RowProps) {
             style={isTaskWeek ? bg : { backgroundColor: '#FFFFFF' }}
           >
             {isTaskWeek && (
-              <div className={`flex items-start gap-2 min-w-0 rounded-[4px] transition-all ${isHighlighted ? 'ring-2 ring-[#38308F] ring-offset-1' : ''}`}>
+              <div className={`flex items-center gap-2 min-w-0 rounded-[4px] transition-all ${isHighlighted ? 'ring-2 ring-[#38308F] ring-offset-1' : ''}`}>
                 {/* Checkbox */}
                 <button
                   onClick={() => onToggleComplete(task.id)}
-                  className={`mt-0.5 flex-shrink-0 w-[15px] h-[15px] rounded-[3px] border flex items-center justify-center transition-colors ${
+                  className={`flex-shrink-0 w-[15px] h-[15px] rounded-[3px] border flex items-center justify-center transition-colors ${
                     task.status === 'complete'
                       ? 'bg-[#00D1BA] border-[#00D1BA]'
                       : 'border-[#DADADA] hover:border-[#00D1BA] bg-white'
@@ -327,7 +327,7 @@ function SortableTaskRow(props: RowProps) {
 
                 {/* Row actions — on hover, hidden while editing */}
                 {!isEditing && (
-                <div className="mt-0.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity relative">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity relative">
                   {/* Edit */}
                   <button
                     onClick={() => { setEditValue(task.description); setIsEditing(true) }}
