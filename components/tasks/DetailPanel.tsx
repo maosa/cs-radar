@@ -43,6 +43,7 @@ interface CommentItemProps {
   comment: CommentRow
   isEditing: boolean
   editContent: string
+  canEdit: boolean
   onEditStart: () => void
   onEditChange: (v: string) => void
   onEditSave: () => void
@@ -54,6 +55,7 @@ function CommentItem({
   comment,
   isEditing,
   editContent,
+  canEdit,
   onEditStart,
   onEditChange,
   onEditSave,
@@ -70,7 +72,7 @@ function CommentItem({
           <span className="text-[11px] text-[#797979]">
             {formatTimestamp(comment.updated_at || comment.created_at)}
           </span>
-          {!isEditing && (
+          {!isEditing && canEdit && (
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5">
               <button
                 onClick={onEditStart}
@@ -133,6 +135,7 @@ export interface DetailPanelProps {
   initialSection: 'notes' | 'comments'
   onClose: () => void
   readOnlyNotes?: boolean
+  canEditAllComments?: boolean
 }
 
 export default function DetailPanel({
@@ -143,6 +146,7 @@ export default function DetailPanel({
   initialSection,
   onClose,
   readOnlyNotes = false,
+  canEditAllComments = true,
 }: DetailPanelProps) {
   const { userId } = useAuth()
 
@@ -397,6 +401,7 @@ export default function DetailPanel({
                         comment={comment}
                         isEditing={editingCommentId === comment.id}
                         editContent={editContent}
+                        canEdit={canEditAllComments || comment.created_by === userId}
                         onEditStart={() => {
                           setEditingCommentId(comment.id)
                           setEditContent(comment.content)

@@ -638,6 +638,7 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
           initialSection={panelSection}
           onClose={() => setPanelOpen(false)}
           readOnlyNotes
+          canEditAllComments={false}
         />
       )}
     </div>
