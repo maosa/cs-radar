@@ -65,6 +65,7 @@ export default function SignupPage() {
             <h1 className="text-[18px] font-medium text-[#19153F]">Confirm your email address</h1>
             <p className="text-[13px] text-[#595959] mt-1">Task Tracker</p>
           </div>
+          <p className="text-[13px] text-[#595959]">A confirmation email has been sent to <span className="font-medium text-[#19153F]">{email}</span></p>
           <p className="text-[13px] text-[#595959]">Check your email to activate your account.</p>
           <Link href="/login" className="block text-[13px] text-[#38308F] hover:underline">
             Back to sign in
