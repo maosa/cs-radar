@@ -419,70 +419,71 @@ export default function DetailPanel({
         {/* Scrollable content */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
 
-          {/* Details (owner only) */}
-          {!readOnlyNotes && (
-            <div className="p-4 border-b border-[#DADADA]">
-              <h3 className="text-[11px] font-medium text-[#797979] uppercase tracking-wide mb-3">Details</h3>
-              <div className="flex flex-col gap-3">
+          {/* Details */}
+          <div className={`p-4 border-b border-[#DADADA]${readOnlyNotes ? ' opacity-50' : ''}`}>
+            <h3 className="text-[11px] font-medium text-[#797979] uppercase tracking-wide mb-3">Details</h3>
+            <div className="flex flex-col gap-3">
 
-                {/* Product */}
-                <div className="flex items-center gap-3">
-                  <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Product</span>
-                  <select
-                    value={localProduct}
-                    onChange={handleProductChange}
-                    className="flex-1 h-8 px-2 text-[13px] border border-[#DADADA] rounded-[6px] bg-white text-[#19153F] focus:outline-none focus:border-[#38308F]"
-                  >
-                    <option value="AH">Access Hub (AH)</option>
-                    <option value="NURO">NURO</option>
-                    <option value="EH">Evidence Hub (EH)</option>
-                    <option value="N/A">N/A (Not Applicable)</option>
-                  </select>
-                </div>
-
-                {/* Project */}
-                <div className="flex items-center gap-3">
-                  <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Project</span>
-                  <select
-                    value={localProjectId ?? ''}
-                    onChange={handleProjectChange}
-                    className="flex-1 h-8 px-2 text-[13px] border border-[#DADADA] rounded-[6px] bg-white text-[#19153F] focus:outline-none focus:border-[#38308F]"
-                  >
-                    <option value="">No project</option>
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Week */}
-                <div className="flex items-center gap-3">
-                  <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Week</span>
-                  <div className="flex items-center gap-1 flex-1">
-                    <button
-                      onClick={() => handleWeekStep(-1)}
-                      disabled={localWeekIndex <= 0}
-                      className="p-1 rounded hover:bg-[#F2F2F2] text-[#595959] disabled:opacity-30 transition-colors"
-                      title="Previous week"
-                    >
-                      <ChevronLeft size={14} />
-                    </button>
-                    <span className="flex-1 text-center text-[12px] text-[#19153F]">
-                      {formatWeekHeader(localWeekIndex)}
-                    </span>
-                    <button
-                      onClick={() => handleWeekStep(1)}
-                      className="p-1 rounded hover:bg-[#F2F2F2] text-[#595959] transition-colors"
-                      title="Next week"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-
+              {/* Product */}
+              <div className="flex items-center gap-3">
+                <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Product</span>
+                <select
+                  value={localProduct}
+                  onChange={handleProductChange}
+                  disabled={readOnlyNotes}
+                  className={`flex-1 h-8 px-2 text-[13px] border border-[#DADADA] rounded-[6px] text-[#19153F] focus:outline-none focus:border-[#38308F] ${readOnlyNotes ? 'bg-[#F2F2F2] cursor-not-allowed' : 'bg-white'}`}
+                >
+                  <option value="AH">Access Hub (AH)</option>
+                  <option value="NURO">NURO</option>
+                  <option value="EH">Evidence Hub (EH)</option>
+                  <option value="N/A">N/A (Not Applicable)</option>
+                </select>
               </div>
+
+              {/* Project */}
+              <div className="flex items-center gap-3">
+                <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Project</span>
+                <select
+                  value={localProjectId ?? ''}
+                  onChange={handleProjectChange}
+                  disabled={readOnlyNotes}
+                  className={`flex-1 h-8 px-2 text-[13px] border border-[#DADADA] rounded-[6px] text-[#19153F] focus:outline-none focus:border-[#38308F] ${readOnlyNotes ? 'bg-[#F2F2F2] cursor-not-allowed' : 'bg-white'}`}
+                >
+                  <option value="">No project</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Week */}
+              <div className="flex items-center gap-3">
+                <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Week</span>
+                <div className="flex items-center gap-1 flex-1">
+                  <button
+                    onClick={() => handleWeekStep(-1)}
+                    disabled={readOnlyNotes || localWeekIndex <= 0}
+                    className="p-1 rounded text-[#595959] disabled:opacity-30 transition-colors"
+                    title="Previous week"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <span className="flex-1 text-center text-[12px] text-[#19153F]">
+                    {formatWeekHeader(localWeekIndex)}
+                  </span>
+                  <button
+                    onClick={() => handleWeekStep(1)}
+                    disabled={readOnlyNotes}
+                    className="p-1 rounded text-[#595959] disabled:opacity-30 transition-colors"
+                    title="Next week"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+
             </div>
-          )}
+          </div>
 
           {/* Notes */}
           <div ref={notesRef} className="p-4 border-b border-[#DADADA]">
