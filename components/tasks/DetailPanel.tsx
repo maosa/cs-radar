@@ -509,7 +509,7 @@ export default function DetailPanel({
                 onChange={(e) => setNoteContent(e.target.value)}
                 onBlur={handleNoteBlur}
                 placeholder="Add notes about this task…"
-                rows={4}
+                rows={7}
                 className="w-full text-[13px] text-[#19153F] placeholder:text-[#797979] border border-[#DADADA] rounded-[6px] px-3 py-2 resize-none focus:outline-none focus:border-[#38308F] bg-white"
               />
             )}
