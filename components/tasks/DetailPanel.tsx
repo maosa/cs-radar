@@ -498,11 +498,13 @@ export default function DetailPanel({
             {noteLoading ? (
               <p className="text-[13px] text-[#797979]">Loading…</p>
             ) : readOnlyNotes ? (
-              noteContent ? (
-                <p className="text-[13px] text-[#595959] whitespace-pre-wrap break-words">{noteContent}</p>
-              ) : (
-                <p className="text-[13px] text-[#797979] italic">No notes added.</p>
-              )
+              <textarea
+                value={noteContent || ''}
+                readOnly
+                rows={7}
+                placeholder="No notes added."
+                className="w-full text-[13px] text-[#595959] placeholder:text-[#797979] placeholder:italic border border-[#DADADA] rounded-[6px] px-3 py-2 resize-none bg-[#F2F2F2] cursor-default focus:outline-none"
+              />
             ) : (
               <textarea
                 value={noteContent}
