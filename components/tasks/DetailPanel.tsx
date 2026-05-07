@@ -599,7 +599,7 @@ export default function DetailPanel({
                     disabled={!newComment.trim() || addingComment}
                     className="px-3 py-1.5 text-[13px] font-medium bg-[#19153F] text-white rounded-[6px] border border-transparent hover:bg-[#2a2460] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
-                    {addingComment ? 'Saving…' : 'Save'}
+                    {addingComment ? 'Posting…' : 'Post'}
                   </button>
                 </div>
               </>
