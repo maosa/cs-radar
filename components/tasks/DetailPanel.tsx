@@ -172,8 +172,8 @@ export default function DetailPanel({
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  // Editable task fields
-  const [localProduct, setLocalProduct] = useState(taskProduct)
+  // Editable task fields (local — not saved until Save is clicked)
+  const [localProduct, setLocalProduct] = useState<Product>(taskProduct as Product)
   const [localProjectId, setLocalProjectId] = useState<string | null>(taskProjectId)
   const [localWeekIndex, setLocalWeekIndex] = useState(() => dateStringToWeekIndex(taskWeekStartDate))
 
@@ -192,9 +192,25 @@ export default function DetailPanel({
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
 
+  // Footer save state
+  const [saving, setSaving] = useState(false)
+
   const notesRef = useRef<HTMLDivElement>(null)
   const commentsRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // ─── Dirty detection (derived, no extra state) ───────────────────────────
+
+  const initialWeekIndex = dateStringToWeekIndex(taskWeekStartDate)
+
+  const isDetailsDirty =
+    localProduct !== (taskProduct as Product) ||
+    localProjectId !== taskProjectId ||
+    localWeekIndex !== initialWeekIndex
+
+  const isNotesDirty = noteContent !== lastSavedContent.current
+
+  const isDirty = isDetailsDirty || isNotesDirty
 
   // Close on Escape
   useEffect(() => {
@@ -269,74 +285,89 @@ export default function DetailPanel({
     return () => clearTimeout(timer)
   }, [initialSection])
 
-  // ─── Task field handlers ──────────────────────────────────────────────────
+  // ─── Details field handlers (local state only — no Supabase) ─────────────
 
-  const handleProductChange = useCallback(async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const prev = localProduct
-    const val = e.target.value as Product
-    setLocalProduct(val)
-    const { error } = await supabase.from('tasks')
-      .update({ product: val, updated_at: new Date().toISOString(), updated_by: userId })
-      .eq('id', taskId)
-    if (error) { setLocalProduct(prev); return }
-    onTaskUpdated?.({ product: val })
-  }, [localProduct, taskId, userId, onTaskUpdated])
+  const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLocalProduct(e.target.value as Product)
+  }
 
-  const handleProjectChange = useCallback(async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const prev = localProjectId
-    const val = e.target.value || null
-    setLocalProjectId(val)
-    const projectName = projects.find(p => p.id === val)?.name ?? null
-    const { error } = await supabase.from('tasks')
-      .update({ project_id: val, updated_at: new Date().toISOString(), updated_by: userId })
-      .eq('id', taskId)
-    if (error) { setLocalProjectId(prev); return }
-    onTaskUpdated?.({ project_id: val, project_name: projectName })
-  }, [localProjectId, projects, taskId, userId, onTaskUpdated])
+  const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLocalProjectId(e.target.value || null)
+  }
 
-  const handleWeekStep = useCallback(async (delta: number) => {
-    const prev = localWeekIndex
+  const handleWeekStep = (delta: number) => {
     const next = localWeekIndex + delta
     if (next < 0) return
     setLocalWeekIndex(next)
-    const dateStr = weekIndexToDateString(next)
-    const { error } = await supabase.from('tasks')
-      .update({ week_start_date: dateStr, updated_at: new Date().toISOString(), updated_by: userId })
-      .eq('id', taskId)
-    if (error) { setLocalWeekIndex(prev); return }
-    onTaskUpdated?.({ week_start_date: dateStr })
-  }, [localWeekIndex, taskId, userId, onTaskUpdated])
+  }
 
-  // ─── Notes / comments handlers ────────────────────────────────────────────
+  // ─── Footer: combined save ────────────────────────────────────────────────
 
-  const handleNoteBlur = useCallback(async () => {
-    if (noteContent === lastSavedContent.current) return
-    setNoteSaving(true)
+  const handleSave = useCallback(async () => {
+    setSaving(true)
     const now = new Date().toISOString()
-    if (note) {
-      const { data, error } = await supabase
-        .from('task_notes')
-        .update({ content: noteContent, updated_at: now, updated_by: userId })
-        .eq('id', note.id)
-        .select()
-        .single()
-      if (!error && data) {
-        setNote(data)
-        lastSavedContent.current = noteContent
-      }
-    } else {
-      const { data, error } = await supabase
-        .from('task_notes')
-        .insert({ task_id: taskId, content: noteContent, created_by: userId! })
-        .select()
-        .single()
-      if (!error && data) {
-        setNote(data)
-        lastSavedContent.current = noteContent
+
+    if (isDetailsDirty) {
+      const dateStr = weekIndexToDateString(localWeekIndex)
+      const { error } = await supabase.from('tasks').update({
+        product: localProduct,
+        project_id: localProjectId,
+        week_start_date: dateStr,
+        updated_at: now,
+        updated_by: userId,
+      }).eq('id', taskId)
+      if (!error) {
+        const projectName = projects.find(p => p.id === localProjectId)?.name ?? null
+        onTaskUpdated?.({
+          product: localProduct,
+          project_id: localProjectId,
+          project_name: projectName,
+          week_start_date: dateStr,
+        })
       }
     }
-    setNoteSaving(false)
-  }, [note, noteContent, taskId])
+
+    if (isNotesDirty) {
+      setNoteSaving(true)
+      if (note) {
+        const { data, error } = await supabase
+          .from('task_notes')
+          .update({ content: noteContent, updated_at: now, updated_by: userId })
+          .eq('id', note.id)
+          .select()
+          .single()
+        if (!error && data) {
+          setNote(data)
+          lastSavedContent.current = noteContent
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('task_notes')
+          .insert({ task_id: taskId, content: noteContent, created_by: userId! })
+          .select()
+          .single()
+        if (!error && data) {
+          setNote(data)
+          lastSavedContent.current = noteContent
+        }
+      }
+      setNoteSaving(false)
+    }
+
+    setSaving(false)
+  }, [isDetailsDirty, isNotesDirty, localProduct, localProjectId, localWeekIndex,
+      noteContent, note, taskId, userId, projects, onTaskUpdated])
+
+  // ─── Footer: discard ─────────────────────────────────────────────────────
+
+  const handleDiscard = useCallback(() => {
+    setLocalProduct(taskProduct as Product)
+    setLocalProjectId(taskProjectId)
+    setLocalWeekIndex(dateStringToWeekIndex(taskWeekStartDate))
+    setNoteContent(lastSavedContent.current)
+  }, [taskProduct, taskProjectId, taskWeekStartDate])
+
+  // ─── Comments handlers ────────────────────────────────────────────────────
 
   const handleAddComment = useCallback(async () => {
     if (!newComment.trim()) return
@@ -379,6 +410,8 @@ export default function DetailPanel({
       setComments((prev) => prev.filter((c) => c.id !== commentId))
     }
   }, [])
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -509,7 +542,6 @@ export default function DetailPanel({
               <textarea
                 value={noteContent}
                 onChange={(e) => setNoteContent(e.target.value)}
-                onBlur={handleNoteBlur}
                 placeholder="Add notes about this task…"
                 rows={7}
                 className="w-full text-[13px] text-[#19153F] placeholder:text-[#797979] border border-[#DADADA] rounded-[6px] px-3 py-2 resize-none focus:outline-none focus:border-[#38308F] bg-white"
@@ -574,6 +606,29 @@ export default function DetailPanel({
             )}
           </div>
         </div>
+
+        {/* Sticky footer — visible only when there are unsaved changes */}
+        {isDirty && (
+          <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-t border-[#DADADA] bg-white">
+            <span className="text-[12px] text-[#797979]">Unsaved changes</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDiscard}
+                disabled={saving}
+                className="px-2.5 py-1 text-[12px] font-medium border border-[#DADADA] rounded-[6px] text-[#595959] hover:border-[#aaa] hover:text-[#19153F] bg-white disabled:opacity-40 transition-colors"
+              >
+                Discard
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-2.5 py-1 text-[12px] font-medium bg-[#19153F] text-white rounded-[6px] hover:bg-[#2a2460] disabled:opacity-40 transition-colors"
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   )
