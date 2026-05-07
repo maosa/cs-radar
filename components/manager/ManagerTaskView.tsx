@@ -611,6 +611,9 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
           taskDescription={panelTask.description}
           taskProduct={panelTask.product}
           taskProjectName={projectName(panelTask)}
+          taskProjectId={panelTask.project_id ?? null}
+          taskWeekStartDate={panelTask.week_start_date}
+          projects={[]}
           initialSection={panelSection}
           onClose={() => setPanelOpen(false)}
           readOnlyNotes

@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import ProductBadge from './ProductBadge'
-import { X, Pencil, Trash2 } from 'lucide-react'
+import { X, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { dateStringToWeekIndex, weekIndexToDateString, formatWeekHeader } from '@/lib/weeks'
+import type { Product, ProjectRow } from '@/lib/supabase/types'
 
 function formatTimestamp(ts: string | null | undefined): string {
   if (!ts) return ''
@@ -132,6 +134,15 @@ export interface DetailPanelProps {
   taskDescription: string
   taskProduct: string
   taskProjectName: string | null
+  taskProjectId: string | null
+  taskWeekStartDate: string
+  projects: ProjectRow[]
+  onTaskUpdated?: (fields: Partial<{
+    product: Product
+    project_id: string | null
+    project_name: string | null
+    week_start_date: string
+  }>) => void
   initialSection: 'notes' | 'comments'
   onClose: () => void
   readOnlyNotes?: boolean
@@ -143,6 +154,10 @@ export default function DetailPanel({
   taskDescription,
   taskProduct,
   taskProjectName,
+  taskProjectId,
+  taskWeekStartDate,
+  projects,
+  onTaskUpdated,
   initialSection,
   onClose,
   readOnlyNotes = false,
@@ -156,6 +171,11 @@ export default function DetailPanel({
     const raf = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(raf)
   }, [])
+
+  // Editable task fields
+  const [localProduct, setLocalProduct] = useState(taskProduct)
+  const [localProjectId, setLocalProjectId] = useState<string | null>(taskProjectId)
+  const [localWeekIndex, setLocalWeekIndex] = useState(() => dateStringToWeekIndex(taskWeekStartDate))
 
   // Notes state
   const [note, setNote] = useState<NoteRow | null>(null)
@@ -249,6 +269,46 @@ export default function DetailPanel({
     return () => clearTimeout(timer)
   }, [initialSection])
 
+  // ─── Task field handlers ──────────────────────────────────────────────────
+
+  const handleProductChange = useCallback(async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const prev = localProduct
+    const val = e.target.value as Product
+    setLocalProduct(val)
+    const { error } = await supabase.from('tasks')
+      .update({ product: val, updated_at: new Date().toISOString(), updated_by: userId })
+      .eq('id', taskId)
+    if (error) { setLocalProduct(prev); return }
+    onTaskUpdated?.({ product: val })
+  }, [localProduct, taskId, userId, onTaskUpdated])
+
+  const handleProjectChange = useCallback(async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const prev = localProjectId
+    const val = e.target.value || null
+    setLocalProjectId(val)
+    const projectName = projects.find(p => p.id === val)?.name ?? null
+    const { error } = await supabase.from('tasks')
+      .update({ project_id: val, updated_at: new Date().toISOString(), updated_by: userId })
+      .eq('id', taskId)
+    if (error) { setLocalProjectId(prev); return }
+    onTaskUpdated?.({ project_id: val, project_name: projectName })
+  }, [localProjectId, projects, taskId, userId, onTaskUpdated])
+
+  const handleWeekStep = useCallback(async (delta: number) => {
+    const prev = localWeekIndex
+    const next = localWeekIndex + delta
+    if (next < 0) return
+    setLocalWeekIndex(next)
+    const dateStr = weekIndexToDateString(next)
+    const { error } = await supabase.from('tasks')
+      .update({ week_start_date: dateStr, updated_at: new Date().toISOString(), updated_by: userId })
+      .eq('id', taskId)
+    if (error) { setLocalWeekIndex(prev); return }
+    onTaskUpdated?.({ week_start_date: dateStr })
+  }, [localWeekIndex, taskId, userId, onTaskUpdated])
+
+  // ─── Notes / comments handlers ────────────────────────────────────────────
+
   const handleNoteBlur = useCallback(async () => {
     if (noteContent === lastSavedContent.current) return
     setNoteSaving(true)
@@ -334,9 +394,15 @@ export default function DetailPanel({
         <div className="flex items-start gap-3 p-4 border-b border-[#DADADA] flex-shrink-0">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
-              <ProductBadge product={taskProduct as 'AH' | 'EH' | 'NURO' | 'N/A'} />
-              {taskProjectName && (
-                <span className="text-[12px] text-[#797979] truncate">{taskProjectName}</span>
+              <ProductBadge product={localProduct as 'AH' | 'EH' | 'NURO' | 'N/A'} />
+              {(localProjectId
+                ? (projects.find(p => p.id === localProjectId)?.name ?? taskProjectName)
+                : taskProjectName) && (
+                <span className="text-[12px] text-[#797979] truncate">
+                  {localProjectId
+                    ? (projects.find(p => p.id === localProjectId)?.name ?? taskProjectName)
+                    : taskProjectName}
+                </span>
               )}
             </div>
             <p className="text-[13px] font-medium text-[#19153F] leading-snug">{taskDescription}</p>
@@ -352,6 +418,72 @@ export default function DetailPanel({
 
         {/* Scrollable content */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+
+          {/* Details (owner only) */}
+          {!readOnlyNotes && (
+            <div className="p-4 border-b border-[#DADADA]">
+              <h3 className="text-[11px] font-medium text-[#797979] uppercase tracking-wide mb-3">Details</h3>
+              <div className="flex flex-col gap-3">
+
+                {/* Product */}
+                <div className="flex items-center gap-3">
+                  <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Product</span>
+                  <select
+                    value={localProduct}
+                    onChange={handleProductChange}
+                    className="flex-1 h-8 px-2 text-[13px] border border-[#DADADA] rounded-[6px] bg-white text-[#19153F] focus:outline-none focus:border-[#38308F]"
+                  >
+                    <option value="AH">Access Hub (AH)</option>
+                    <option value="NURO">NURO</option>
+                    <option value="EH">Evidence Hub (EH)</option>
+                    <option value="N/A">N/A (Not Applicable)</option>
+                  </select>
+                </div>
+
+                {/* Project */}
+                <div className="flex items-center gap-3">
+                  <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Project</span>
+                  <select
+                    value={localProjectId ?? ''}
+                    onChange={handleProjectChange}
+                    className="flex-1 h-8 px-2 text-[13px] border border-[#DADADA] rounded-[6px] bg-white text-[#19153F] focus:outline-none focus:border-[#38308F]"
+                  >
+                    <option value="">No project</option>
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Week */}
+                <div className="flex items-center gap-3">
+                  <span className="text-[12px] text-[#595959] w-16 flex-shrink-0">Week</span>
+                  <div className="flex items-center gap-1 flex-1">
+                    <button
+                      onClick={() => handleWeekStep(-1)}
+                      disabled={localWeekIndex <= 0}
+                      className="p-1 rounded hover:bg-[#F2F2F2] text-[#595959] disabled:opacity-30 transition-colors"
+                      title="Previous week"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <span className="flex-1 text-center text-[12px] text-[#19153F]">
+                      {formatWeekHeader(localWeekIndex)}
+                    </span>
+                    <button
+                      onClick={() => handleWeekStep(1)}
+                      className="p-1 rounded hover:bg-[#F2F2F2] text-[#595959] transition-colors"
+                      title="Next week"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           <div ref={notesRef} className="p-4 border-b border-[#DADADA]">
             <div className="flex items-center justify-between mb-2.5">

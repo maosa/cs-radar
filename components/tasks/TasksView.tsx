@@ -1269,6 +1269,14 @@ export default function TasksView() {
           taskDescription={panelTask.description}
           taskProduct={panelTask.product}
           taskProjectName={projectName(panelTask)}
+          taskProjectId={panelTask.project_id ?? null}
+          taskWeekStartDate={panelTask.week_start_date}
+          projects={projects}
+          onTaskUpdated={(fields) => {
+            setTasks(prev => prev.map(t =>
+              t.id === panelTask.id ? { ...t, ...fields } : t
+            ))
+          }}
           initialSection={panelSection}
           onClose={handleClosePanel}
         />
