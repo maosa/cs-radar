@@ -119,7 +119,7 @@ function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel = 'Confirm',
           <button
             onClick={onConfirm}
             className={`px-4 py-2 rounded-[6px] text-[13px] font-medium border border-transparent text-white ${
-              dangerous ? 'bg-[#CC0015] hover:bg-[#AA0010]' : 'bg-[#19153F] hover:bg-[#2e2870]'
+              dangerous ? 'bg-[#CC0515] hover:bg-[#a8030f]' : 'bg-[#19153F] hover:bg-[#2e2870]'
             }`}
           >
             {confirmLabel}

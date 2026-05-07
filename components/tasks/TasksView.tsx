@@ -140,7 +140,7 @@ function DeleteConfirmModal({
           <button
             onClick={onConfirm}
             disabled={deleting}
-            className="px-4 py-2 text-[13px] font-medium bg-[#FF0522] text-white rounded-[6px] border border-transparent hover:bg-[#cc0015] disabled:opacity-60 transition-colors"
+            className="px-4 py-2 text-[13px] font-medium bg-[#CC0515] text-white rounded-[6px] border border-transparent hover:bg-[#a8030f] disabled:opacity-60 transition-colors"
           >
             {deleting ? 'Deleting…' : 'Delete'}
           </button>
