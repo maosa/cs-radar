@@ -12,7 +12,7 @@ export default function ProductBadge({ product }: { product: Product }) {
   return (
     <span
       style={{ backgroundColor: bg, color: text }}
-      className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium leading-none whitespace-nowrap select-none"
+      className="inline-flex items-center justify-center px-2 py-[3px] rounded text-[11px] font-medium whitespace-nowrap select-none"
     >
       {label}
     </span>
