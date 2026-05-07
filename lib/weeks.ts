@@ -1,5 +1,5 @@
-// Week 0 = Jan 5, 2026 (first Monday of 2026). All weeks are Monday–Sunday.
-const FIRST_WEEK_MS = Date.UTC(2026, 0, 5) // 2026-01-05 UTC midnight
+// Week 0 = Jul 21, 2025. All weeks are Monday–Sunday.
+const FIRST_WEEK_MS = Date.UTC(2025, 6, 21) // 2025-07-21 UTC midnight
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
 
 export function getCurrentWeekIndex(): number {
