@@ -64,8 +64,8 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
 
       {/* Project — sticky */}
       <td
-        className="sticky z-10 border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[130px]"
-        style={{ left: 110, ...bg, boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
+        className="sticky z-10 border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[182px]"
+        style={{ left: 84, ...bg, boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
       >
         {projectName(task)}
       </td>
@@ -351,8 +351,8 @@ function TaskTable({ tasks, visibleWeekIndices, currentWeekIndex, sortMode, high
     <div className="overflow-x-auto flex-1">
       <table className="border-separate border-spacing-0" style={{ minWidth: '100%', tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: 110, minWidth: 110 }} />
-          <col style={{ width: 130, minWidth: 130 }} />
+          <col style={{ width: 84, minWidth: 84 }} />
+          <col style={{ width: 182, minWidth: 182 }} />
           {visibleWeekIndices.map((wi) => <col key={wi} style={{ minWidth: 200 }} />)}
         </colgroup>
         <thead>
@@ -362,7 +362,7 @@ function TaskTable({ tasks, visibleWeekIndices, currentWeekIndex, sortMode, high
             </th>
             <th
               className="sticky z-20 bg-[#F2F2F2] border-t border-b border-r border-[#DADADA] px-3 py-2 text-left text-[11px] font-medium text-[#797979] uppercase tracking-wide"
-              style={{ left: 110, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
+              style={{ left: 84, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
             >
               Project
             </th>
