@@ -545,7 +545,13 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
       .from('tasks')
       .select('id', { count: 'exact', head: true })
       .eq('project_id', project.id)
-    setDeleteTaskCount(count ?? 0)
+    if ((count ?? 0) > 0) {
+      // Block deletion — show informational dialog instead
+      setDeleteTaskCount(count ?? 0)
+      setDeleteTarget(project)
+      return
+    }
+    setDeleteTaskCount(0)
     setDeleteTarget(project)
   }
 
@@ -567,13 +573,26 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
 
   return (
     <>
-      {deleteTarget && (
+      {deleteTarget && deleteTaskCount > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-[12px] shadow-xl p-6 max-w-sm w-full mx-4">
+            <p className="text-[13px] text-[#19153F] leading-relaxed">
+              <span className="font-medium">&ldquo;{deleteTarget.name}&rdquo;</span> cannot be deleted because it is currently assigned to {deleteTaskCount} task{deleteTaskCount === 1 ? '' : 's'}. Please reassign or remove the project from those tasks first.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 rounded-[6px] text-[13px] font-medium bg-[#19153F] text-white hover:bg-[#2e2870]"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteTarget && deleteTaskCount === 0 && (
         <ConfirmDialog
-          message={
-            deleteTaskCount > 0
-              ? `${deleteTaskCount} task${deleteTaskCount === 1 ? '' : 's'} reference this project. Deleting it will remove the project association from those tasks. This action cannot be undone.`
-              : 'Are you sure you want to delete this project? This action cannot be undone.'
-          }
+          message="Are you sure you want to delete this project? This action cannot be undone."
           confirmLabel="Delete"
           dangerous
           onConfirm={confirmDelete}
