@@ -998,6 +998,23 @@ export default function TasksView() {
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [tasks])
 
+  // Auto-clear stale filters when their target no longer exists in the task list
+  useEffect(() => {
+    const validProjectIds = new Set(uniqueProjects.map(p => p.id))
+    setFilterProjects(prev => {
+      const next = prev.filter(id => validProjectIds.has(id))
+      return next.length === prev.length ? prev : next
+    })
+  }, [uniqueProjects])
+
+  useEffect(() => {
+    const validProducts = new Set<string>(tasks.map(t => t.product))
+    setFilterProducts(prev => {
+      const next = prev.filter(p => validProducts.has(p))
+      return next.length === prev.length ? prev : next
+    })
+  }, [tasks])
+
   const visibleWeekIndices =
     viewMode === 'focused'
       ? [centerWeekIndex]
