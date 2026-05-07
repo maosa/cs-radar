@@ -138,6 +138,7 @@ export interface DetailPanelProps {
   taskWeekStartDate: string
   projects: ProjectRow[]
   onTaskUpdated?: (fields: Partial<{
+    description: string
     product: Product
     project_id: string | null
     project_name: string | null
@@ -173,6 +174,7 @@ export default function DetailPanel({
   }, [])
 
   // Editable task fields (local — not saved until Save is clicked)
+  const [localDescription, setLocalDescription] = useState(taskDescription)
   const [localProduct, setLocalProduct] = useState<Product>(taskProduct as Product)
   const [localProjectId, setLocalProjectId] = useState<string | null>(taskProjectId)
   const [localWeekIndex, setLocalWeekIndex] = useState(() => dateStringToWeekIndex(taskWeekStartDate))
@@ -204,6 +206,7 @@ export default function DetailPanel({
   const initialWeekIndex = dateStringToWeekIndex(taskWeekStartDate)
 
   const isDetailsDirty =
+    localDescription !== taskDescription ||
     localProduct !== (taskProduct as Product) ||
     localProjectId !== taskProjectId ||
     localWeekIndex !== initialWeekIndex
@@ -310,6 +313,7 @@ export default function DetailPanel({
     if (isDetailsDirty) {
       const dateStr = weekIndexToDateString(localWeekIndex)
       const { error } = await supabase.from('tasks').update({
+        description: localDescription,
         product: localProduct,
         project_id: localProjectId,
         week_start_date: dateStr,
@@ -319,6 +323,7 @@ export default function DetailPanel({
       if (!error) {
         const projectName = projects.find(p => p.id === localProjectId)?.name ?? null
         onTaskUpdated?.({
+          description: localDescription,
           product: localProduct,
           project_id: localProjectId,
           project_name: projectName,
@@ -355,17 +360,18 @@ export default function DetailPanel({
     }
 
     setSaving(false)
-  }, [isDetailsDirty, isNotesDirty, localProduct, localProjectId, localWeekIndex,
+  }, [isDetailsDirty, isNotesDirty, localDescription, localProduct, localProjectId, localWeekIndex,
       noteContent, note, taskId, userId, projects, onTaskUpdated])
 
   // ─── Footer: discard ─────────────────────────────────────────────────────
 
   const handleDiscard = useCallback(() => {
+    setLocalDescription(taskDescription)
     setLocalProduct(taskProduct as Product)
     setLocalProjectId(taskProjectId)
     setLocalWeekIndex(dateStringToWeekIndex(taskWeekStartDate))
     setNoteContent(lastSavedContent.current)
-  }, [taskProduct, taskProjectId, taskWeekStartDate])
+  }, [taskDescription, taskProduct, taskProjectId, taskWeekStartDate])
 
   // ─── Comments handlers ────────────────────────────────────────────────────
 
@@ -438,7 +444,16 @@ export default function DetailPanel({
                 </span>
               )}
             </div>
-            <p className="text-[13px] font-medium text-[#19153F] leading-snug">{taskDescription}</p>
+            {readOnlyNotes ? (
+              <p className="text-[13px] font-medium text-[#19153F] leading-snug">{taskDescription}</p>
+            ) : (
+              <textarea
+                value={localDescription}
+                onChange={(e) => setLocalDescription(e.target.value)}
+                rows={2}
+                className="w-full text-[13px] font-medium text-[#19153F] leading-snug resize-none bg-transparent border border-transparent rounded-[4px] focus:outline-none focus:border-[#38308F] focus:bg-white px-1 -mx-1 transition-colors"
+              />
+            )}
           </div>
           <button
             onClick={onClose}
