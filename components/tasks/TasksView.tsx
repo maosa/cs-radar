@@ -977,16 +977,12 @@ export default function TasksView() {
 
   // Unique projects derived from all tasks
   const uniqueProjects = useMemo<{ id: string; name: string }[]>(() => {
-    const seen = new Map<string, string>()
-    tasks.forEach((t) => {
-      if (t.project_id && !seen.has(t.project_id)) {
-        seen.set(t.project_id, projectName(t))
-      }
-    })
-    return Array.from(seen.entries())
-      .map(([id, name]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name))
-  }, [tasks])
+    const usedProjectIds = new Set(tasks.map(t => t.project_id).filter(Boolean))
+    // Preserve the user's sort_order from the projects list (already ordered by Supabase)
+    return projects
+      .filter(p => usedProjectIds.has(p.id))
+      .map(p => ({ id: p.id, name: p.name }))
+  }, [tasks, projects])
 
   // Auto-clear stale filters when their target no longer exists in the task list
   useEffect(() => {
