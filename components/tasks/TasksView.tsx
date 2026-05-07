@@ -39,8 +39,7 @@ import {
   ArrowRight,
   Trash2,
   GripVertical,
-  FileText,
-  MessageSquare,
+  PanelRight,
   X,
   Pencil,
 } from 'lucide-react'
@@ -384,22 +383,13 @@ function SortableTaskRow(props: RowProps) {
                     )}
                   </div>
 
-                  {/* Notes */}
+                  {/* Open detail panel */}
                   <button
                     onClick={() => onOpenPanel(task.id, 'notes')}
                     className="p-1 rounded text-[#797979] hover:text-[#38308F] hover:bg-[#F2F2F2] transition-colors"
-                    title="View notes"
+                    title="Open task details"
                   >
-                    <FileText size={14} />
-                  </button>
-
-                  {/* Comment */}
-                  <button
-                    onClick={() => onOpenPanel(task.id, 'comments')}
-                    className="p-1 rounded text-[#797979] hover:text-[#38308F] hover:bg-[#F2F2F2] transition-colors"
-                    title="View comments"
-                  >
-                    <MessageSquare size={14} />
+                    <PanelRight size={14} />
                   </button>
 
                   {/* Delete */}
