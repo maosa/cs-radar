@@ -64,7 +64,7 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
 
       {/* Project — sticky */}
       <td
-        className="sticky z-10 border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[182px]"
+        className="sticky z-10 border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[264px]"
         style={{ left: 84, ...bg, boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
       >
         {projectName(task)}
@@ -352,7 +352,7 @@ function TaskTable({ tasks, visibleWeekIndices, currentWeekIndex, sortMode, high
       <table className="border-separate border-spacing-0" style={{ minWidth: '100%', tableLayout: 'fixed' }}>
         <colgroup>
           <col style={{ width: 84, minWidth: 84 }} />
-          <col style={{ width: 182, minWidth: 182 }} />
+          <col style={{ width: 264, minWidth: 264 }} />
           {visibleWeekIndices.map((wi) => <col key={wi} style={{ minWidth: 200 }} />)}
         </colgroup>
         <thead>
