@@ -21,6 +21,7 @@ export type ProjectRow = {
   id: string
   admin_user_id: string
   name: string
+  product: Product | null
   sort_order: number
   created_at: string
   updated_at: string | null
@@ -75,6 +76,7 @@ export interface Database {
           id: string
           admin_user_id: string
           name: string
+          product: Product | null
           created_at: string
           updated_at: string | null
           deleted_at: string | null
@@ -83,12 +85,14 @@ export interface Database {
           id?: string
           admin_user_id: string
           name: string
+          product?: Product | null
           created_at?: string
           updated_at?: string | null
           deleted_at?: string | null
         }
         Update: {
           name?: string
+          product?: Product | null
           updated_at?: string | null
           deleted_at?: string | null
         }

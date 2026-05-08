@@ -156,7 +156,7 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
             <label className="text-[12px] font-medium text-[#595959]">Product</label>
             <select
               value={product}
-              onChange={(e) => setProduct(e.target.value as Product | '')}
+              onChange={(e) => { setProduct(e.target.value as Product | ''); setProjectId('') }}
               className="px-3 py-2 text-[13px] border border-[#DADADA] rounded-[6px] bg-white text-[#19153F] focus:outline-none focus:border-[#38308F]"
             >
               <option value="">Select product…</option>
@@ -172,12 +172,15 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="px-3 py-2 text-[13px] border border-[#DADADA] rounded-[6px] bg-white text-[#19153F] focus:outline-none focus:border-[#38308F]"
+              disabled={!product}
+              className={`px-3 py-2 text-[13px] border border-[#DADADA] rounded-[6px] text-[#19153F] focus:outline-none focus:border-[#38308F] ${!product ? 'bg-[#F2F2F2] cursor-not-allowed' : 'bg-white'}`}
             >
-              <option value="">Select project…</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
+              <option value="">{product ? 'Select project…' : 'Select a product first'}</option>
+              {projects
+                .filter((p) => p.product === product || p.product === null)
+                .map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
             </select>
           </div>
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import type { DefaultLanding, ProjectRow } from '@/lib/supabase/types'
+import type { DefaultLanding, Product, ProjectRow } from '@/lib/supabase/types'
 import { GripVertical, Pencil, Trash2, Check, X } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import {
@@ -317,13 +317,44 @@ function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' |
 
 // ─── Projects Section ─────────────────────────────────────────────────────────
 
+const PRODUCTS: { value: Product; label: string }[] = [
+  { value: 'AH', label: 'Access Hub (AH)' },
+  { value: 'NURO', label: 'NURO' },
+  { value: 'EH', label: 'Evidence Hub (EH)' },
+  { value: 'N/A', label: 'N/A' },
+]
+
+const PRODUCT_BADGE_STYLES: Record<Product, string> = {
+  AH: 'bg-[#E8E6F8] text-[#38308F]',
+  EH: 'bg-[#E6F4F1] text-[#1B6B5E]',
+  NURO: 'bg-[#FFF3E0] text-[#8B5E00]',
+  'N/A': 'bg-[#F2F2F2] text-[#595959]',
+}
+
+function ProjectProductBadge({ product }: { product: Product | null }) {
+  if (!product) {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium bg-[#F2F2F2] text-[#AAAAAA]">
+        Unassigned
+      </span>
+    )
+  }
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium ${PRODUCT_BADGE_STYLES[product]}`}>
+      {product}
+    </span>
+  )
+}
+
 interface SortableProjectRowProps {
   project: ProjectRow
   editingId: string | null
   editName: string
+  editProduct: Product | null
   editInputRef: React.RefObject<HTMLInputElement | null>
   onEditStart: (project: ProjectRow) => void
   onEditNameChange: (name: string) => void
+  onEditProductChange: (product: Product | null) => void
   onEditSave: (id: string) => void
   onEditCancel: () => void
   onDelete: (project: ProjectRow) => void
@@ -333,9 +364,11 @@ function SortableProjectRow({
   project,
   editingId,
   editName,
+  editProduct,
   editInputRef,
   onEditStart,
   onEditNameChange,
+  onEditProductChange,
   onEditSave,
   onEditCancel,
   onDelete,
@@ -376,6 +409,16 @@ function SortableProjectRow({
 
       {isEditing ? (
         <>
+          <select
+            value={editProduct ?? ''}
+            onChange={(e) => onEditProductChange((e.target.value as Product) || null)}
+            className="px-2 py-1.5 rounded-[6px] border border-[#DADADA] text-[12px] text-[#19153F] outline-none focus:border-[#19153F] bg-white w-[120px] flex-shrink-0"
+          >
+            <option value="">Unassigned</option>
+            {PRODUCTS.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
           <input
             ref={editInputRef}
             type="text"
@@ -404,7 +447,10 @@ function SortableProjectRow({
         </>
       ) : (
         <>
-          <span className="flex-1 text-[13px] text-[#19153F]">{project.name}</span>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <ProjectProductBadge product={project.product} />
+            <span className="text-[13px] text-[#19153F] truncate">{project.name}</span>
+          </div>
           <button
             onClick={() => onEditStart(project)}
             className="p-1.5 rounded-[4px] text-[#797979] opacity-0 group-hover:opacity-100 hover:bg-[#F2F2F2] hover:text-[#19153F]"
@@ -430,10 +476,12 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
   const [projects, setProjects] = useState<ProjectRow[]>([])
   const [loading, setLoading] = useState(true)
   const [newName, setNewName] = useState('')
+  const [newProduct, setNewProduct] = useState<Product | ''>('')
   const [addError, setAddError] = useState('')
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ProjectRow | null>(null)
   const [deleteTaskCount, setDeleteTaskCount] = useState(0)
   const editInputRef = useRef<HTMLInputElement>(null)
@@ -469,8 +517,13 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
   const handleAdd = async () => {
     const name = newName.trim()
     if (!name) return
-    if (projects.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
-      setAddError('A project with this name already exists.')
+    if (!newProduct) {
+      setAddError('Please select a product.')
+      return
+    }
+    // Block duplicate (name + product) pairs; same name under a different product is allowed
+    if (projects.some((p) => p.name.toLowerCase() === name.toLowerCase() && p.product === newProduct)) {
+      setAddError('A project with this name already exists for the selected product.')
       return
     }
     setAdding(true)
@@ -481,6 +534,7 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
       .insert({
         admin_user_id: userId!,
         name,
+        product: newProduct,
         sort_order: nextOrder,
         created_at: new Date().toISOString(),
       })
@@ -490,9 +544,9 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
     if (error || !data) {
       onToast('Failed to add project.', 'error')
     } else {
-      // Append at end — preserve user's custom order
       setProjects((prev) => [...prev, data as ProjectRow])
       setNewName('')
+      setNewProduct('')
       onToast('Project added.')
     }
   }
@@ -500,19 +554,38 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
   const handleEditSave = async (id: string) => {
     const name = editName.trim()
     if (!name) { setEditingId(null); return }
-    if (projects.some((p) => p.id !== id && p.name.toLowerCase() === name.toLowerCase())) {
-      onToast('A project with this name already exists.', 'error')
+    // Block duplicate (name + product) pairs, excluding self
+    if (projects.some((p) => p.id !== id && p.name.toLowerCase() === name.toLowerCase() && p.product === editProduct)) {
+      onToast('A project with this name already exists for the selected product.', 'error')
       return
     }
+
+    const original = projects.find((p) => p.id === id)
+    const productChanged = original && original.product !== editProduct
+
+    // Warn (but don't block) if remapping product while tasks reference this project under a different product
+    if (productChanged && editProduct) {
+      const { count } = await supabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('project_id', id)
+        .neq('product', editProduct)
+      if ((count ?? 0) > 0) {
+        onToast(
+          `Note: ${count} task${count === 1 ? '' : 's'} using this project will still show their original product.`,
+          'success',
+        )
+      }
+    }
+
     const { error } = await supabase
       .from('projects')
-      .update({ name, updated_at: new Date().toISOString() })
+      .update({ name, product: editProduct, updated_at: new Date().toISOString() })
       .eq('id', id)
     if (error) {
       onToast('Failed to save project.', 'error')
     } else {
-      // Keep current position — only the name changes
-      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)))
+      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name, product: editProduct } : p)))
       onToast('Project saved.')
     }
     setEditingId(null)
@@ -622,9 +695,11 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
                     project={project}
                     editingId={editingId}
                     editName={editName}
+                    editProduct={editProduct}
                     editInputRef={editInputRef}
-                    onEditStart={(p) => { setEditingId(p.id); setEditName(p.name) }}
+                    onEditStart={(p) => { setEditingId(p.id); setEditName(p.name); setEditProduct(p.product) }}
                     onEditNameChange={setEditName}
+                    onEditProductChange={setEditProduct}
                     onEditSave={handleEditSave}
                     onEditCancel={() => setEditingId(null)}
                     onDelete={initiateDelete}
@@ -637,6 +712,16 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
 
         <div className="flex flex-col gap-1 pt-1">
           <div className="flex gap-2">
+            <select
+              value={newProduct}
+              onChange={(e) => { setNewProduct(e.target.value as Product | ''); setAddError('') }}
+              className="px-2 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F] bg-white w-[148px] flex-shrink-0"
+            >
+              <option value="">Select product…</option>
+              {PRODUCTS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
             <input
               type="text"
               value={newName}

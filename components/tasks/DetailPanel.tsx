@@ -292,6 +292,7 @@ export default function DetailPanel({
 
   const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setLocalProduct(e.target.value as Product)
+    setLocalProjectId(null)
   }
 
   const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -498,9 +499,16 @@ export default function DetailPanel({
                   className={`flex-1 h-8 px-2 text-[13px] border border-[#DADADA] rounded-[6px] text-[#19153F] focus:outline-none focus:border-[#38308F] ${readOnlyNotes ? 'bg-[#F2F2F2] cursor-not-allowed' : 'bg-white'}`}
                 >
                   <option value="">No project</option>
-                  {projects.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
+                  {projects
+                    .filter((p) => p.product === localProduct || p.product === null || p.id === localProjectId)
+                    .map((p) => {
+                      const isMismatch = p.id === localProjectId && p.product !== null && p.product !== localProduct
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {isMismatch ? `${p.name} (other product)` : p.name}
+                        </option>
+                      )
+                    })}
                 </select>
               </div>
 
