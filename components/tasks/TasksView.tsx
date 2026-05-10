@@ -993,7 +993,7 @@ export default function TasksView() {
       id: p.id,
       name: p.name,
       displayName:
-        nameCounts[p.name.toLowerCase()] > 1
+        nameCounts[p.name.toLowerCase()] > 1 && p.product !== 'N/A'
           ? `${p.name} (${p.product ?? 'Unassigned'})`
           : p.name,
     }))
