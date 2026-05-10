@@ -17,7 +17,11 @@ import {
 } from '@/lib/weeks'
 
 type ViewMode = 'focused' | 'expanded'
-type SortMode = 'drag' | 'product' | 'project'
+import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
+import SharedFilterBar, { SortMode } from '@/components/tasks/shared/SharedFilterBar'
+import { useDebounce } from '@/lib/hooks/useDebounce'
+import { useTasksQuery } from '@/lib/hooks/useTasks'
+
 type AnyTask = TaskWithProject
 
 const PRODUCT_ORDER: Record<string, number> = { AH: 0, EH: 1, NURO: 2, 'N/A': 3 }
@@ -29,9 +33,9 @@ function taskBg(t: AnyTask): React.CSSProperties {
 }
 
 function descClass(t: AnyTask): string {
-  if (t.status === 'complete') return 'line-through text-[#797979]'
-  if (t.is_flagged) return 'text-[#CC0015]'
-  return 'text-[#19153F]'
+  if (t.status === 'complete') return 'line-through text-text-muted'
+  if (t.is_flagged) return 'text-red-dark'
+  return 'text-navy'
 }
 
 function projectName(t: AnyTask): string {
@@ -58,13 +62,13 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
   return (
     <tr style={bg} className="group">
       {/* Product — sticky */}
-      <td className="sticky left-0 z-10 border-l border-r border-[#DADADA] px-3 py-2.5" style={{ ...bg, boxShadow: 'inset 0 -1px 0 0 #DADADA' }}>
+      <td className="sticky left-0 z-10 border-l border-r border-border px-3 py-2.5" style={{ ...bg, boxShadow: 'inset 0 -1px 0 0 #DADADA' }}>
         <ProductBadge product={task.product} />
       </td>
 
       {/* Project — sticky */}
       <td
-        className="sticky z-10 border-r border-[#DADADA] px-3 py-2.5 text-[13px] text-[#595959] whitespace-nowrap overflow-hidden text-ellipsis max-w-[264px]"
+        className="sticky z-10 border-r border-border px-3 py-2.5 text-[13px] text-text-secondary whitespace-nowrap overflow-hidden text-ellipsis max-w-[264px]"
         style={{ left: 84, ...bg, boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
       >
         {projectName(task)}
@@ -76,13 +80,13 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
         return (
           <td
             key={wi}
-            className="border-b border-r border-[#DADADA] px-3 py-2.5 text-[13px]"
+            className="border-b border-r border-border px-3 py-2.5 text-[13px]"
             style={isTaskWeek ? bg : { backgroundColor: '#FFFFFF' }}
           >
             {isTaskWeek && (
               <div
                 className={`flex items-center gap-2 min-w-0 rounded-[4px] transition-all ${
-                  isHighlighted ? 'ring-2 ring-[#38308F] ring-offset-1' : ''
+                  isHighlighted ? 'ring-2 ring-navy-mid ring-offset-1' : ''
                 }`}
               >
                 {/* Description */}
@@ -90,14 +94,14 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
 
                 {/* Flag icon — always visible for flagged tasks */}
                 {task.is_flagged && (
-                  <Flag size={14} className="flex-shrink-0 text-[#FF0522] fill-[#FF0522]" />
+                  <Flag size={14} className="flex-shrink-0 text-red-flag fill-red-flag" />
                 )}
 
                 {/* Comments icon — visible on hover */}
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity">
                   <button
                     onClick={() => onOpenPanel(task.id, 'comments')}
-                    className="p-1 rounded text-[#797979] hover:text-[#38308F] hover:bg-[#F2F2F2] transition-colors"
+                    className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
                     title="View comments"
                   >
                     <MessageSquare size={14} />
@@ -112,215 +116,6 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
   )
 }
 
-// ─── Toolbar ──────────────────────────────────────────────────────────────────
-
-interface SearchResult { task: AnyTask; weekLabel: string }
-
-interface ToolbarProps {
-  adminName: string
-  viewMode: ViewMode
-  onViewModeChange: (m: ViewMode) => void
-  centerWeekIndex: number
-  currentWeekIndex: number
-  onPrev: () => void
-  onNext: () => void
-  onToday: () => void
-  searchQuery: string
-  onSearchChange: (q: string) => void
-  searchResults: SearchResult[]
-  showSearchDropdown: boolean
-  onSearchResultClick: (t: AnyTask) => void
-  onSearchClose: () => void
-}
-
-function Toolbar({
-  adminName,
-  viewMode,
-  onViewModeChange,
-  centerWeekIndex,
-  currentWeekIndex,
-  onPrev,
-  onNext,
-  onToday,
-  searchQuery,
-  onSearchChange,
-  searchResults,
-  showSearchDropdown,
-  onSearchResultClick,
-  onSearchClose,
-}: ToolbarProps) {
-  const isAtCurrentWeek = centerWeekIndex === currentWeekIndex
-  const searchRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) onSearchClose()
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [onSearchClose])
-
-  return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-[#DADADA] flex-shrink-0">
-      {/* Back */}
-      <Link
-        href="/manager"
-        className="flex items-center gap-1.5 px-3 py-1 text-[13px] font-medium border border-[#DADADA] rounded-[6px] text-[#595959] hover:border-[#aaa] hover:text-[#19153F] bg-white transition-colors"
-      >
-        <ArrowLeft size={14} />
-        Back
-      </Link>
-
-      {/* Admin name */}
-      <span className="text-[13px] font-medium text-[#19153F] truncate max-w-[200px]">
-        {adminName}&rsquo;s tasks
-      </span>
-
-      {/* Read-only badge */}
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#F2F2F2] text-[#797979] border border-[#DADADA]">
-        Read only
-      </span>
-
-      <div className="flex-1" />
-
-      {/* Week navigation */}
-      <div className="flex items-center gap-1">
-        <button
-          onClick={onPrev}
-          disabled={centerWeekIndex === 0}
-          className="flex items-center justify-center w-7 h-7 rounded border border-[#DADADA] text-[#595959] hover:border-[#aaa] hover:text-[#19153F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white"
-          aria-label="Previous week"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <button
-          onClick={onToday}
-          className={`px-2.5 py-1 text-[12px] font-medium rounded border transition-colors ${
-            isAtCurrentWeek
-              ? 'border-[#00D1BA] text-[#00D1BA] bg-white cursor-default'
-              : 'border-[#DADADA] text-[#595959] bg-white hover:border-[#00D1BA] hover:text-[#00D1BA]'
-          }`}
-        >
-          Today
-        </button>
-        <button
-          onClick={onNext}
-          className="flex items-center justify-center w-7 h-7 rounded border border-[#DADADA] text-[#595959] hover:border-[#aaa] hover:text-[#19153F] transition-colors bg-white"
-          aria-label="Next week"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
-
-      {/* View toggle */}
-      <div className="flex rounded border border-[#DADADA] overflow-hidden bg-white">
-        {(['focused', 'expanded'] as const).map((mode) => (
-          <button
-            key={mode}
-            onClick={() => onViewModeChange(mode)}
-            className={`px-3 py-1 text-[12px] font-medium capitalize transition-colors ${
-              viewMode === mode ? 'bg-[#19153F] text-white' : 'text-[#595959] hover:bg-[#F2F2F2]'
-            }`}
-          >
-            {mode}
-          </button>
-        ))}
-      </div>
-
-      {/* Search */}
-      <div ref={searchRef} className="relative flex items-center">
-        <span className="absolute left-2.5 text-[#797979] pointer-events-none">
-          <Search size={14} />
-        </span>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') { onSearchClose(); (e.target as HTMLInputElement).blur() }
-          }}
-          placeholder="Search tasks…"
-          className="pl-7 pr-3 h-7 text-[13px] border border-[#DADADA] rounded-[6px] w-48 placeholder:text-[#797979] focus:outline-none focus:border-[#38308F] bg-white"
-        />
-        {showSearchDropdown && searchResults.length > 0 && (
-          <div className="absolute top-full right-0 mt-1 z-40 bg-white border border-[#DADADA] rounded-[6px] shadow-lg w-80 py-1 overflow-hidden">
-            {searchResults.map(({ task, weekLabel }) => (
-              <button
-                key={task.id}
-                onMouseDown={(e) => { e.preventDefault(); onSearchResultClick(task) }}
-                className="w-full text-left px-3 py-2 hover:bg-[#F2F2F2] transition-colors flex flex-col gap-0.5"
-              >
-                <span className="text-[13px] text-[#19153F] truncate">{task.description}</span>
-                <div className="flex items-center gap-2">
-                  <ProductBadge product={task.product} />
-                  <span className="text-[11px] text-[#797979]">{projectName(task)}</span>
-                  <span className="text-[11px] text-[#797979] ml-auto">{weekLabel}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Filter bar ───────────────────────────────────────────────────────────────
-
-const PRODUCT_LABELS: Record<string, string> = { AH: 'Access Hub', EH: 'Evidence Hub', NURO: 'NURO', 'N/A': 'N/A' }
-
-interface FilterBarProps {
-  uniqueProjects: { id: string; name: string }[]
-  filterProducts: string[]
-  filterProjects: string[]
-  sortMode: SortMode
-  onToggleProduct: (p: string) => void
-  onToggleProject: (id: string) => void
-  onSortMode: (m: SortMode) => void
-}
-
-function FilterBar({ uniqueProjects, filterProducts, filterProjects, sortMode, onToggleProduct, onToggleProject, onSortMode }: FilterBarProps) {
-  const chipBase = 'px-2.5 py-1 text-[12px] font-medium rounded-[4px] border transition-colors'
-  const chipActive = 'bg-[#19153F] text-white border-[#19153F]'
-  const chipInactive = 'bg-white text-[#595959] border-[#DADADA] hover:border-[#aaa] hover:text-[#19153F]'
-
-  return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-[#DADADA] flex-shrink-0 flex-wrap">
-      {(['AH', 'EH', 'NURO', 'N/A'] as const).map((p) => (
-        <button
-          key={p}
-          onClick={() => onToggleProduct(p)}
-          className={`${chipBase} ${filterProducts.includes(p) ? chipActive : chipInactive}`}
-        >
-          {PRODUCT_LABELS[p]}
-        </button>
-      ))}
-      {uniqueProjects.length > 0 && <div className="w-px h-4 bg-[#DADADA] mx-0.5 flex-shrink-0" />}
-      {uniqueProjects.map((proj) => (
-        <button
-          key={proj.id}
-          onClick={() => onToggleProject(proj.id)}
-          className={`${chipBase} ${filterProjects.includes(proj.id) ? chipActive : chipInactive}`}
-        >
-          {proj.name}
-        </button>
-      ))}
-      <div className="flex-1" />
-      <div className="flex items-center gap-1.5">
-        <span className="text-[11px] text-[#797979]">Sort:</span>
-        {([['product', 'By product'], ['project', 'By project']] as const).map(([mode, label]) => (
-          <button
-            key={mode}
-            onClick={() => onSortMode(mode)}
-            className={`${chipBase} ${sortMode === mode ? chipActive : chipInactive}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 // ─── Task table ───────────────────────────────────────────────────────────────
 
@@ -357,11 +152,11 @@ function TaskTable({ tasks, visibleWeekIndices, currentWeekIndex, sortMode, high
         </colgroup>
         <thead>
           <tr>
-            <th className="sticky left-0 z-20 bg-[#F2F2F2] border-t border-b border-l border-r border-[#DADADA] px-3 py-2 text-left text-[11px] font-medium text-[#797979] uppercase tracking-wide">
+            <th className="sticky left-0 z-20 bg-bg border-t border-b border-l border-r border-border px-3 py-2 text-left text-[11px] font-medium text-text-muted uppercase tracking-wide">
               Product
             </th>
             <th
-              className="sticky z-20 bg-[#F2F2F2] border-t border-b border-r border-[#DADADA] px-3 py-2 text-left text-[11px] font-medium text-[#797979] uppercase tracking-wide"
+              className="sticky z-20 bg-bg border-t border-b border-r border-border px-3 py-2 text-left text-[11px] font-medium text-text-muted uppercase tracking-wide"
               style={{ left: 84, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
             >
               Project
@@ -369,11 +164,11 @@ function TaskTable({ tasks, visibleWeekIndices, currentWeekIndex, sortMode, high
             {visibleWeekIndices.map((wi) => {
               const isCurrent = wi === currentWeekIndex
               return (
-                <th key={wi} className="border-t border-b border-r border-[#DADADA] px-3 py-2 text-left text-[13px] font-medium text-[#19153F] bg-[#F2F2F2]">
+                <th key={wi} className="border-t border-b border-r border-border px-3 py-2 text-left text-[13px] font-medium text-navy bg-bg">
                   <div className="flex items-center gap-2">
-                    <span className={isCurrent ? 'pb-0.5 border-b-2 border-[#00D1BA]' : ''}>{formatWeekHeader(wi)}</span>
+                    <span className={isCurrent ? 'pb-0.5 border-b-2 border-teal' : ''}>{formatWeekHeader(wi)}</span>
                     {isCurrent && (
-                      <span className="inline-flex items-center justify-center px-1.5 py-[3px] rounded text-[10px] font-medium bg-[#00D1BA] text-[#19153F]">
+                      <span className="inline-flex items-center justify-center px-1.5 py-[3px] rounded text-[10px] font-medium bg-teal text-navy">
                         current
                       </span>
                     )}
@@ -386,7 +181,7 @@ function TaskTable({ tasks, visibleWeekIndices, currentWeekIndex, sortMode, high
         <tbody>
           {visibleTasks.length === 0 && (
             <tr>
-              <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-[#797979]">
+              <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-text-muted">
                 No tasks for this period.
               </td>
             </tr>
@@ -418,9 +213,11 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
   const todayWeekIndex = getCurrentWeekIndex()
   const [viewMode, setViewMode] = useState<ViewMode>('focused')
   const [centerWeekIndex, setCenterWeekIndex] = useState(todayWeekIndex)
-  const [tasks, setTasks] = useState<AnyTask[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(adminUserId)
+  const [loadingUser, setLoadingUser] = useState(true)
   const [adminName, setAdminName] = useState('')
+
+  const loading = loadingTasks || loadingUser
 
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
@@ -434,18 +231,12 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
   const [panelSection, setPanelSection] = useState<'notes' | 'comments'>('notes')
   const [panelOpen, setPanelOpen] = useState(false)
 
-  // Fetch tasks and admin name
+  // Fetch admin name and verify relationship
   useEffect(() => {
     if (!userId) return
     const loadData = async () => {
-      setLoading(true)
-      const [tasksRes, userRes, relRes] = await Promise.all([
-        supabase
-          .from('tasks')
-          .select('*, projects(name)')
-          .eq('admin_user_id', adminUserId)
-          .order('week_start_date')
-          .order('sort_order'),
+      setLoadingUser(true)
+      const [userRes, relRes] = await Promise.all([
         supabase
           .from('users')
           .select('first_name, last_name')
@@ -464,50 +255,39 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
         return
       }
 
-      if (tasksRes.data) {
-        const mapped: TaskWithProject[] = tasksRes.data.map((row) => {
-          const proj = row.projects as { name: string } | null
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { projects: _p, ...rest } = row
-          return { ...rest, project_name: proj?.name ?? null }
-        })
-        setTasks(mapped)
-      }
-
       if (userRes.data) {
         const { first_name, last_name } = userRes.data
         setAdminName([first_name, last_name].filter(Boolean).join(' ') || 'Unknown')
       }
 
-      setLoading(false)
+      setLoadingUser(false)
     }
     loadData()
   }, [adminUserId, userId, router])
 
   // Debounced search
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
   useEffect(() => {
-    if (searchQuery.length < 2) {
+    if (debouncedSearchQuery.length < 2) {
       setSearchResults([])
       setShowSearchDropdown(false)
       return
     }
-    const timer = setTimeout(() => {
-      const q = searchQuery.toLowerCase()
-      const results = tasks
-        .filter(
-          (t) =>
-            t.description.toLowerCase().includes(q) ||
-            t.product.toLowerCase().includes(q) ||
-            projectName(t).toLowerCase().includes(q)
-        )
-        .sort((a, b) => dateStringToWeekIndex(b.week_start_date) - dateStringToWeekIndex(a.week_start_date))
-        .slice(0, 8)
-        .map((task) => ({ task, weekLabel: formatWeekHeader(dateStringToWeekIndex(task.week_start_date)) }))
-      setSearchResults(results)
-      setShowSearchDropdown(results.length > 0)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery, tasks])
+    const q = debouncedSearchQuery.toLowerCase()
+    const results = tasks
+      .filter(
+        (t) =>
+          t.description.toLowerCase().includes(q) ||
+          t.product.toLowerCase().includes(q) ||
+          projectName(t).toLowerCase().includes(q)
+      )
+      .sort((a, b) => dateStringToWeekIndex(b.week_start_date) - dateStringToWeekIndex(a.week_start_date))
+      .slice(0, 8)
+      .map((task) => ({ task, weekLabel: formatWeekHeader(dateStringToWeekIndex(task.week_start_date)) }))
+    setSearchResults(results)
+    setShowSearchDropdown(results.length > 0)
+  }, [debouncedSearchQuery, tasks])
 
   const uniqueProjects = useMemo<{ id: string; name: string }[]>(() => {
     const seen = new Map<string, string>()
@@ -561,15 +341,15 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-[13px] text-[#797979]">
+      <div className="flex items-center justify-center h-full text-[13px] text-text-muted">
         Loading…
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#F2F2F2]">
-      <Toolbar
+    <div className="flex flex-col h-full bg-bg">
+      <SharedToolbar
         adminName={adminName}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -584,8 +364,9 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
         showSearchDropdown={showSearchDropdown}
         onSearchResultClick={handleSearchResultClick}
         onSearchClose={() => setShowSearchDropdown(false)}
+        projectNameFn={projectName}
       />
-      <FilterBar
+      <SharedFilterBar
         uniqueProjects={uniqueProjects}
         filterProducts={filterProducts}
         filterProjects={filterProjects}
@@ -593,6 +374,7 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
         onToggleProduct={handleToggleProduct}
         onToggleProject={handleToggleProject}
         onSortMode={setSortMode}
+        hideDragSort
       />
       <div className="flex-1 overflow-hidden flex">
         <TaskTable

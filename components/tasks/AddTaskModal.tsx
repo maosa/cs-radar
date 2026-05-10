@@ -147,17 +147,17 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
       onMouseDown={handleBackdrop}
     >
       <div className="bg-white rounded-[12px] shadow-xl w-full max-w-md mx-4 p-6">
-        <h2 className="text-[15px] font-medium text-[#19153F] mb-1">Add task</h2>
-        <p className="text-[12px] text-[#797979] mb-5">{formatWeekHeader(weekIndex)}</p>
+        <h2 className="text-[15px] font-medium text-navy mb-1">Add task</h2>
+        <p className="text-[12px] text-text-muted mb-5">{formatWeekHeader(weekIndex)}</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Product */}
           <div className="flex flex-col gap-1">
-            <label className="text-[12px] font-medium text-[#595959]">Product</label>
+            <label className="text-[12px] font-medium text-text-secondary">Product</label>
             <select
               value={product}
               onChange={(e) => { setProduct(e.target.value as Product | ''); setProjectId('') }}
-              className="px-3 py-2 text-[13px] border border-[#DADADA] rounded-[6px] bg-white text-[#19153F] focus:outline-none focus:border-[#38308F]"
+              className="px-3 py-2 text-[13px] border border-border rounded-[6px] bg-white text-navy focus:outline-none focus:border-navy-mid"
             >
               <option value="">Select product…</option>
               {PRODUCTS.map((p) => (
@@ -168,12 +168,12 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
 
           {/* Project */}
           <div className="flex flex-col gap-1">
-            <label className="text-[12px] font-medium text-[#595959]">Project</label>
+            <label className="text-[12px] font-medium text-text-secondary">Project</label>
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
               disabled={!product}
-              className={`px-3 py-2 text-[13px] border border-[#DADADA] rounded-[6px] text-[#19153F] focus:outline-none focus:border-[#38308F] ${!product ? 'bg-[#F2F2F2] cursor-not-allowed' : 'bg-white'}`}
+              className={`px-3 py-2 text-[13px] border border-border rounded-[6px] text-navy focus:outline-none focus:border-navy-mid ${!product ? 'bg-bg cursor-not-allowed' : 'bg-white'}`}
             >
               <option value="">{product ? 'Select project…' : 'Select a product first'}</option>
               {projects
@@ -186,7 +186,7 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
 
           {/* Description with autocomplete */}
           <div className="flex flex-col gap-1 relative">
-            <label className="text-[12px] font-medium text-[#595959]">Description</label>
+            <label className="text-[12px] font-medium text-text-secondary">Description</label>
             <input
               ref={descRef}
               type="text"
@@ -197,16 +197,16 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               placeholder="What needs to be done?"
               autoFocus
-              className="px-3 py-2 text-[13px] border border-[#DADADA] rounded-[6px] bg-white text-[#19153F] focus:outline-none focus:border-[#38308F] placeholder:text-[#797979]"
+              className="px-3 py-2 text-[13px] border border-border rounded-[6px] bg-white text-navy focus:outline-none focus:border-navy-mid placeholder:text-text-muted"
             />
             {showSuggestions && suggestions.length > 0 && (
-              <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#DADADA] rounded-[6px] shadow-md z-10 overflow-hidden">
+              <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-[6px] shadow-md z-10 overflow-hidden">
                 {suggestions.map((s, i) => (
                   <li
                     key={i}
                     onMouseDown={() => pickSuggestion(s)}
                     className={`px-3 py-2 text-[13px] cursor-pointer ${
-                      i === activeSuggestion ? 'bg-[#F2F2F2] text-[#19153F]' : 'text-[#595959] hover:bg-[#F2F2F2]'
+                      i === activeSuggestion ? 'bg-bg text-navy' : 'text-text-secondary hover:bg-bg'
                     }`}
                   >
                     {s}
@@ -216,20 +216,20 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
             )}
           </div>
 
-          {error && <p className="text-[12px] text-[#FF0522]">{error}</p>}
+          {error && <p className="text-[12px] text-red-flag">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[13px] font-medium border border-[#DADADA] rounded-[6px] text-[#595959] hover:border-[#aaa] hover:text-[#19153F] transition-colors bg-white"
+              className="px-4 py-2 text-[13px] font-medium border border-border rounded-[6px] text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 text-[13px] font-medium bg-[#19153F] text-white rounded-[6px] border border-transparent hover:bg-[#2a2460] disabled:opacity-60 transition-colors"
+              className="px-4 py-2 text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-60 transition-colors"
             >
               {saving ? 'Saving…' : 'Save task'}
             </button>

@@ -3,6 +3,7 @@
 @theme inline {
   /* Brand colors */
   --color-navy:        #19153F;
+  --color-navy-hover:  #2a2460;
   --color-navy-mid:    #38308F;
   --color-navy-light:  #B4AFE4;
   --color-teal:        #00D1BA;
@@ -13,9 +14,14 @@
   --color-yellow-light:#FFF7CB;
   --color-red-flag:    #FF0522;
   --color-red-flag-light: #FFCDD3;
+  --color-red-dark:    #CC0015;
+  --color-red-btn:     #CC0515;
+  --color-red-btn-hover:#a8030f;
+  --color-red-hover:   #FFF0F2;
   --color-surface:     #FFFFFF;
   --color-bg:          #F2F2F2;
   --color-border:      #DADADA;
+  --color-border-hover:#aaa;
   --color-text:        #19153F;
   --color-text-secondary: #595959;
   --color-text-muted:  #797979;
@@ -33,8 +39,8 @@ body {
 }
 
 body {
-  background-color: #F2F2F2;
-  color: #19153F;
+  background-color: var(--color-bg);
+  color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
   font-weight: 400;

@@ -79,7 +79,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="flex flex-col h-full bg-[#19153F] text-white flex-shrink-0 transition-[width] duration-200"
+      className="flex flex-col h-full bg-navy text-white flex-shrink-0 transition-[width] duration-200"
       style={{ width: isExpanded ? '220px' : '52px' }}
     >
       {/* Toggle button */}
@@ -96,7 +96,7 @@ export default function Sidebar() {
 
       {/* Logo / app name */}
       <div className="flex items-center gap-3 px-3 pb-4">
-        <div className="w-7 h-7 rounded bg-[#00D1BA] flex-shrink-0 flex items-center justify-center text-[#19153F] font-semibold text-xs select-none">
+        <div className="w-7 h-7 rounded bg-teal flex-shrink-0 flex items-center justify-center text-navy font-semibold text-xs select-none">
           TT
         </div>
         {isExpanded && (
@@ -149,7 +149,7 @@ function NavLink({
       <span className="relative flex-shrink-0 w-5 h-5 flex items-center justify-center">
         {item.icon}
         {badge && badge > 0 ? (
-          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#CC0015] text-white text-[8px] font-bold flex items-center justify-center leading-none">
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-dark text-white text-[8px] font-bold flex items-center justify-center leading-none">
             {badge > 9 ? '9+' : badge}
           </span>
         ) : null}

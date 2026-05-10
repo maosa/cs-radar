@@ -81,8 +81,8 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
           key={t.id}
           className={`pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-[6px] text-[13px] font-medium shadow-lg border ${
             t.type === 'error'
-              ? 'bg-white border-[#FF0522] text-[#CC0015]'
-              : 'bg-[#19153F] border-transparent text-white'
+              ? 'bg-white border-red-flag text-red-dark'
+              : 'bg-navy border-transparent text-white'
           }`}
         >
           {t.message}
@@ -109,18 +109,18 @@ function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel = 'Confirm',
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div className="bg-white rounded-[12px] shadow-xl p-6 max-w-sm w-full mx-4">
-        <p className="text-[13px] text-[#19153F] leading-relaxed">{message}</p>
+        <p className="text-[13px] text-navy leading-relaxed">{message}</p>
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-[6px] text-[13px] font-medium border border-[#DADADA] text-[#595959] bg-white hover:border-[#AAAAAA]"
+            className="px-4 py-2 rounded-[6px] text-[13px] font-medium border border-border text-text-secondary bg-white hover:border-[#AAAAAA]"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             className={`px-4 py-2 rounded-[6px] text-[13px] font-medium border border-transparent text-white ${
-              dangerous ? 'bg-[#CC0515] hover:bg-[#a8030f]' : 'bg-[#19153F] hover:bg-[#2e2870]'
+              dangerous ? 'bg-red-btn hover:bg-red-btn-hover' : 'bg-navy hover:bg-[#2e2870]'
             }`}
           >
             {confirmLabel}
@@ -135,9 +135,9 @@ function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel = 'Confirm',
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-[8px] border border-[#DADADA] overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#DADADA]">
-        <h2 className="text-[13px] font-medium text-[#19153F]">{title}</h2>
+    <div className="bg-white rounded-[8px] border border-border overflow-hidden">
+      <div className="px-5 py-4 border-b border-border">
+        <h2 className="text-[13px] font-medium text-navy">{title}</h2>
       </div>
       <div className="px-5 py-5">
         {children}
@@ -221,56 +221,56 @@ function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' |
   }
 
   if (loading) {
-    return <p className="text-[13px] text-[#797979]">Loading…</p>
+    return <p className="text-[13px] text-text-muted">Loading…</p>
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-[12px] font-medium text-[#595959]">First name</span>
+          <span className="text-[12px] font-medium text-text-secondary">First name</span>
           <input
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="px-3 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F]"
+            className="px-3 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy"
             placeholder="First name"
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[12px] font-medium text-[#595959]">Last name</span>
+          <span className="text-[12px] font-medium text-text-secondary">Last name</span>
           <input
             type="text"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="px-3 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F]"
+            className="px-3 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy"
             placeholder="Last name"
           />
         </label>
       </div>
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-medium text-[#595959]">Email</span>
+        <span className="text-[12px] font-medium text-text-secondary">Email</span>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="px-3 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F]"
+          className="px-3 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy"
           placeholder="you@example.com"
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-medium text-[#595959]">Current role</span>
+        <span className="text-[12px] font-medium text-text-secondary">Current role</span>
         <input
           type="text"
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="px-3 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F]"
+          className="px-3 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy"
           placeholder="e.g. Product Manager"
         />
       </label>
 
       <div className="flex flex-col gap-2">
-        <span className="text-[12px] font-medium text-[#595959]">Default landing page</span>
+        <span className="text-[12px] font-medium text-text-secondary">Default landing page</span>
         <label className="flex items-center gap-2.5 cursor-pointer">
           <input
             type="radio"
@@ -278,9 +278,9 @@ function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' |
             value="task_list"
             checked={defaultLanding === 'task_list'}
             onChange={() => setDefaultLanding('task_list')}
-            className="accent-[#19153F]"
+            className="accent-navy"
           />
-          <span className="text-[13px] text-[#19153F]">My task list</span>
+          <span className="text-[13px] text-navy">My task list</span>
         </label>
         <div className="flex flex-col gap-1">
           <label className={`flex items-center gap-2.5 ${!hasManagerRole ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
@@ -291,12 +291,12 @@ function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' |
               checked={defaultLanding === 'manager_view'}
               onChange={() => hasManagerRole && setDefaultLanding('manager_view')}
               disabled={!hasManagerRole}
-              className="accent-[#19153F]"
+              className="accent-navy"
             />
-            <span className="text-[13px] text-[#19153F]">Manager view</span>
+            <span className="text-[13px] text-navy">Manager view</span>
           </label>
           {!hasManagerRole && (
-            <p className="text-[12px] text-[#797979] ml-6">
+            <p className="text-[12px] text-text-muted ml-6">
               Manager view is available once you have an accepted manager relationship. Ask a colleague to invite you as their manager.
             </p>
           )}
@@ -307,7 +307,7 @@ function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' |
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 rounded-[6px] text-[13px] font-medium bg-[#19153F] text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
+          className="px-4 py-2 rounded-[6px] text-[13px] font-medium bg-navy text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save changes'}
         </button>
@@ -331,7 +331,7 @@ function ProjectProductBadge({ product }: { product: Product | null }) {
       {product ? (
         <ProductBadge product={product} />
       ) : (
-        <span className="inline-flex items-center justify-center px-2 py-[3px] rounded text-[11px] font-medium bg-[#E8E8E8] text-[#595959] whitespace-nowrap select-none">
+        <span className="inline-flex items-center justify-center px-2 py-[3px] rounded text-[11px] font-medium bg-[#E8E8E8] text-text-secondary whitespace-nowrap select-none">
           Unassigned
         </span>
       )}
@@ -388,15 +388,15 @@ function SortableProjectRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 py-2.5 group border-b border-[#F2F2F2] last:border-b-0"
+      className="flex items-center gap-2 py-2.5 group border-b border-bg last:border-b-0"
     >
       {/* Drag handle — hidden in edit mode */}
       <span
         {...(isEditing ? {} : { ...attributes, ...listeners })}
-        className={`flex-shrink-0 text-[#DADADA] transition-colors ${
+        className={`flex-shrink-0 text-border transition-colors ${
           isEditing
             ? 'invisible'
-            : 'cursor-grab active:cursor-grabbing group-hover:text-[#797979]'
+            : 'cursor-grab active:cursor-grabbing group-hover:text-text-muted'
         }`}
       >
         <GripVertical size={14} />
@@ -407,7 +407,7 @@ function SortableProjectRow({
           <select
             value={editProduct ?? ''}
             onChange={(e) => onEditProductChange((e.target.value as Product) || null)}
-            className="px-2 py-1.5 rounded-[6px] border border-[#DADADA] text-[12px] text-[#19153F] outline-none focus:border-[#19153F] bg-white w-[190px] flex-shrink-0"
+            className="px-2 py-1.5 rounded-[6px] border border-border text-[12px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
           >
             <option value="">Unassigned</option>
             {PRODUCTS.map((p) => (
@@ -423,18 +423,18 @@ function SortableProjectRow({
               if (e.key === 'Enter') onEditSave(project.id)
               if (e.key === 'Escape') onEditCancel()
             }}
-            className="flex-1 px-2.5 py-1.5 rounded-[6px] border border-[#19153F] text-[13px] text-[#19153F] outline-none"
+            className="flex-1 px-2.5 py-1.5 rounded-[6px] border border-navy text-[13px] text-navy outline-none"
           />
           <button
             onClick={() => onEditSave(project.id)}
-            className="p-1.5 rounded-[4px] text-[#19153F] hover:bg-[#F2F2F2]"
+            className="p-1.5 rounded-[4px] text-navy hover:bg-bg"
             title="Save"
           >
             <Check size={13} />
           </button>
           <button
             onClick={onEditCancel}
-            className="p-1.5 rounded-[4px] text-[#797979] hover:bg-[#F2F2F2]"
+            className="p-1.5 rounded-[4px] text-text-muted hover:bg-bg"
             title="Cancel"
           >
             <X size={12} />
@@ -444,15 +444,15 @@ function SortableProjectRow({
         <>
           <div className={`flex items-center gap-2 flex-1 min-w-0 ${!project.is_visible ? 'opacity-40' : ''}`}>
             <ProjectProductBadge product={project.product} />
-            <span className="text-[13px] text-[#19153F] truncate">{project.name}</span>
+            <span className="text-[13px] text-navy truncate">{project.name}</span>
           </div>
           {/* Visibility toggle — Eye on hover for visible; EyeOff always shown for hidden */}
           <button
             onClick={() => onToggleVisibility(project)}
-            className={`p-1.5 rounded-[4px] hover:bg-[#F2F2F2] transition-colors ${
+            className={`p-1.5 rounded-[4px] hover:bg-bg transition-colors ${
               project.is_visible
-                ? 'text-[#797979] opacity-0 group-hover:opacity-100 hover:text-[#19153F]'
-                : 'text-[#AAAAAA] opacity-100 hover:text-[#19153F]'
+                ? 'text-text-muted opacity-0 group-hover:opacity-100 hover:text-navy'
+                : 'text-[#AAAAAA] opacity-100 hover:text-navy'
             }`}
             title={project.is_visible ? 'Hide from filters' : 'Show in filters'}
           >
@@ -460,14 +460,14 @@ function SortableProjectRow({
           </button>
           <button
             onClick={() => onEditStart(project)}
-            className="p-1.5 rounded-[4px] text-[#797979] opacity-0 group-hover:opacity-100 hover:bg-[#F2F2F2] hover:text-[#19153F] transition-colors"
+            className="p-1.5 rounded-[4px] text-text-muted opacity-0 group-hover:opacity-100 hover:bg-bg hover:text-navy transition-colors"
             title="Edit"
           >
             <Pencil size={13} />
           </button>
           <button
             onClick={() => onDelete(project)}
-            className="p-1.5 rounded-[4px] text-[#797979] opacity-0 group-hover:opacity-100 hover:bg-[#FFCDD3] hover:text-[#CC0015] transition-colors"
+            className="p-1.5 rounded-[4px] text-text-muted opacity-0 group-hover:opacity-100 hover:bg-red-flag-light hover:text-red-dark transition-colors"
             title="Delete"
           >
             <Trash2 size={13} />
@@ -671,13 +671,13 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
       {deleteTarget && deleteTaskCount > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-[12px] shadow-xl p-6 max-w-sm w-full mx-4">
-            <p className="text-[13px] text-[#19153F] leading-relaxed">
+            <p className="text-[13px] text-navy leading-relaxed">
               <span className="font-medium">&ldquo;{deleteTarget.name}&rdquo;</span> cannot be deleted because it is currently assigned to {deleteTaskCount} task{deleteTaskCount === 1 ? '' : 's'}. Please reassign or remove the project from those tasks first.
             </p>
             <div className="mt-5 flex justify-end">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 rounded-[6px] text-[13px] font-medium bg-[#19153F] text-white hover:bg-[#2e2870]"
+                className="px-4 py-2 rounded-[6px] text-[13px] font-medium bg-navy text-white hover:bg-[#2e2870]"
               >
                 OK
               </button>
@@ -697,9 +697,9 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
 
       <div className="flex flex-col gap-3">
         {loading ? (
-          <p className="text-[13px] text-[#797979]">Loading…</p>
+          <p className="text-[13px] text-text-muted">Loading…</p>
         ) : projects.length === 0 ? (
-          <p className="text-[13px] text-[#797979]">No projects yet. Add one below.</p>
+          <p className="text-[13px] text-text-muted">No projects yet. Add one below.</p>
         ) : (
           <DndContext
             sensors={sensors}
@@ -738,7 +738,7 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
             <select
               value={newProduct}
               onChange={(e) => { setNewProduct(e.target.value as Product | ''); setAddError('') }}
-              className="px-2 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F] bg-white w-[190px] flex-shrink-0"
+              className="px-2 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
             >
               <option value="">Select product…</option>
               {PRODUCTS.map((p) => (
@@ -751,17 +751,17 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
               onChange={(e) => { setNewName(e.target.value); setAddError('') }}
               onKeyDown={(e) => { if (e.key === 'Enter') handleAdd() }}
               placeholder="New project name"
-              className="flex-1 px-3 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F] placeholder:text-[#797979]"
+              className="flex-1 px-3 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy placeholder:text-text-muted"
             />
             <button
               onClick={handleAdd}
               disabled={adding || !newName.trim()}
-              className="px-4 py-2 rounded-[6px] text-[13px] font-medium bg-[#19153F] text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
+              className="px-4 py-2 rounded-[6px] text-[13px] font-medium bg-navy text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
             >
               {adding ? 'Adding…' : 'Add'}
             </button>
           </div>
-          {addError && <p className="text-[12px] text-[#CC0015]">{addError}</p>}
+          {addError && <p className="text-[12px] text-red-dark">{addError}</p>}
         </div>
       </div>
     </>
@@ -783,7 +783,7 @@ function personLabel(
 
 const GreenDot = () => <span className="w-2 h-2 rounded-full bg-[#1B8C7A] flex-shrink-0 mt-[6px]" />
 const AmberDot = () => <span className="w-2 h-2 rounded-full bg-[#B38600] flex-shrink-0 mt-[6px]" />
-const RedDot = () => <span className="w-2 h-2 rounded-full bg-[#CC0015] opacity-60 flex-shrink-0 mt-[6px]" />
+const RedDot = () => <span className="w-2 h-2 rounded-full bg-red-dark opacity-60 flex-shrink-0 mt-[6px]" />
 
 function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
   const { userId } = useAuth()
@@ -970,7 +970,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
       <div className="flex flex-col gap-5">
         {/* ── Add your manager ── */}
         <div className="flex flex-col gap-2">
-          <p className="text-[12px] font-medium text-[#595959]">Add your manager</p>
+          <p className="text-[12px] font-medium text-text-secondary">Add your manager</p>
           <div className="flex gap-2">
             <div className="flex-1 flex flex-col gap-1">
               <input
@@ -980,7 +980,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                 onBlur={handleEmailBlur}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSendInvitation() }}
                 placeholder="manager@example.com"
-                className="px-3 py-2 rounded-[6px] border border-[#DADADA] text-[13px] text-[#19153F] outline-none focus:border-[#19153F] placeholder:text-[#797979]"
+                className="px-3 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy placeholder:text-text-muted"
               />
               {validation === 'found' && (
                 <p className="text-[12px] text-[#1B8C7A]">✓ Registered user — invitation will be sent and they can accept it in Settings.</p>
@@ -992,24 +992,24 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
             <button
               onClick={handleSendInvitation}
               disabled={sending || !inviteEmail.trim()}
-              className="self-start px-4 py-2 rounded-[6px] text-[13px] font-medium bg-[#19153F] text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
+              className="self-start px-4 py-2 rounded-[6px] text-[13px] font-medium bg-navy text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
             >
               {sending ? 'Sending…' : 'Invite manager'}
             </button>
           </div>
         </div>
 
-        {loading && <p className="text-[13px] text-[#797979]">Loading…</p>}
+        {loading && <p className="text-[13px] text-text-muted">Loading…</p>}
 
-        {showSeparator && <hr className="border-[#F2F2F2]" />}
+        {showSeparator && <hr className="border-bg" />}
 
         {/* ── Manager relationships ── */}
         {hasRelationships && (
           <div className="flex flex-col gap-3">
             {managing.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <p className="text-[12px] font-medium text-[#595959]">You are managing</p>
-                <div className="flex flex-col divide-y divide-[#F2F2F2]">
+                <p className="text-[12px] font-medium text-text-secondary">You are managing</p>
+                <div className="flex flex-col divide-y divide-bg">
                   {managing.map((row) => {
                     const a = row.admin
                     const label = a ? personLabel(a.first_name, a.last_name, a.email) : row.admin_user_id
@@ -1017,7 +1017,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                       <div key={row.id} className="flex items-center justify-between py-2.5 gap-4">
                         <div className="flex items-start gap-2 min-w-0">
                           <GreenDot />
-                          <span className="text-[13px] text-[#19153F] truncate">{label}</span>
+                          <span className="text-[13px] text-navy truncate">{label}</span>
                         </div>
                         <button
                           disabled={acting === row.id}
@@ -1026,7 +1026,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                             confirmLabel: 'Remove',
                             onConfirm: () => hardDelete(row.id, 'Removed from manager role.', true),
                           })}
-                          className="flex-shrink-0 px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-[#797979] border border-[#DADADA] bg-white hover:border-[#FF0522] hover:text-[#CC0015] disabled:opacity-50"
+                          className="flex-shrink-0 px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-text-muted border border-border bg-white hover:border-red-flag hover:text-red-dark disabled:opacity-50"
                         >
                           Remove
                         </button>
@@ -1039,8 +1039,8 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
 
             {beingManaged.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <p className="text-[12px] font-medium text-[#595959]">You are being managed by</p>
-                <div className="flex flex-col divide-y divide-[#F2F2F2]">
+                <p className="text-[12px] font-medium text-text-secondary">You are being managed by</p>
+                <div className="flex flex-col divide-y divide-bg">
                   {beingManaged.map((row) => {
                     const m = row.manager
                     const label = m ? personLabel(m.first_name, m.last_name, row.manager_email) : row.manager_email
@@ -1049,9 +1049,9 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                         <div className="flex items-start gap-2 min-w-0">
                           <GreenDot />
                           <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-[13px] text-[#19153F] truncate">{label}</span>
+                            <span className="text-[13px] text-navy truncate">{label}</span>
                             {row.accepted_at && (
-                              <span className="text-[11px] text-[#797979]">Since {fmtDate(row.accepted_at)}</span>
+                              <span className="text-[11px] text-text-muted">Since {fmtDate(row.accepted_at)}</span>
                             )}
                           </div>
                         </div>
@@ -1062,7 +1062,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                             confirmLabel: 'Sever',
                             onConfirm: () => hardDelete(row.id, 'Manager relationship severed.'),
                           })}
-                          className="flex-shrink-0 px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-[#797979] border border-[#DADADA] bg-white hover:border-[#FF0522] hover:text-[#CC0015] disabled:opacity-50"
+                          className="flex-shrink-0 px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-text-muted border border-border bg-white hover:border-red-flag hover:text-red-dark disabled:opacity-50"
                         >
                           Sever
                         </button>
@@ -1080,21 +1080,21 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
           <div className="flex flex-col gap-3">
             {allPending.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <p className="text-[12px] font-medium text-[#595959]">Pending</p>
-                <div className="flex flex-col divide-y divide-[#F2F2F2]">
+                <p className="text-[12px] font-medium text-text-secondary">Pending</p>
+                <div className="flex flex-col divide-y divide-bg">
                   {allPending.map((row) => (
                     <div key={row.id} className="flex items-center justify-between py-2.5 gap-4">
                       <div className="flex items-start gap-2 min-w-0">
                         <AmberDot />
                         <div className="flex flex-col gap-0.5 min-w-0">
                           {row.direction === 'incoming' ? (
-                            <span className="text-[13px] text-[#19153F]">
+                            <span className="text-[13px] text-navy">
                               {personLabel(row.admin?.first_name, row.admin?.last_name, row.admin?.email ?? row.admin_user_id)} wants you to manage their tasks
                             </span>
                           ) : (
-                            <span className="text-[13px] text-[#19153F] truncate">{row.manager_email}</span>
+                            <span className="text-[13px] text-navy truncate">{row.manager_email}</span>
                           )}
-                          <span className="text-[11px] text-[#797979]">Invited {fmtDate(row.invited_at)}</span>
+                          <span className="text-[11px] text-text-muted">Invited {fmtDate(row.invited_at)}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -1103,14 +1103,14 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                             <button
                               onClick={() => handleAccept(row.id)}
                               disabled={acting === row.id}
-                              className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium bg-[#19153F] text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium bg-navy text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
                             >
                               Accept
                             </button>
                             <button
                               onClick={() => handleDecline(row.id)}
                               disabled={acting === row.id}
-                              className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-[#797979] border border-[#DADADA] bg-white hover:border-[#FF0522] hover:text-[#CC0015] disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-text-muted border border-border bg-white hover:border-red-flag hover:text-red-dark disabled:opacity-50"
                             >
                               Decline
                             </button>
@@ -1123,7 +1123,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                               confirmLabel: 'Cancel invitation',
                               onConfirm: () => hardDelete(row.id, 'Invitation cancelled.'),
                             })}
-                            className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-[#797979] border border-[#DADADA] bg-white hover:border-[#FF0522] hover:text-[#CC0015] disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-text-muted border border-border bg-white hover:border-red-flag hover:text-red-dark disabled:opacity-50"
                           >
                             Delete
                           </button>
@@ -1137,22 +1137,22 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
 
             {declined.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <p className="text-[12px] font-medium text-[#595959]">Declined</p>
-                <div className="flex flex-col divide-y divide-[#F2F2F2]">
+                <p className="text-[12px] font-medium text-text-secondary">Declined</p>
+                <div className="flex flex-col divide-y divide-bg">
                   {declined.map((row) => (
                     <div key={row.id} className="flex items-center justify-between py-2.5 gap-4">
                       <div className="flex items-start gap-2 min-w-0">
                         <RedDot />
                         <div className="flex flex-col gap-0.5 min-w-0">
-                          <span className="text-[13px] text-[#19153F] truncate">{row.manager_email}</span>
-                          <span className="text-[11px] text-[#797979]">Invited {fmtDate(row.invited_at)}</span>
+                          <span className="text-[13px] text-navy truncate">{row.manager_email}</span>
+                          <span className="text-[11px] text-text-muted">Invited {fmtDate(row.invited_at)}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleResend(row.id)}
                           disabled={acting === row.id}
-                          className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium bg-[#19153F] text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium bg-navy text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
                         >
                           Re-send
                         </button>
@@ -1163,7 +1163,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
                             confirmLabel: 'Delete',
                             onConfirm: () => hardDelete(row.id, 'Invitation deleted.'),
                           })}
-                          className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-[#797979] border border-[#DADADA] bg-white hover:border-[#FF0522] hover:text-[#CC0015] disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-text-muted border border-border bg-white hover:border-red-flag hover:text-red-dark disabled:opacity-50"
                         >
                           Delete
                         </button>
@@ -1312,13 +1312,13 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
 
   return (
     <div>
-      <p className="text-[13px] text-[#595959] mb-4">
+      <p className="text-[13px] text-text-secondary mb-4">
         Download all your tasks, notes, and comments as a CSV file.
       </p>
       <button
         onClick={handleExport}
         disabled={exporting}
-        className="px-4 py-2 text-[13px] font-medium bg-[#19153F] text-white rounded-[6px] border border-transparent hover:bg-[#2a2460] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="px-4 py-2 text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {exporting ? 'Exporting…' : 'Export to CSV'}
       </button>
@@ -1343,7 +1343,7 @@ export default function SettingsView() {
 
   return (
     <div className="p-6 max-w-2xl flex flex-col gap-5">
-      <h1 className="text-base font-medium text-[#19153F]">Settings</h1>
+      <h1 className="text-base font-medium text-navy">Settings</h1>
       <SectionCard title="Account details">
         <AccountSection onToast={addToast} />
       </SectionCard>

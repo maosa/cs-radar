@@ -39,30 +39,30 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full max-w-sm bg-white rounded-xl border border-[#DADADA] p-8 shadow-sm">
+    <div className="w-full max-w-sm bg-white rounded-xl border border-border p-8 shadow-sm">
       <div className="mb-6">
-        <h1 className="text-[18px] font-medium text-[#19153F]">Sign in</h1>
-        <p className="text-[13px] text-[#595959] mt-1">Task Tracker</p>
+        <h1 className="text-[18px] font-medium text-navy">Sign in</h1>
+        <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-[12px] font-medium text-[#595959] mb-1">Email</label>
+          <label className="block text-[12px] font-medium text-text-secondary mb-1">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             autoFocus
-            className="w-full h-9 px-3 text-[13px] border border-[#DADADA] rounded-md focus:outline-none focus:border-[#38308F] text-[#19153F]"
+            className="w-full h-9 px-3 text-[13px] border border-border rounded-md focus:outline-none focus:border-navy-mid text-navy"
             placeholder="you@accessinfinity.com"
           />
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[12px] font-medium text-[#595959]">Password</label>
-            <Link href="/forgot-password" className="text-[12px] text-[#38308F] hover:underline">
+            <label className="text-[12px] font-medium text-text-secondary">Password</label>
+            <Link href="/forgot-password" className="text-[12px] text-navy-mid hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -71,25 +71,25 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full h-9 px-3 text-[13px] border border-[#DADADA] rounded-md focus:outline-none focus:border-[#38308F] text-[#19153F]"
+            className="w-full h-9 px-3 text-[13px] border border-border rounded-md focus:outline-none focus:border-navy-mid text-navy"
             placeholder="••••••••"
           />
         </div>
 
-        {error && <p className="text-[12px] text-[#CC0015]">{error}</p>}
+        {error && <p className="text-[12px] text-red-dark">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-9 bg-[#19153F] text-white text-[13px] font-medium rounded-md hover:bg-[#2D2870] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full h-9 bg-navy text-white text-[13px] font-medium rounded-md hover:bg-[#2D2870] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
-      <p className="mt-4 text-[12px] text-[#595959] text-center">
+      <p className="mt-4 text-[12px] text-text-secondary text-center">
         Don&apos;t have an account?{' '}
-        <Link href="/signup" className="text-[#38308F] hover:underline">
+        <Link href="/signup" className="text-navy-mid hover:underline">
           Sign up
         </Link>
       </p>

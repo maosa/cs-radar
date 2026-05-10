@@ -49,11 +49,11 @@ export default function TopBar() {
   }
 
   return (
-    <header className="flex items-center justify-end h-12 px-4 bg-white border-b border-[#DADADA] flex-shrink-0">
+    <header className="flex items-center justify-end h-12 px-4 bg-white border-b border-border flex-shrink-0">
       <div className="relative" ref={menuRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="w-8 h-8 rounded-full bg-[#38308F] text-white text-xs font-medium flex items-center justify-center select-none hover:bg-[#2D2870] transition-colors"
+          className="w-8 h-8 rounded-full bg-navy-mid text-white text-xs font-medium flex items-center justify-center select-none hover:bg-[#2D2870] transition-colors"
           title={fullName || undefined}
           aria-label={fullName ? `Signed in as ${fullName}` : 'User menu'}
         >
@@ -61,15 +61,15 @@ export default function TopBar() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-10 w-48 bg-white border border-[#DADADA] rounded-lg shadow-lg py-1 z-50">
+          <div className="absolute right-0 top-10 w-48 bg-white border border-border rounded-lg shadow-lg py-1 z-50">
             {fullName && (
-              <div className="px-3 py-2 border-b border-[#DADADA]">
-                <p className="text-[12px] font-medium text-[#19153F] truncate">{fullName}</p>
+              <div className="px-3 py-2 border-b border-border">
+                <p className="text-[12px] font-medium text-navy truncate">{fullName}</p>
               </div>
             )}
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-[#595959] hover:bg-[#F2F2F2] hover:text-[#19153F] transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-text-secondary hover:bg-bg hover:text-navy transition-colors"
             >
               <LogOut size={13} />
               Sign out

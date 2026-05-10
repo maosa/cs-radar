@@ -61,27 +61,27 @@ export default function ResetPasswordPage() {
   // Token not yet verified — still waiting for the hash to be processed
   if (!ready) {
     return (
-      <div className="w-full max-w-sm bg-white rounded-xl border border-[#DADADA] p-8 shadow-sm">
+      <div className="w-full max-w-sm bg-white rounded-xl border border-border p-8 shadow-sm">
         <div className="mb-6">
-          <h1 className="text-[18px] font-medium text-[#19153F]">Reset password</h1>
-          <p className="text-[13px] text-[#595959] mt-1">Task Tracker</p>
+          <h1 className="text-[18px] font-medium text-navy">Reset password</h1>
+          <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
         </div>
-        <p className="text-[13px] text-[#797979]">Verifying reset link…</p>
+        <p className="text-[13px] text-text-muted">Verifying reset link…</p>
       </div>
     )
   }
 
   return (
-    <div className="w-full max-w-sm bg-white rounded-xl border border-[#DADADA] p-8 shadow-sm">
+    <div className="w-full max-w-sm bg-white rounded-xl border border-border p-8 shadow-sm">
       <div className="mb-6">
-        <h1 className="text-[18px] font-medium text-[#19153F]">Set new password</h1>
-        <p className="text-[13px] text-[#595959] mt-1">Task Tracker</p>
+        <h1 className="text-[18px] font-medium text-navy">Set new password</h1>
+        <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
       </div>
 
       {done ? (
         <div className="space-y-4">
-          <div className="rounded-md bg-[#F0FDF9] border border-[#00D1BA] px-4 py-3">
-            <p className="text-[13px] text-[#19153F]">
+          <div className="rounded-md bg-[#F0FDF9] border border-teal px-4 py-3">
+            <p className="text-[13px] text-navy">
               Password updated successfully. Redirecting you to sign in…
             </p>
           </div>
@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[12px] font-medium text-[#595959] mb-1">New password</label>
+            <label className="block text-[12px] font-medium text-text-secondary mb-1">New password</label>
             <input
               type="password"
               value={password}
@@ -97,29 +97,29 @@ export default function ResetPasswordPage() {
               required
               autoFocus
               minLength={6}
-              className="w-full h-9 px-3 text-[13px] border border-[#DADADA] rounded-md focus:outline-none focus:border-[#38308F] text-[#19153F]"
+              className="w-full h-9 px-3 text-[13px] border border-border rounded-md focus:outline-none focus:border-navy-mid text-navy"
               placeholder="At least 6 characters"
             />
           </div>
 
           <div>
-            <label className="block text-[12px] font-medium text-[#595959] mb-1">Confirm new password</label>
+            <label className="block text-[12px] font-medium text-text-secondary mb-1">Confirm new password</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full h-9 px-3 text-[13px] border border-[#DADADA] rounded-md focus:outline-none focus:border-[#38308F] text-[#19153F]"
+              className="w-full h-9 px-3 text-[13px] border border-border rounded-md focus:outline-none focus:border-navy-mid text-navy"
               placeholder="••••••••"
             />
           </div>
 
-          {error && <p className="text-[12px] text-[#CC0015]">{error}</p>}
+          {error && <p className="text-[12px] text-red-dark">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-9 bg-[#19153F] text-white text-[13px] font-medium rounded-md hover:bg-[#2D2870] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full h-9 bg-navy text-white text-[13px] font-medium rounded-md hover:bg-[#2D2870] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Updating…' : 'Update password'}
           </button>
@@ -127,8 +127,8 @@ export default function ResetPasswordPage() {
       )}
 
       {!done && (
-        <p className="mt-4 text-[12px] text-[#595959] text-center">
-          <Link href="/login" className="text-[#38308F] hover:underline">
+        <p className="mt-4 text-[12px] text-text-secondary text-center">
+          <Link href="/login" className="text-navy-mid hover:underline">
             Back to sign in
           </Link>
         </p>
