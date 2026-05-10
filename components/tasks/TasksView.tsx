@@ -566,6 +566,7 @@ function Toolbar({
 interface UniqueProject {
   id: string
   name: string
+  displayName: string
 }
 
 interface FilterBarProps {
@@ -626,7 +627,7 @@ function FilterBar({
             onClick={() => onToggleProject(proj.id)}
             className={`${chipBase} ${active ? chipActive : chipInactive}`}
           >
-            {proj.name}
+            {proj.displayName}
           </button>
         )
       })}
@@ -976,12 +977,26 @@ export default function TasksView() {
   }, [searchQuery, tasks])
 
   // Unique projects derived from all tasks
-  const uniqueProjects = useMemo<{ id: string; name: string }[]>(() => {
+  const uniqueProjects = useMemo<UniqueProject[]>(() => {
     const usedProjectIds = new Set(tasks.map(t => t.project_id).filter(Boolean))
     // Preserve the user's sort_order from the projects list (already ordered by Supabase)
-    return projects
-      .filter(p => usedProjectIds.has(p.id) && p.is_visible !== false)
-      .map(p => ({ id: p.id, name: p.name }))
+    const filtered = projects.filter(p => usedProjectIds.has(p.id) && p.is_visible !== false)
+
+    // Count how many times each name appears so duplicates can be disambiguated
+    const nameCounts = filtered.reduce<Record<string, number>>((acc, p) => {
+      const key = p.name.toLowerCase()
+      acc[key] = (acc[key] ?? 0) + 1
+      return acc
+    }, {})
+
+    return filtered.map(p => ({
+      id: p.id,
+      name: p.name,
+      displayName:
+        nameCounts[p.name.toLowerCase()] > 1
+          ? `${p.name} (${p.product ?? 'Unassigned'})`
+          : p.name,
+    }))
   }, [tasks, projects])
 
   // Auto-clear stale filters when their target no longer exists in the task list
