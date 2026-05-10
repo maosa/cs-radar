@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import type { DefaultLanding, Product, ProjectRow } from '@/lib/supabase/types'
 import ProductBadge from '@/components/tasks/ProductBadge'
-import { GripVertical, Pencil, Trash2, Check, X } from 'lucide-react'
+import { GripVertical, Pencil, Trash2, Check, X, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import {
   DndContext,
@@ -350,6 +350,7 @@ interface SortableProjectRowProps {
   onEditProductChange: (product: Product | null) => void
   onEditSave: (id: string) => void
   onEditCancel: () => void
+  onToggleVisibility: (project: ProjectRow) => void
   onDelete: (project: ProjectRow) => void
 }
 
@@ -364,6 +365,7 @@ function SortableProjectRow({
   onEditProductChange,
   onEditSave,
   onEditCancel,
+  onToggleVisibility,
   onDelete,
 }: SortableProjectRowProps) {
   const isEditing = editingId === project.id
@@ -440,20 +442,32 @@ function SortableProjectRow({
         </>
       ) : (
         <>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className={`flex items-center gap-2 flex-1 min-w-0 ${!project.is_visible ? 'opacity-40' : ''}`}>
             <ProjectProductBadge product={project.product} />
             <span className="text-[13px] text-[#19153F] truncate">{project.name}</span>
           </div>
+          {/* Visibility toggle — Eye on hover for visible; EyeOff always shown for hidden */}
+          <button
+            onClick={() => onToggleVisibility(project)}
+            className={`p-1.5 rounded-[4px] hover:bg-[#F2F2F2] transition-colors ${
+              project.is_visible
+                ? 'text-[#797979] opacity-0 group-hover:opacity-100 hover:text-[#19153F]'
+                : 'text-[#AAAAAA] opacity-100 hover:text-[#19153F]'
+            }`}
+            title={project.is_visible ? 'Hide from filters' : 'Show in filters'}
+          >
+            {project.is_visible ? <Eye size={13} /> : <EyeOff size={13} />}
+          </button>
           <button
             onClick={() => onEditStart(project)}
-            className="p-1.5 rounded-[4px] text-[#797979] opacity-0 group-hover:opacity-100 hover:bg-[#F2F2F2] hover:text-[#19153F]"
+            className="p-1.5 rounded-[4px] text-[#797979] opacity-0 group-hover:opacity-100 hover:bg-[#F2F2F2] hover:text-[#19153F] transition-colors"
             title="Edit"
           >
             <Pencil size={13} />
           </button>
           <button
             onClick={() => onDelete(project)}
-            className="p-1.5 rounded-[4px] text-[#797979] opacity-0 group-hover:opacity-100 hover:bg-[#FFCDD3] hover:text-[#CC0015]"
+            className="p-1.5 rounded-[4px] text-[#797979] opacity-0 group-hover:opacity-100 hover:bg-[#FFCDD3] hover:text-[#CC0015] transition-colors"
             title="Delete"
           >
             <Trash2 size={13} />
@@ -621,6 +635,21 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
     setDeleteTarget(project)
   }
 
+  const handleToggleVisibility = async (project: ProjectRow) => {
+    const newVisibility = !project.is_visible
+    // Optimistic update
+    setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, is_visible: newVisibility } : p)))
+    const { error } = await supabase
+      .from('projects')
+      .update({ is_visible: newVisibility, updated_at: new Date().toISOString() })
+      .eq('id', project.id)
+    if (error) {
+      // Revert on failure
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, is_visible: project.is_visible } : p)))
+      onToast('Failed to update project visibility.', 'error')
+    }
+  }
+
   const confirmDelete = async () => {
     if (!deleteTarget) return
     const { error } = await supabase
@@ -695,6 +724,7 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
                     onEditProductChange={setEditProduct}
                     onEditSave={handleEditSave}
                     onEditCancel={() => setEditingId(null)}
+                    onToggleVisibility={handleToggleVisibility}
                     onDelete={initiateDelete}
                   />
                 ))}

@@ -980,7 +980,7 @@ export default function TasksView() {
     const usedProjectIds = new Set(tasks.map(t => t.project_id).filter(Boolean))
     // Preserve the user's sort_order from the projects list (already ordered by Supabase)
     return projects
-      .filter(p => usedProjectIds.has(p.id))
+      .filter(p => usedProjectIds.has(p.id) && p.is_visible !== false)
       .map(p => ({ id: p.id, name: p.name }))
   }, [tasks, projects])
 

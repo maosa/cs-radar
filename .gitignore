@@ -35,7 +35,6 @@ yarn-error.log*
 
 # local notes
 prompts.txt
-*.csv
 
 # claude
 .claude/

@@ -23,6 +23,7 @@ export type ProjectRow = {
   name: string
   product: Product | null
   sort_order: number
+  is_visible: boolean
   created_at: string
   updated_at: string | null
   deleted_at: string | null

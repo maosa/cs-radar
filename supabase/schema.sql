@@ -65,6 +65,7 @@ create table if not exists public.projects (
   name          text not null,
   product       text check (product in ('AH', 'NURO', 'EH', 'N/A')),
   sort_order    integer not null default 0,
+  is_visible    boolean not null default true,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz,
   deleted_at    timestamptz
