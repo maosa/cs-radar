@@ -23,6 +23,7 @@ import { useDebounce } from '@/lib/hooks/useDebounce'
 import { useTasksQuery } from '@/lib/hooks/useTasks'
 
 type AnyTask = TaskWithProject
+type SearchResult = { task: AnyTask; weekLabel: string }
 
 const PRODUCT_ORDER: Record<string, number> = { AH: 0, EH: 1, NURO: 2, 'N/A': 3 }
 

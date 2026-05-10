@@ -4,7 +4,7 @@ import TasksView from '@/components/tasks/TasksView'
 
 export default async function TasksPage() {
   const queryClient = new QueryClient()
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id
 

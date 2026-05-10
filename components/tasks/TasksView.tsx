@@ -872,8 +872,8 @@ export default function TasksView() {
           weekIndex={addModalWeekIndex}
           projects={projects}
           onClose={() => setAddModalWeekIndex(null)}
-          onCreated={(task) => {
-            taskCreated(task)
+          onCreated={() => {
+            taskCreated()
             setAddModalWeekIndex(null)
           }}
         />

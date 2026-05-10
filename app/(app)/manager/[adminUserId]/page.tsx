@@ -10,7 +10,7 @@ export default async function ManagerTaskPage({
   const { adminUserId } = await params
   
   const queryClient = new QueryClient()
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id
 

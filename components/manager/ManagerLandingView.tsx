@@ -19,8 +19,6 @@ interface PersonCard {
   adminUserId: string
 }
 
-}
-
 type SortMode = 'name' | 'role' | 'favorites'
 type Tab = 'home' | 'archive'
 
