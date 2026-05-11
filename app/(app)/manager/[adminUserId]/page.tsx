@@ -2,6 +2,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ManagerTaskView from '@/components/manager/ManagerTaskView'
+import { getCurrentWeekIndex, weekIndexToDateString } from '@/lib/weeks'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -32,6 +33,12 @@ export default async function ManagerTaskPage({
 
   if (!rel) redirect('/manager')
 
+  // Match the same initial window used by TaskTableView so the prefetched data
+  // is consumed directly by the client query without a redundant refetch.
+  const todayIndex = getCurrentWeekIndex()
+  const fromDate = weekIndexToDateString(Math.max(0, todayIndex - 26))
+  const toDate = weekIndexToDateString(todayIndex + 4)
+
   await queryClient.prefetchQuery({
     queryKey: ['tasks', 'managed', adminUserId],
     queryFn: async () => {
@@ -39,6 +46,8 @@ export default async function ManagerTaskPage({
         .from('tasks')
         .select('*, projects(name)')
         .eq('admin_user_id', adminUserId)
+        .gte('week_start_date', fromDate)
+        .lte('week_start_date', toDate)
         .order('week_start_date')
         .order('sort_order')
       if (error) throw error

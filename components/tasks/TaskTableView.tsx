@@ -9,7 +9,7 @@ import EditableTaskTable from './task-table/EditableTaskTable'
 import ReadOnlyTaskTable from './task-table/ReadOnlyTaskTable'
 import { supabase } from '@/lib/supabase/client'
 import type { TaskWithProject } from '@/lib/supabase/types'
-import { getCurrentWeekIndex, formatWeekHeader, dateStringToWeekIndex } from '@/lib/weeks'
+import { getCurrentWeekIndex, formatWeekHeader, dateStringToWeekIndex, weekIndexToDateString } from '@/lib/weeks'
 import { useAuth } from '@/lib/auth-context'
 import { ToastContainer, type Toast } from '@/components/ui/ToastContainer'
 import { projectName } from '@/lib/taskUtils'
@@ -34,9 +34,31 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   const [viewMode, setViewMode] = useState<ViewMode>('focused')
   const [centerWeekIndex, setCenterWeekIndex] = useState(todayWeekIndex)
 
+  // Week window — fetch a rolling range instead of all tasks.
+  // Starts at [today − 26, today + 4] and auto-expands as the user navigates.
+  const WINDOW_BACK = 26
+  const WINDOW_FORWARD = 4
+  const EXPAND_THRESHOLD = 4   // pre-load this many weeks before reaching the edge
+  const EXPAND_BY = 13         // expand by one quarter at a time
+  const [windowStart, setWindowStart] = useState(() => Math.max(0, todayWeekIndex - WINDOW_BACK))
+  const [windowEnd, setWindowEnd] = useState(() => todayWeekIndex + WINDOW_FORWARD)
+  const weekRange = useMemo(() => ({
+    from: weekIndexToDateString(windowStart),
+    to: weekIndexToDateString(windowEnd),
+  }), [windowStart, windowEnd])
+
+  useEffect(() => {
+    if (windowStart > 0 && centerWeekIndex <= windowStart + EXPAND_THRESHOLD) {
+      setWindowStart((s) => Math.max(0, s - EXPAND_BY))
+    }
+    if (centerWeekIndex >= windowEnd - EXPAND_THRESHOLD) {
+      setWindowEnd((e) => e + EXPAND_BY)
+    }
+  }, [centerWeekIndex, windowStart, windowEnd])
+
   // Data fetching
   const targetId = readOnly ? (adminUserId ?? null) : userId
-  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(targetId, readOnly ? 'managed' : 'own')
+  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(targetId, readOnly ? 'managed' : 'own', weekRange)
   const { data: projects = [], isLoading: loadingProjects } = useProjectsQuery(readOnly ? null : userId)
 
   // Admin info (manager mode only)

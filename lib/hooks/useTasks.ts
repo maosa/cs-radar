@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase/client'
 import type { TaskWithProject, ProjectRow } from '@/lib/supabase/types'
@@ -21,8 +21,17 @@ export function useProjectsQuery(adminUserId: string | null) {
   })
 }
 
-export function useTasksQuery(adminUserId: string | null, scope: 'own' | 'managed' = 'managed') {
+export function useTasksQuery(
+  adminUserId: string | null,
+  scope: 'own' | 'managed' = 'managed',
+  weekRange?: { from: string; to: string },
+) {
   const queryClient = useQueryClient()
+
+  // Pass the current range to queryFn via ref — keeps the cache key stable so
+  // mutations (which use the same key) continue to work with optimistic updates.
+  const weekRangeRef = useRef(weekRange)
+  weekRangeRef.current = weekRange
 
   // Live updates for manager view — invalidate cache whenever the admin's tasks change
   useEffect(() => {
@@ -38,15 +47,37 @@ export function useTasksQuery(adminUserId: string | null, scope: 'own' | 'manage
     return () => { supabase.removeChannel(channel) }
   }, [scope, adminUserId, queryClient])
 
+  // Refetch when the week window expands so newly visible weeks are loaded
+  const prevFromRef = useRef<string | undefined>(undefined)
+  const prevToRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    const prevFrom = prevFromRef.current
+    const prevTo = prevToRef.current
+    prevFromRef.current = weekRange?.from
+    prevToRef.current = weekRange?.to
+    if (!weekRange || (prevFrom === undefined && prevTo === undefined)) return
+    if (
+      (prevFrom !== undefined && weekRange.from < prevFrom) ||
+      (prevTo !== undefined && weekRange.to > prevTo)
+    ) {
+      queryClient.invalidateQueries({ queryKey: ['tasks', scope, adminUserId], exact: true })
+    }
+  }, [weekRange?.from, weekRange?.to, scope, adminUserId, queryClient])
+
   return useQuery({
     queryKey: ['tasks', scope, adminUserId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const range = weekRangeRef.current
+      let query = supabase
         .from('tasks')
         .select('*, projects(name)')
         .eq('admin_user_id', adminUserId)
         .order('week_start_date')
         .order('sort_order')
+      if (range) {
+        query = query.gte('week_start_date', range.from).lte('week_start_date', range.to)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data.map((row: any) => {
         const proj = row.projects as { name: string } | null
