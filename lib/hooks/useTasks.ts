@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase/client'
 import type { TaskWithProject, ProjectRow } from '@/lib/supabase/types'
@@ -21,6 +22,22 @@ export function useProjectsQuery(adminUserId: string | null) {
 }
 
 export function useTasksQuery(adminUserId: string | null, scope: 'own' | 'managed' = 'managed') {
+  const queryClient = useQueryClient()
+
+  // Live updates for manager view — invalidate cache whenever the admin's tasks change
+  useEffect(() => {
+    if (scope !== 'managed' || !adminUserId) return
+    const channel = supabase
+      .channel(`tasks:managed:${adminUserId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks', filter: `admin_user_id=eq.${adminUserId}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['tasks', 'managed', adminUserId] }) }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [scope, adminUserId, queryClient])
+
   return useQuery({
     queryKey: ['tasks', scope, adminUserId],
     queryFn: async () => {
