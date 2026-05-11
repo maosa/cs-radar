@@ -1,6 +1,6 @@
 # Task Tracker — Product Design & Engineering Specification
 
-**Access Infinity · Version 1.0 · April 2026**
+**Access Infinity · Version 1.1 · May 2026**
 
 > This document is the authoritative reference for the Task Tracker web application. It is written to be self-contained so that any agentic AI coding tool or developer can pick up the project at any point and continue development without additional context.
 
@@ -19,6 +19,7 @@
 9. [UI Design System](#9-ui-design-system)
 10. [Phased Development Plan](#10-phased-development-plan)
 11. [Resolved Decisions & Notes for Developers](#11-resolved-decisions--notes-for-developers)
+12. [Data Loading & Performance](#12-data-loading--performance)
 
 ---
 
@@ -32,7 +33,7 @@ Every user has a single account with two contexts: their own task list (where th
 |---|---|
 | **Hosting** | Vercel (frontend + serverless functions) |
 | **Database** | Supabase (PostgreSQL + Auth + Row Level Security) |
-| **Start date** | Week of January 5, 2026 (first week column) |
+| **Week navigation** | Open in both directions — no fixed start or end date |
 | **Calendar week** | Monday – Sunday |
 | **Initial users** | 1 Admin + 1 invited Manager |
 | **Target scale** | Hundreds to thousands of users |
@@ -96,7 +97,7 @@ Supabase Auth handles all authentication. Row Level Security (RLS) policies enfo
 | **Hosting** | Vercel |
 | **ORM / queries** | Supabase JS client (supabase-js v2) |
 | **Email** | Supabase Auth email templates + transactional email (Resend or SendGrid) |
-| **State management** | React Context + SWR or React Query for server state |
+| **State management** | React Context + TanStack Query v5 (React Query) — client-side data fetching, caching, and optimistic updates |
 | **Drag and drop** | dnd-kit |
 | **Language** | TypeScript throughout |
 
@@ -130,6 +131,9 @@ Admin-configurable project list. Each Admin has their own set of projects.
 | `id` | `uuid` — primary key |
 | `admin_user_id` | `uuid` — references `users(id)` |
 | `name` | `text` |
+| `product` | `text` — optional product association (`'AH'` \| `'NURO'` \| `'EH'` \| `'N/A'`), nullable. Used to pre-filter the project dropdown when a product is selected in a task form. |
+| `sort_order` | `integer` — drag-and-drop ordering within the user's project list |
+| `is_visible` | `boolean` — default `true`. Hidden projects are excluded from the filter bar and project dropdowns; tasks that already reference them remain unaffected. |
 | `created_at` | `timestamptz` |
 | `updated_at` | `timestamptz` |
 | `deleted_at` | `timestamptz` — soft delete |
@@ -156,7 +160,7 @@ Core data model. One row per task.
 |---|---|
 | `id` | `uuid` — primary key |
 | `admin_user_id` | `uuid` — references `users(id)` |
-| `product` | `text` — `'AH'` \| `'NURO'` \| `'EH'` |
+| `product` | `text` — `'AH'` \| `'NURO'` \| `'EH'` \| `'N/A'` |
 | `project_id` | `uuid` — references `projects(id)`, nullable |
 | `description` | `text` |
 | `week_start_date` | `date` — always a Monday, e.g. `2026-01-05` |
@@ -234,11 +238,11 @@ Each row represents a single task. The product and project columns are sticky (`
 
 | Column | Spec |
 |---|---|
-| **Column 1 — Product** | Sticky. Single-select badge: AH (blue), EH (yellow/gold), NURO (navy-purple). Width ~110px. |
-| **Column 2 — Project** | Sticky. Displays the project name from the admin's project list. Width ~130px. |
+| **Column 1 — Product** | Sticky. Single-select badge: AH (blue), EH (yellow/gold), NURO (navy-purple), N/A (grey). Width ~84px. |
+| **Column 2 — Project** | Sticky. Displays the project name from the admin's project list. Width ~240px. |
 | **Week columns** | One column per week, minimum 200px wide. Header shows `Week of [Month] [Day], [Year]`. |
 
-Week columns begin at **January 5, 2026** (the first Monday of 2026). They extend indefinitely into the future, generated dynamically. There is no end date.
+Week columns have no fixed start or end date. Navigation is open in both directions — users can scroll backward to any historical week and forward indefinitely. The initial view loads approximately 30 weeks centred on today; additional weeks are fetched automatically as the user navigates (see Section 12).
 
 ### 5.3 Week Navigation
 
@@ -282,7 +286,7 @@ A search input in the toolbar provides global search across all tasks, all weeks
 
 - Searches across: task description, product name, project name
 - Results appear in a dropdown below the search input
-- Results are ordered most recent first (by `created_at` descending)
+- Results are ordered most recent first (by `week_start_date` descending)
 - Each result shows: task description, product badge, project name, week label
 - Clicking a result navigates to that week and highlights the task row
 - Search is debounced (300ms). Minimum 2 characters to trigger.
@@ -296,7 +300,7 @@ A search input in the toolbar provides global search across all tasks, all weeks
 Clicking **Add task** (primary button in the toolbar, or the inline "Add task" link at the bottom of any week column) opens a modal dialog.
 
 The modal contains:
-- **Product** — single-select dropdown: Access Hub (AH), NURO, Evidence Hub (EH). Required.
+- **Product** — single-select dropdown: Access Hub (AH), NURO, Evidence Hub (EH), N/A (Not Applicable). Required.
 - **Project** — single-select dropdown, populated from the admin's project list. Required.
 - **Task description** — free-text input. Required. As the user types, an autocomplete suggestion dropdown appears (see Section 6.7).
 - Save and Cancel buttons.
@@ -311,7 +315,8 @@ Each task row has a set of action icons. The checkbox is always visible. All oth
 |---|---|
 | **Checkbox** | Tick/untick to mark complete. Always visible. |
 | **Flag icon** | Toggle flagged state. Click once to flag, again to unflag. |
-| **Arrow-right icon** | Move task to a future week. Opens a dropdown: Move to next week / Move by 2 weeks / Move by 3 weeks / Move by 4 weeks. |
+| **Arrow-left icon** | Move task to a past week. Opens a dropdown: Previous week (−1) / −2 weeks / −3 weeks / −4 weeks. |
+| **Arrow-right icon** | Move task to a future week. Opens a dropdown: Next week (+1) / +2 weeks / +3 weeks / +4 weeks. |
 | **Notes icon** | Opens the detail panel (right-side) and scrolls to the Notes section. |
 | **Comment icon** | Opens the detail panel and scrolls to the Comments section. |
 | **Delete icon** | Opens a confirmation dialog: "Are you sure you want to delete this task? This action cannot be undone." Confirm / Cancel. |
@@ -327,7 +332,7 @@ Each task row has a set of action icons. The checkbox is always visible. All oth
 
 ### 6.4 Moving a Task
 
-Selecting a move option immediately moves the task: it disappears from its current week and reappears in the target week. No placeholder is left in the original week. The move is reversible — the admin can move it back manually.
+Selecting a move option immediately moves the task: it disappears from its current week and reappears in the target week. No placeholder is left in the original week. The move is reversible — the admin can move it forward or backward manually using the arrow icons.
 
 ### 6.5 Deleting a Task
 
@@ -432,6 +437,7 @@ Clicking a card navigates to that user's task list. The view is identical to the
 - Notes icon and Comment icon are visible. Notes are read-only. Comments can be added, edited, or deleted by the manager.
 - The left sidebar remains visible and functional — the manager can switch back to their own task list at any time without using the Back button
 - A Back button in the top bar also returns to the Manager landing page
+- **Live updates via Supabase Realtime** — the manager view subscribes to Postgres change events on the `tasks` table filtered to the task owner's records. Any task created, updated, or deleted by the owner is reflected in the manager's view within approximately one second, without a manual page reload. This requires Realtime to be enabled for the `tasks` table in the Supabase dashboard.
 
 ---
 
@@ -605,9 +611,11 @@ Phases are ordered by dependency. Each phase is independently shippable to Verce
 | **Move task — original week** | No placeholder left. Task disappears from source week and appears in target week. |
 | **Task ownership** | Each user sees only their own tasks in owner context. No shared team task lists in v1. |
 | **Manager relationship init** | Task list owner invites manager from Settings. Manager's landing page auto-populates from accepted relationships. |
-| **Global search ordering** | Results ordered by `created_at` descending (most recent first). |
+| **Global search ordering** | Results ordered by `week_start_date` descending (most recent week first). |
 | **Sort scope** | Sort (drag-and-drop, by product, by project) is applied per-week, not globally across the full table. |
-| **Week definition** | Monday–Sunday. Week columns start Jan 5, 2026. Generated dynamically, no end date. |
+| **Week definition** | Monday–Sunday. No fixed start or end date. Navigation is open in both directions. The week epoch used internally is January 3, 2000 (the first Monday of 2000), giving a practical floor far enough back for any historical import. |
+| **Week-window data loading** | The tasks query fetches a rolling window of weeks rather than all tasks. The initial window is approximately today −26 weeks to today +4 weeks. The window auto-expands by 13 weeks in either direction as the user navigates toward the boundary. This keeps initial load fast for users with years of task history. |
+| **Realtime live updates** | The manager task view uses a Supabase Realtime Postgres changes subscription scoped to the task owner's `admin_user_id`. Any change to the tasks table triggers a React Query cache invalidation, refreshing the manager view within ~1 second. |
 | **Row structure** | One row = one task. Product and project columns repeat per row. Multiple tasks for the same product/project in the same week each have their own row. |
 | **Detail panel trigger** | Not auto-opened on row click. Opened via Notes/Comment icon on task row, or panel toggle button. |
 | **Flagged task visibility** | Flag is visible to both task owner and manager. |
@@ -617,6 +625,32 @@ Phases are ordered by dependency. Each phase is independently shippable to Verce
 
 ---
 
-*Task Tracker Specification · Access Infinity · v1.0 · April 2026*
+## 12. Data Loading & Performance
 
-*Update this document as decisions are made or requirements change. Version the file (v1.1, v1.2, etc.) with a brief change note when significant updates are made.*
+### 12.1 Week-Window Pagination
+
+The tasks query does not fetch all of a user's tasks on load. Instead, it fetches a rolling window of weeks from Supabase using `week_start_date` range filters.
+
+**Initial window:** today −26 weeks to today +4 weeks (approximately 7 months).
+
+**Auto-expansion:** when the user navigates within 4 weeks of either boundary of the loaded window, the window expands by 13 weeks in that direction and a new fetch is triggered. The expansion is cumulative — the window only ever grows, never shrinks.
+
+**Cache behaviour:** the React Query cache key for tasks does not include the window bounds, so the optimistic update logic for mutations (toggle, flag, move, reorder, delete) continues to work unchanged. The window is passed to the query function via a ref and triggers a manual cache invalidation when it expands.
+
+This approach keeps initial page load fast for users with years of task history (e.g. a user with 1,000+ tasks will load ~300 rows on first visit rather than all 1,000+), while making older and future weeks accessible on demand.
+
+### 12.2 Server-Side Prefetch (Manager View)
+
+The manager task view page uses Next.js server components to prefetch the task data before sending HTML to the browser. The server applies the same initial window filter as the client, so the prefetched data is consumed directly by React Query on hydration without an additional network request.
+
+### 12.3 Batch Sort Order Updates
+
+Drag-and-drop reordering within a week column persists sort order to the database using a single Supabase RPC call (`batch_update_sort_order`) rather than one `UPDATE` statement per task. The RPC function uses PostgreSQL `unnest` to update all affected rows in a single statement.
+
+---
+
+*Task Tracker Specification · Access Infinity · v1.1 · May 2026*
+
+*Update this document as decisions are made or requirements change. Version the file (v1.2, v1.3, etc.) with a brief change note when significant updates are made.*
+
+**v1.1 changes (May 2026):** Added N/A product option; open week navigation (no fixed start date); move-task backward action; corrected column widths; updated tech stack to TanStack Query v5; added `sort_order`, `product`, `is_visible` to projects schema; fixed search ordering; added Realtime live updates (§8.3); added Section 12 (Data Loading & Performance).
