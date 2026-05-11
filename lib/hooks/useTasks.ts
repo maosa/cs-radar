@@ -20,9 +20,9 @@ export function useProjectsQuery(adminUserId: string | null) {
   })
 }
 
-export function useTasksQuery(adminUserId: string | null) {
+export function useTasksQuery(adminUserId: string | null, scope: 'own' | 'managed' = 'managed') {
   return useQuery({
-    queryKey: ['tasks', adminUserId],
+    queryKey: ['tasks', scope, adminUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
@@ -43,7 +43,7 @@ export function useTasksQuery(adminUserId: string | null) {
 
 export function useTasks(userId: string | null, addToast: (msg: string, type?: 'success' | 'error') => void) {
   const queryClient = useQueryClient()
-  const tasksKey = ['tasks', userId]
+  const tasksKey = ['tasks', 'own', userId]
 
   const updateCache = (id: string, updater: (t: TaskWithProject) => TaskWithProject) => {
     queryClient.setQueryData<TaskWithProject[]>(tasksKey, (old) => {
@@ -73,9 +73,6 @@ export function useTasks(userId: string | null, addToast: (msg: string, type?: '
       if (context?.previousTasks) queryClient.setQueryData(tasksKey, context.previousTasks)
       addToast('Failed to update task.', 'error')
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: tasksKey })
-    },
   })
 
   const toggleFlag = useMutation({
@@ -99,9 +96,6 @@ export function useTasks(userId: string | null, addToast: (msg: string, type?: '
       if (context?.previousTasks) queryClient.setQueryData(tasksKey, context.previousTasks)
       addToast('Failed to update task.', 'error')
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: tasksKey })
-    },
   })
 
   const moveTask = useMutation({
@@ -124,9 +118,6 @@ export function useTasks(userId: string | null, addToast: (msg: string, type?: '
       if (context?.previousTasks) queryClient.setQueryData(tasksKey, context.previousTasks)
       addToast('Failed to move task.', 'error')
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: tasksKey })
-    },
   })
 
   const editDescription = useMutation({
@@ -146,9 +137,6 @@ export function useTasks(userId: string | null, addToast: (msg: string, type?: '
     onError: (err, variables, context) => {
       if (context?.previousTasks) queryClient.setQueryData(tasksKey, context.previousTasks)
       addToast('Failed to update task.', 'error')
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: tasksKey })
     },
   })
 
@@ -170,21 +158,16 @@ export function useTasks(userId: string | null, addToast: (msg: string, type?: '
       if (context?.previousTasks) queryClient.setQueryData(tasksKey, context.previousTasks)
       addToast('Failed to delete task.', 'error')
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: tasksKey })
-    },
   })
 
   const reorderTasks = useMutation({
     mutationFn: async ({ orderedIds }: { orderedIds: string[]; weekDateStr: string }) => {
-      await Promise.all(
-        orderedIds.map((id, idx) =>
-          supabase
-            .from('tasks')
-            .update({ sort_order: idx, updated_at: new Date().toISOString(), updated_by: userId })
-            .eq('id', id)
-        )
-      )
+      const { error } = await supabase.rpc('batch_update_sort_order', {
+        task_ids: orderedIds,
+        sort_orders: orderedIds.map((_, i) => i),
+        updated_by_user: userId,
+      })
+      if (error) throw error
     },
     onMutate: async ({ orderedIds, weekDateStr }) => {
       await queryClient.cancelQueries({ queryKey: tasksKey })

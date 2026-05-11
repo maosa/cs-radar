@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import ProductBadge from '@/components/tasks/ProductBadge'
@@ -21,27 +21,12 @@ import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
 import SharedFilterBar, { SortMode } from '@/components/tasks/shared/SharedFilterBar'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { useTasksQuery } from '@/lib/hooks/useTasks'
+import { taskBg, descClass, projectName } from '@/lib/taskUtils'
 
 type AnyTask = TaskWithProject
 type SearchResult = { task: AnyTask; weekLabel: string }
 
 const PRODUCT_ORDER: Record<string, number> = { AH: 0, EH: 1, NURO: 2, 'N/A': 3 }
-
-function taskBg(t: AnyTask): React.CSSProperties {
-  if (t.status === 'complete') return { backgroundColor: '#C3FFF8' }
-  if (t.is_flagged) return { backgroundColor: '#FFCDD3' }
-  return { backgroundColor: '#FFFFFF' }
-}
-
-function descClass(t: AnyTask): string {
-  if (t.status === 'complete') return 'line-through text-text-muted'
-  if (t.is_flagged) return 'text-red-dark'
-  return 'text-navy'
-}
-
-function projectName(t: AnyTask): string {
-  return t.project_name ?? '—'
-}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -55,7 +40,7 @@ interface ReadOnlyRowProps {
   isHighlighted: boolean
 }
 
-function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted }: ReadOnlyRowProps) {
+const ReadOnlyTaskRow = memo(function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted }: ReadOnlyRowProps) {
   const taskWeekIndex = dateStringToWeekIndex(task.week_start_date)
   const bg = taskBg(task)
   const dc = descClass(task)
@@ -115,8 +100,7 @@ function ReadOnlyTaskRow({ task, visibleWeekIndices, onOpenPanel, isHighlighted 
       })}
     </tr>
   )
-}
-
+})
 
 // ─── Task table ───────────────────────────────────────────────────────────────
 
@@ -214,7 +198,7 @@ export default function ManagerTaskView({ adminUserId }: ManagerTaskViewProps) {
   const todayWeekIndex = getCurrentWeekIndex()
   const [viewMode, setViewMode] = useState<ViewMode>('focused')
   const [centerWeekIndex, setCenterWeekIndex] = useState(todayWeekIndex)
-  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(adminUserId)
+  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(adminUserId, 'managed')
   const [loadingUser, setLoadingUser] = useState(true)
   const [adminName, setAdminName] = useState('')
 

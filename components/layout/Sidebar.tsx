@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ListTodo, Users, Settings, ChevronRight, ChevronLeft } from 'lucide-react'
+import { ListTodo, Users, Settings, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
+import { useSidebarCounter } from '@/lib/sidebar-context'
 
 const STORAGE_KEY = 'sidebar_expanded'
 
@@ -17,10 +18,12 @@ interface NavItem {
 
 export default function Sidebar() {
   const { userId } = useAuth()
+  const refreshCounter = useSidebarCounter()
   const [expanded, setExpanded] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [hasManagerRelationships, setHasManagerRelationships] = useState(false)
   const [pendingInviteCount, setPendingInviteCount] = useState(0)
+  const [fetchError, setFetchError] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -32,30 +35,33 @@ export default function Sidebar() {
   useEffect(() => {
     if (!userId) return
 
-    const fetchRelationshipData = () => {
-      supabase
-        .from('manager_relationships')
-        .select('id')
-        .eq('manager_user_id', userId)
-        .eq('status', 'accepted')
-        .limit(1)
-        .then(({ data }) => {
-          setHasManagerRelationships(Array.isArray(data) && data.length > 0)
-        })
-      supabase
-        .from('manager_relationships')
-        .select('id', { count: 'exact', head: true })
-        .eq('manager_user_id', userId)
-        .eq('status', 'pending')
-        .then(({ count }) => {
-          setPendingInviteCount(count ?? 0)
-        })
+    const fetchRelationshipData = async () => {
+      const [relResult, countResult] = await Promise.all([
+        supabase
+          .from('manager_relationships')
+          .select('id')
+          .eq('manager_user_id', userId)
+          .eq('status', 'accepted')
+          .limit(1),
+        supabase
+          .from('manager_relationships')
+          .select('id', { count: 'exact', head: true })
+          .eq('manager_user_id', userId)
+          .eq('status', 'pending'),
+      ])
+
+      if (relResult.error || countResult.error) {
+        setFetchError(true)
+        return
+      }
+
+      setFetchError(false)
+      setHasManagerRelationships(Array.isArray(relResult.data) && relResult.data.length > 0)
+      setPendingInviteCount(countResult.count ?? 0)
     }
 
     fetchRelationshipData()
-    window.addEventListener('sidebar:refresh', fetchRelationshipData)
-    return () => window.removeEventListener('sidebar:refresh', fetchRelationshipData)
-  }, [userId])
+  }, [userId, refreshCounter])
 
   const toggle = () => {
     setExpanded((prev) => {
@@ -114,7 +120,16 @@ export default function Sidebar() {
       </nav>
 
       {/* Settings — pinned to bottom */}
-      <div className="px-2 pb-4">
+      <div className="px-2 pb-4 flex flex-col gap-1">
+        {fetchError && (
+          <div
+            className="flex items-center gap-1.5 px-2 py-1.5 text-white/50"
+            title="Could not load sidebar data. Check your connection."
+          >
+            <AlertCircle size={14} className="flex-shrink-0" />
+            {isExpanded && <span className="text-[11px]">Could not load data</span>}
+          </div>
+        )}
         <NavLink
           item={{ href: '/settings', label: 'Settings', icon: <Settings size={20} /> }}
           expanded={isExpanded}

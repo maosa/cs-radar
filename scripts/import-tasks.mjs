@@ -162,111 +162,98 @@ async function main() {
   const projectMap = {};
   for (const p of existingProjects ?? []) projectMap[p.name] = p.id;
 
-  let projectsCreated = 0;
+  const newProjectNames = uniqueProjectNames.filter((name) => !projectMap[name]);
   let projectSortOrder = (existingProjects?.length ?? 0) + 1;
 
-  for (const name of uniqueProjectNames) {
-    if (projectMap[name]) continue;
-
-    const { data: newProj, error: projErr } = await supabase
+  if (newProjectNames.length > 0) {
+    const { data: newProjects, error: projErr } = await supabase
       .from('projects')
-      .insert({ admin_user_id: userId, name, sort_order: projectSortOrder++ })
-      .select('id')
-      .single();
+      .insert(newProjectNames.map((name) => ({ admin_user_id: userId, name, sort_order: projectSortOrder++ })))
+      .select('id, name');
 
     if (projErr) {
-      console.error(`Failed to create project "${name}":`, projErr.message);
+      console.error('Failed to create projects:', projErr.message);
       process.exit(1);
     }
 
-    projectMap[name] = newProj.id;
-    projectsCreated++;
-    console.log(`  Created project: ${name}`);
+    for (const p of newProjects ?? []) {
+      projectMap[p.name] = p.id;
+      console.log(`  Created project: ${p.name}`);
+    }
   }
 
-  console.log(`Projects: ${projectsCreated} created, ${(existingProjects?.length ?? 0)} pre-existing`);
+  console.log(`Projects: ${newProjectNames.length} created, ${(existingProjects?.length ?? 0)} pre-existing`);
 
-  // 4. Insert tasks, notes, and comments
-  let tasksInserted = 0;
-  let notesInserted = 0;
-  let commentsInserted = 0;
-  const errors = [];
-
-  // Track sort_order per week
+  // 4. Build task payloads with pre-generated IDs so notes/comments can reference them
+  const { randomUUID } = await import('crypto');
   const weekSortCounters = {};
+  const taskPayloads = [];
+  const notePayloads = [];
+  const commentPayloads = [];
 
   for (let i = 0; i < records.length; i++) {
     const r = records[i];
-    const rowNum = i + 2; // 1-based + header row
+    const weekStartDate = parseDate(r['Week']);
+    const projectName = r['Project'];
+    const projectId = projectName ? projectMap[projectName] : null;
 
-    try {
-      const weekStartDate = parseDate(r['Week']);
-      const projectName = r['Project'];
-      const projectId = projectName ? projectMap[projectName] : null;
+    weekSortCounters[weekStartDate] = (weekSortCounters[weekStartDate] ?? 0) + 1;
+    const sortOrder = weekSortCounters[weekStartDate];
+    const taskId = randomUUID();
 
-      weekSortCounters[weekStartDate] = (weekSortCounters[weekStartDate] ?? 0) + 1;
-      const sortOrder = weekSortCounters[weekStartDate];
+    taskPayloads.push({
+      id: taskId,
+      admin_user_id: userId,
+      product: r['Product'] || 'N/A',
+      project_id: projectId,
+      description: r['Task Description'],
+      week_start_date: weekStartDate,
+      status: mapStatus(r['Status']),
+      is_flagged: mapFlagged(r['Flagged']),
+      sort_order: sortOrder,
+      created_by: userId,
+    });
 
-      const { data: task, error: taskErr } = await supabase
-        .from('tasks')
-        .insert({
-          admin_user_id: userId,
-          product: r['Product'] || 'N/A',
-          project_id: projectId,
-          description: r['Task Description'],
-          week_start_date: weekStartDate,
-          status: mapStatus(r['Status']),
-          is_flagged: mapFlagged(r['Flagged']),
-          sort_order: sortOrder,
-          created_by: userId,
-        })
-        .select('id')
-        .single();
-
-      if (taskErr) throw new Error(`Task insert: ${taskErr.message}`);
-      tasksInserted++;
-
-      const taskId = task.id;
-
-      const noteContent = r['Notes'];
-      if (noteContent) {
-        const { error: noteErr } = await supabase
-          .from('task_notes')
-          .insert({ task_id: taskId, content: noteContent, created_by: userId });
-        if (noteErr) throw new Error(`Note insert: ${noteErr.message}`);
-        notesInserted++;
-      }
-
-      const commentContent = r['Comments'];
-      if (commentContent) {
-        const { error: commentErr } = await supabase
-          .from('task_comments')
-          .insert({ task_id: taskId, content: commentContent, created_by: userId });
-        if (commentErr) throw new Error(`Comment insert: ${commentErr.message}`);
-        commentsInserted++;
-      }
-
-    } catch (err) {
-      errors.push({ rowNum, description: r['Task Description']?.slice(0, 60), error: err.message });
+    if (r['Notes']) {
+      notePayloads.push({ task_id: taskId, content: r['Notes'], created_by: userId });
+    }
+    if (r['Comments']) {
+      commentPayloads.push({ task_id: taskId, content: r['Comments'], created_by: userId });
     }
   }
 
-  // 5. Summary
-  console.log('\n=== Import Complete ===');
-  console.log(`Tasks inserted:    ${tasksInserted}`);
-  console.log(`Projects created:  ${projectsCreated}`);
-  console.log(`Notes inserted:    ${notesInserted}`);
-  console.log(`Comments inserted: ${commentsInserted}`);
-
-  if (errors.length > 0) {
-    console.log(`\nErrors (${errors.length}):`);
-    for (const e of errors) {
-      console.log(`  Row ${e.rowNum} "${e.description}": ${e.error}`);
-    }
+  // 5. Batch insert tasks, then notes and comments in parallel
+  const { error: taskErr } = await supabase.from('tasks').insert(taskPayloads);
+  if (taskErr) {
+    console.error('Failed to insert tasks:', taskErr.message);
     process.exit(1);
-  } else {
-    console.log('\nAll rows imported successfully.');
   }
+
+  const [noteRes, commentRes] = await Promise.all([
+    notePayloads.length > 0
+      ? supabase.from('task_notes').insert(notePayloads)
+      : Promise.resolve({ error: null }),
+    commentPayloads.length > 0
+      ? supabase.from('task_comments').insert(commentPayloads)
+      : Promise.resolve({ error: null }),
+  ]);
+
+  if (noteRes.error) {
+    console.error('Failed to insert notes:', noteRes.error.message);
+    process.exit(1);
+  }
+  if (commentRes.error) {
+    console.error('Failed to insert comments:', commentRes.error.message);
+    process.exit(1);
+  }
+
+  // 6. Summary
+  console.log('\n=== Import Complete ===');
+  console.log(`Tasks inserted:    ${taskPayloads.length}`);
+  console.log(`Projects created:  ${newProjectNames.length}`);
+  console.log(`Notes inserted:    ${notePayloads.length}`);
+  console.log(`Comments inserted: ${commentPayloads.length}`);
+  console.log('\nAll rows imported successfully.');
 }
 
 main().catch(err => {

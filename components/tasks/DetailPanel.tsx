@@ -257,33 +257,26 @@ export default function DetailPanel({
     fetchNote()
   }, [taskId])
 
-  // Fetch comments
+  // Fetch comments (single query with join — no N+1)
   useEffect(() => {
     const fetchComments = async () => {
       setCommentsLoading(true)
       const { data } = await supabase
         .from('task_comments')
-        .select('*')
+        .select('*, author:users!created_by(first_name, last_name)')
         .eq('task_id', taskId)
         .order('created_at')
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map((c) => c.created_by))]
-        const nameMap: Record<string, string> = {}
-        const { data: users } = await supabase
-          .from('users')
-          .select('id, first_name, last_name')
-          .in('id', userIds)
-        if (users) {
-          users.forEach((u) => {
-            const name = [u.first_name, u.last_name].filter(Boolean).join(' ')
-            nameMap[u.id] = name || 'Unknown'
-          })
-        }
+      if (data) {
         setComments(
-          data.map((c) => ({
-            ...c,
-            author_name: c.created_by === userId ? 'You' : (nameMap[c.created_by] || 'Unknown'),
-          }))
+          data.map((c) => {
+            const author = c.author as { first_name: string | null; last_name: string | null } | null
+            const name = author ? [author.first_name, author.last_name].filter(Boolean).join(' ') : ''
+            const { author: _a, ...rest } = c
+            return {
+              ...rest,
+              author_name: c.created_by === userId ? 'You' : (name || 'Unknown'),
+            }
+          })
         )
       }
       setCommentsLoading(false)

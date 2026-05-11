@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import type { DefaultLanding, Product, ProjectRow } from '@/lib/supabase/types'
 import ProductBadge from '@/components/tasks/ProductBadge'
 import { GripVertical, Pencil, Trash2, Check, X, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { useSidebarRefresh, useSidebarCounter } from '@/lib/sidebar-context'
+import { ToastContainer, type Toast } from '@/components/ui/ToastContainer'
 import {
   DndContext,
   closestCenter,
@@ -69,30 +71,6 @@ interface DeclinedRow {
   invited_at: string
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
-
-interface Toast { id: string; message: string; type: 'success' | 'error' }
-
-function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: string) => void }) {
-  return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-[6px] text-[13px] font-medium shadow-lg border ${
-            t.type === 'error'
-              ? 'bg-white border-red-flag text-red-dark'
-              : 'bg-navy border-transparent text-white'
-          }`}
-        >
-          {t.message}
-          <button onClick={() => onDismiss(t.id)} className="ml-1 opacity-60 hover:opacity-100 text-[11px] font-bold">✕</button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 // ─── Confirm Dialog ───────────────────────────────────────────────────────────
@@ -150,6 +128,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
   const { userId } = useAuth()
+  const sidebarCounter = useSidebarCounter()
   const [user, setUser] = useState<UserRow | null>(null)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -185,19 +164,15 @@ function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' |
 
   // Re-check manager role whenever an invitation is accepted or declined
   useEffect(() => {
-    const refresh = async () => {
-      if (!userId) return
-      const { data } = await supabase
-        .from('manager_relationships')
-        .select('id')
-        .eq('manager_user_id', userId)
-        .eq('status', 'accepted')
-        .limit(1)
-      setHasManagerRole(Array.isArray(data) && data.length > 0)
-    }
-    window.addEventListener('sidebar:refresh', refresh)
-    return () => window.removeEventListener('sidebar:refresh', refresh)
-  }, [userId])
+    if (!userId) return
+    supabase
+      .from('manager_relationships')
+      .select('id')
+      .eq('manager_user_id', userId)
+      .eq('status', 'accepted')
+      .limit(1)
+      .then(({ data }) => setHasManagerRole(Array.isArray(data) && data.length > 0))
+  }, [userId, sidebarCounter])
 
   const handleSave = async () => {
     if (!userId) return
@@ -354,7 +329,7 @@ interface SortableProjectRowProps {
   onDelete: (project: ProjectRow) => void
 }
 
-function SortableProjectRow({
+const SortableProjectRow = memo(function SortableProjectRow({
   project,
   editingId,
   editName,
@@ -476,7 +451,7 @@ function SortableProjectRow({
       )}
     </div>
   )
-}
+})
 
 function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
   const { userId } = useAuth()
@@ -787,6 +762,7 @@ const RedDot = () => <span className="w-2 h-2 rounded-full bg-red-dark opacity-6
 
 function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
   const { userId } = useAuth()
+  const triggerSidebarRefresh = useSidebarRefresh()
   const [loading, setLoading] = useState(true)
   const [managing, setManaging] = useState<ManagingRow[]>([])
   const [beingManaged, setBeingManaged] = useState<BeingManagedRow[]>([])
@@ -901,7 +877,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
     setActing(null)
     if (error) { onToast('Failed to accept invitation.', 'error') } else {
       onToast('Invitation accepted.')
-      window.dispatchEvent(new Event('sidebar:refresh'))
+      triggerSidebarRefresh()
       loadAll()
     }
   }
@@ -913,7 +889,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
     setActing(null)
     if (error) { onToast('Failed to decline invitation.', 'error') } else {
       onToast('Invitation declined.')
-      window.dispatchEvent(new Event('sidebar:refresh'))
+      triggerSidebarRefresh()
       loadAll()
     }
   }
@@ -937,7 +913,7 @@ function TeamManagementSection({ onToast }: { onToast: (msg: string, type?: 'suc
     setActing(null)
     if (error) { onToast('Action failed. Please try again.', 'error') } else {
       onToast(successMsg)
-      if (refreshSidebar) window.dispatchEvent(new Event('sidebar:refresh'))
+      if (refreshSidebar) triggerSidebarRefresh()
       loadAll()
     }
   }

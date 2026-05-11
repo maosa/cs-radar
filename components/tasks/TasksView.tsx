@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -44,6 +44,8 @@ import {
   Pencil,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { ToastContainer, type Toast } from '@/components/ui/ToastContainer'
+import { taskBg, descClass, projectName } from '@/lib/taskUtils'
 
 import SharedToolbar from './shared/SharedToolbar'
 import SharedFilterBar, { SortMode, UniqueProject } from './shared/SharedFilterBar'
@@ -51,61 +53,9 @@ import { useDebounce } from '@/lib/hooks/useDebounce'
 import { useTasks, useTasksQuery, useProjectsQuery } from '@/lib/hooks/useTasks'
 
 type ViewMode = 'focused' | 'expanded'
-
-const PRODUCT_ORDER: Record<string, number> = { AH: 0, EH: 1, NURO: 2, 'N/A': 3 }
-
-// ─── Toasts ──────────────────────────────────────────────────────────────────
-
-interface Toast {
-  id: string
-  message: string
-  type: 'success' | 'error'
-}
-
-function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: string) => void }) {
-  return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-[6px] text-[13px] font-medium shadow-lg border ${
-            t.type === 'error'
-              ? 'bg-white border-red-flag text-red-dark'
-              : 'bg-navy border-transparent text-white'
-          }`}
-        >
-          {t.message}
-          <button
-            onClick={() => onDismiss(t.id)}
-            className="ml-1 opacity-60 hover:opacity-100 text-[11px] font-bold"
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Task normalisation ───────────────────────────────────────────────────────
-
 type AnyTask = TaskWithProject
 
-function taskBg(t: AnyTask): React.CSSProperties {
-  if (t.status === 'complete') return { backgroundColor: '#C3FFF8' }
-  if (t.is_flagged) return { backgroundColor: '#FFCDD3' }
-  return { backgroundColor: '#FFFFFF' }
-}
-
-function descClass(t: AnyTask): string {
-  if (t.status === 'complete') return 'line-through text-text-muted'
-  if (t.is_flagged) return 'text-red-dark'
-  return 'text-navy'
-}
-
-function projectName(t: AnyTask): string {
-  return t.project_name ?? '—'
-}
+const PRODUCT_ORDER: Record<string, number> = { AH: 0, EH: 1, NURO: 2, 'N/A': 3 }
 
 // ─── Delete confirmation modal ────────────────────────────────────────────────
 
@@ -224,7 +174,7 @@ interface RowProps {
   isHighlighted: boolean
 }
 
-function SortableTaskRow(props: RowProps) {
+const SortableTaskRow = memo(function SortableTaskRow(props: RowProps) {
   const { task, visibleWeekIndices, onToggleComplete, onToggleFlag, onMove, onDelete, onOpenPanel, onEditDescription, isDragMode, isHighlighted } = props
   const [showMoveDropdown, setShowMoveDropdown] = useState(false)
   const [showMoveBackDropdown, setShowMoveBackDropdown] = useState(false)
@@ -413,9 +363,7 @@ function SortableTaskRow(props: RowProps) {
       })}
     </tr>
   )
-}
-
-
+})
 
 // ─── Task table ────────────────────────────────────────────────────────────────
 
@@ -627,7 +575,7 @@ export default function TasksView() {
   const [viewMode, setViewMode] = useState<ViewMode>('focused')
   const [centerWeekIndex, setCenterWeekIndex] = useState(todayWeekIndex)
 
-  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(userId)
+  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(userId, 'own')
   const { data: projects = [], isLoading: loadingProjects } = useProjectsQuery(userId)
   const loading = loadingTasks || loadingProjects
 
