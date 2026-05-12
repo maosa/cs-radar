@@ -1,14 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 
 export default function TopBar() {
   const { userId } = useAuth()
-  const router = useRouter()
   const [initials, setInitials] = useState('?')
   const [fullName, setFullName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -45,7 +43,7 @@ export default function TopBar() {
 
   async function handleSignOut() {
     await supabase.auth.signOut()
-    router.push('/login')
+    window.location.href = '/login'
   }
 
   return (
