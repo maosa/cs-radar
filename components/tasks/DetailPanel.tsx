@@ -76,6 +76,15 @@ export default function DetailPanel({
   const [noteLoading, setNoteLoading] = useState(true)
   const lastSavedContent = useRef('')
 
+  // Auto-resize description textarea to fit content
+  const descriptionRef = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const el = descriptionRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [form.description])
+
   // Comments state
   const [comments, setComments] = useState<CommentRow[]>([])
   const [commentsLoading, setCommentsLoading] = useState(true)
@@ -351,10 +360,11 @@ export default function DetailPanel({
               <p className="text-[13px] font-medium text-navy leading-snug">{taskDescription}</p>
             ) : (
               <textarea
+                ref={descriptionRef}
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                rows={2}
-                className="w-full text-[13px] font-medium text-navy leading-snug resize-none bg-transparent border border-transparent rounded-[4px] focus:outline-none focus:border-navy-mid focus:bg-white px-1 -mx-1 transition-colors"
+                rows={1}
+                className="w-full text-[13px] font-medium text-navy leading-snug resize-none bg-transparent border border-transparent rounded-[4px] focus:outline-none focus:border-navy-mid focus:bg-white px-1 -mx-1 transition-colors overflow-hidden"
               />
             )}
           </div>
