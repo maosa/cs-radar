@@ -40,7 +40,7 @@ const ReadOnlyTaskRow = memo(function ReadOnlyTaskRow({ task, visibleWeekIndices
           >
             {isTaskWeek && (
               <div className={`flex items-center gap-2 min-w-0 rounded-[4px] transition-all ${isHighlighted ? 'ring-2 ring-navy-mid ring-offset-1' : ''}`}>
-                <span className={`flex-1 min-w-0 truncate ${dc}`}>{task.description}</span>
+                <span className={`flex-1 min-w-0 break-words ${dc}`}>{task.description}</span>
                 {task.is_flagged && <Flag size={14} className="flex-shrink-0 text-red-flag fill-red-flag" />}
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity">
                   <button
