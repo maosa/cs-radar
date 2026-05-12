@@ -29,34 +29,14 @@ function CommentItem({
   onDelete,
 }: CommentItemProps) {
   return (
-    <div className="group">
-      <div className="flex items-center justify-between gap-2 mb-1">
+    <div className="group border border-border rounded-[8px] bg-bg px-3 py-2.5">
+      <div className="flex items-center justify-between gap-2 mb-1.5">
         <span className="text-[12px] font-medium text-navy truncate">
           {comment.author_name || 'Unknown'}
         </span>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[11px] text-text-muted">
-            {formatTimestamp(comment.updated_at || comment.created_at)}
-          </span>
-          {!isEditing && canEdit && (
-            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5">
-              <button
-                onClick={onEditStart}
-                className="p-1 rounded text-text-muted hover:text-navy hover:bg-bg transition-colors"
-                title="Edit comment"
-              >
-                <Pencil size={12} />
-              </button>
-              <button
-                onClick={onDelete}
-                className="p-1 rounded text-text-muted hover:text-red-flag hover:bg-red-hover transition-colors"
-                title="Delete comment"
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
-          )}
-        </div>
+        <span className="text-[11px] text-text-muted flex-shrink-0">
+          {formatTimestamp(comment.updated_at || comment.created_at)}
+        </span>
       </div>
 
       {isEditing ? (
@@ -85,7 +65,27 @@ function CommentItem({
           </div>
         </div>
       ) : (
-        <p className="text-[13px] text-text-secondary whitespace-pre-wrap break-words">{comment.content}</p>
+        <>
+          <p className="text-[13px] text-text-secondary whitespace-pre-wrap break-words">{comment.content}</p>
+          {canEdit && (
+            <div className="flex justify-end gap-0.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={onEditStart}
+                className="p-1 rounded text-text-muted hover:text-navy hover:bg-white transition-colors"
+                title="Edit comment"
+              >
+                <Pencil size={12} />
+              </button>
+              <button
+                onClick={onDelete}
+                className="p-1 rounded text-text-muted hover:text-red-flag hover:bg-red-hover transition-colors"
+                title="Delete comment"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -142,7 +142,7 @@ export default function CommentsSection({
             <p className="text-[13px] text-text-muted mb-4">No comments yet.</p>
           )}
           {comments.length > 0 && (
-            <div className="flex flex-col gap-4 mb-4">
+            <div className="flex flex-col gap-2.5 mb-4">
               {comments.map((comment) => (
                 <CommentItem
                   key={comment.id}
