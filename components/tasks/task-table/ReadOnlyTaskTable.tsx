@@ -37,7 +37,7 @@ export default function ReadOnlyTaskTable({
     })
 
   return (
-    <div className="overflow-x-auto flex-1">
+    <div className="overflow-y-auto flex-1">
       <table className="border-separate border-spacing-0" style={{ minWidth: '100%', tableLayout: 'fixed' }}>
         <colgroup>
           <col style={{ width: 84, minWidth: 84 }} />
