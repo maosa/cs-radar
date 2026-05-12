@@ -47,6 +47,21 @@ export function useTasksQuery(
     return () => { supabase.removeChannel(channel) }
   }, [scope, adminUserId, queryClient])
 
+  // Live updates when comments are added or deleted by any party — keeps comment_count
+  // in sync across both the owner's and manager's views without a page refresh.
+  useEffect(() => {
+    if (!adminUserId) return
+    const channel = supabase
+      .channel(`task_comments:${scope}:${adminUserId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'task_comments' },
+        () => { queryClient.invalidateQueries({ queryKey: ['tasks', scope, adminUserId] }) }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [scope, adminUserId, queryClient])
+
   // Refetch when the week window expands so newly visible weeks are loaded
   const prevFromRef = useRef<string | undefined>(undefined)
   const prevToRef = useRef<string | undefined>(undefined)
