@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase/client'
 import ProductBadge from './ProductBadge'
 import { X } from 'lucide-react'
@@ -49,6 +50,7 @@ export default function DetailPanel({
   canEditAllComments = true,
 }: DetailPanelProps) {
   const { userId } = useAuth()
+  const queryClient = useQueryClient()
 
   // Slide-in animation
   const [visible, setVisible] = useState(false)
@@ -267,9 +269,10 @@ export default function DetailPanel({
     if (!error && data) {
       setComments((prev) => [...prev, { ...data, author_name: 'You' }])
       setNewComment('')
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
     }
     setAddingComment(false)
-  }, [newComment, taskId, userId])
+  }, [newComment, taskId, userId, queryClient])
 
   const handleEditSave = useCallback(async (commentId: string) => {
     if (!editContent.trim()) return

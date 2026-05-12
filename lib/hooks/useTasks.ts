@@ -70,7 +70,7 @@ export function useTasksQuery(
       const range = weekRangeRef.current
       let query = supabase
         .from('tasks')
-        .select('*, projects(name)')
+        .select('*, projects(name), task_comments(count)')
         .eq('admin_user_id', adminUserId)
         .order('week_start_date')
         .order('sort_order')
@@ -81,8 +81,13 @@ export function useTasksQuery(
       if (error) throw error
       return data.map((row: any) => {
         const proj = row.projects as { name: string } | null
-        const { projects: _p, ...rest } = row
-        return { ...rest, project_name: proj?.name ?? null } as TaskWithProject
+        const tc = row.task_comments as { count: number }[] | null
+        const { projects: _p, task_comments: _tc, ...rest } = row
+        return {
+          ...rest,
+          project_name: proj?.name ?? null,
+          comment_count: Array.isArray(tc) ? (tc[0]?.count ?? 0) : 0,
+        } as TaskWithProject
       })
     },
     enabled: !!adminUserId,

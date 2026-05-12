@@ -42,13 +42,13 @@ const ReadOnlyTaskRow = memo(function ReadOnlyTaskRow({ task, visibleWeekIndices
               <div className={`flex items-center gap-2 min-w-0 rounded-[4px] transition-all ${isHighlighted ? 'ring-2 ring-navy-mid ring-offset-1' : ''}`}>
                 <span className={`flex-1 min-w-0 break-words ${dc}`}>{task.description}</span>
                 {task.is_flagged && <Flag size={14} className="flex-shrink-0 text-red-flag fill-red-flag" />}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity">
+                <div className={`flex items-center gap-1 flex-shrink-0 transition-opacity ${task.comment_count > 0 ? '' : 'opacity-0 group-hover:opacity-100'}`}>
                   <button
                     onClick={() => onOpenPanel(task.id, 'comments')}
                     className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
                     title="View comments"
                   >
-                    <MessageSquare size={14} />
+                    <MessageSquare size={14} className={task.comment_count > 0 ? 'fill-current' : ''} />
                   </button>
                 </div>
               </div>

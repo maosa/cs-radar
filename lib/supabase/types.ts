@@ -31,6 +31,7 @@ export type ProjectRow = {
 
 export interface TaskWithProject extends TaskRow {
   project_name: string | null
+  comment_count: number
 }
 
 export type Product = 'AH' | 'NURO' | 'EH' | 'N/A'

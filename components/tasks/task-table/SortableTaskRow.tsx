@@ -3,7 +3,7 @@
 import { useState, memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Flag, ArrowLeft, ArrowRight, Trash2, GripVertical, PanelRight, Pencil } from 'lucide-react'
+import { Flag, ChevronsLeftRight, Trash2, GripVertical, PanelRight, Pencil, MessageSquare } from 'lucide-react'
 import ProductBadge from '../ProductBadge'
 import MoveDropdown, { MOVE_FORWARD_OPTIONS, MOVE_BACK_OPTIONS } from './MoveDropdown'
 import { dateStringToWeekIndex } from '@/lib/weeks'
@@ -26,7 +26,6 @@ interface EditableRowProps {
 const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
   const { task, visibleWeekIndices, onToggleComplete, onToggleFlag, onMove, onDelete, onOpenPanel, onEditDescription, isDragMode, isHighlighted } = props
   const [showMoveDropdown, setShowMoveDropdown] = useState(false)
-  const [showMoveBackDropdown, setShowMoveBackDropdown] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const taskWeekIndex = dateStringToWeekIndex(task.week_start_date)
@@ -133,32 +132,15 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
                     </button>
                     <div className="relative">
                       <button
-                        onClick={() => { setShowMoveBackDropdown((v) => !v); setShowMoveDropdown(false) }}
+                        onClick={() => setShowMoveDropdown((v) => !v)}
                         className="p-1 rounded text-text-muted hover:text-navy hover:bg-bg transition-colors"
-                        title="Move to a previous week"
+                        title="Move to another week"
                       >
-                        <ArrowLeft size={14} />
-                      </button>
-                      {showMoveBackDropdown && (
-                        <MoveDropdown
-                          options={MOVE_BACK_OPTIONS}
-                          align="left"
-                          onMove={(weeks) => onMove(task.id, weeks)}
-                          onClose={() => setShowMoveBackDropdown(false)}
-                        />
-                      )}
-                    </div>
-                    <div className="relative">
-                      <button
-                        onClick={() => { setShowMoveDropdown((v) => !v); setShowMoveBackDropdown(false) }}
-                        className="p-1 rounded text-text-muted hover:text-navy hover:bg-bg transition-colors"
-                        title="Move to a future week"
-                      >
-                        <ArrowRight size={14} />
+                        <ChevronsLeftRight size={14} />
                       </button>
                       {showMoveDropdown && (
                         <MoveDropdown
-                          options={MOVE_FORWARD_OPTIONS}
+                          groups={[MOVE_FORWARD_OPTIONS, MOVE_BACK_OPTIONS]}
                           align="right"
                           onMove={(weeks) => onMove(task.id, weeks)}
                           onClose={() => setShowMoveDropdown(false)}
@@ -180,6 +162,16 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
                       <Trash2 size={14} />
                     </button>
                   </div>
+                )}
+
+                {task.comment_count > 0 && !isEditing && (
+                  <button
+                    onClick={() => onOpenPanel(task.id, 'comments')}
+                    className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors flex-shrink-0"
+                    title="View comments"
+                  >
+                    <MessageSquare size={14} className="fill-current" />
+                  </button>
                 )}
               </div>
             )}
