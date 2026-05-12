@@ -38,9 +38,16 @@ export default function SignupPage() {
       return
     }
 
-    // identities is empty when the email is already registered (confirmed or not).
-    // Supabase does not send a new confirmation email in this case.
+    // identities is empty when the email is already registered (unconfirmed).
     if (data.user && (data.user.identities?.length ?? 0) === 0) {
+      setDuplicateEmail(true)
+      setLoading(false)
+      return
+    }
+
+    // Newer Supabase behaviour: signing up with an already-confirmed email returns
+    // { user: null, session: null } as a silent fake-success to prevent enumeration.
+    if (!data.user && !data.session) {
       setDuplicateEmail(true)
       setLoading(false)
       return
