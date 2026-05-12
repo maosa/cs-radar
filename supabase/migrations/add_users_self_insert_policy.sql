@@ -2,9 +2,20 @@
 -- This is needed as a defensive fallback in the login flow: if the
 -- handle_new_user trigger failed to create the row at signup time, the
 -- login page can upsert it directly from the client.
-create policy if not exists "users: self insert"
-  on public.users for insert
-  with check (auth.uid() = id);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename  = 'users'
+      and policyname = 'users: self insert'
+  ) then
+    create policy "users: self insert"
+      on public.users for insert
+      with check (auth.uid() = id);
+  end if;
+end;
+$$;
 
 -- Backfill any auth.users rows that are missing from public.users
 -- (covers accounts created before the trigger was in place).
