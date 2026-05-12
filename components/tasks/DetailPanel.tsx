@@ -12,6 +12,7 @@ import DetailsForm from './detail-panel/DetailsForm'
 import NotesSection from './detail-panel/NotesSection'
 import CommentsSection from './detail-panel/CommentsSection'
 import DetailPanelFooter from './detail-panel/DetailPanelFooter'
+import DeleteConfirmModal from './task-table/DeleteConfirmModal'
 import type { NoteRow, CommentRow } from './detail-panel/types'
 
 export interface DetailPanelProps {
@@ -82,6 +83,8 @@ export default function DetailPanel({
   const [addingComment, setAddingComment] = useState(false)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<string | null>(null)
+  const [deletingComment, setDeletingComment] = useState(false)
 
   // Footer save state
   const [saving, setSaving] = useState(false)
@@ -291,15 +294,36 @@ export default function DetailPanel({
     }
   }, [editContent, userId])
 
-  const handleDeleteComment = useCallback(async (commentId: string) => {
-    const { error } = await supabase.from('task_comments').delete().eq('id', commentId)
-    if (!error) setComments((prev) => prev.filter((c) => c.id !== commentId))
+  const handleDeleteComment = useCallback((commentId: string) => {
+    setPendingDeleteCommentId(commentId)
   }, [])
+
+  const confirmDeleteComment = useCallback(async () => {
+    if (!pendingDeleteCommentId) return
+    setDeletingComment(true)
+    const { error } = await supabase.from('task_comments').delete().eq('id', pendingDeleteCommentId)
+    if (!error) {
+      setComments((prev) => prev.filter((c) => c.id !== pendingDeleteCommentId))
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    }
+    setDeletingComment(false)
+    setPendingDeleteCommentId(null)
+  }, [pendingDeleteCommentId, queryClient])
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <>
+      {pendingDeleteCommentId && (
+        <DeleteConfirmModal
+          title="Delete comment?"
+          message="Are you sure you want to delete this comment? This action cannot be undone."
+          deleting={deletingComment}
+          onConfirm={confirmDeleteComment}
+          onCancel={() => setPendingDeleteCommentId(null)}
+        />
+      )}
+
       {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
 

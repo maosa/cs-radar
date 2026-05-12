@@ -6,9 +6,17 @@ interface DeleteConfirmModalProps {
   onConfirm: () => void
   onCancel: () => void
   deleting: boolean
+  title?: string
+  message?: string
 }
 
-export default function DeleteConfirmModal({ onConfirm, onCancel, deleting }: DeleteConfirmModalProps) {
+export default function DeleteConfirmModal({
+  onConfirm,
+  onCancel,
+  deleting,
+  title = 'Delete task?',
+  message = 'Are you sure you want to delete this task? This action cannot be undone.',
+}: DeleteConfirmModalProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
     window.addEventListener('keydown', onKey)
@@ -21,10 +29,8 @@ export default function DeleteConfirmModal({ onConfirm, onCancel, deleting }: De
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel() }}
     >
       <div className="bg-white rounded-[12px] shadow-xl w-full max-w-sm mx-4 p-6">
-        <h2 className="text-[15px] font-medium text-navy mb-2">Delete task?</h2>
-        <p className="text-[13px] text-text-secondary mb-6">
-          Are you sure you want to delete this task? This action cannot be undone.
-        </p>
+        <h2 className="text-[15px] font-medium text-navy mb-2">{title}</h2>
+        <p className="text-[13px] text-text-secondary mb-6">{message}</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
