@@ -164,6 +164,7 @@ alter table public.task_comments       enable row level security;
 -- can read basic profile info (needed to resolve admin names in pending invitations)
 create policy "users: self read"          on public.users for select using (auth.uid() = id);
 create policy "users: authenticated read" on public.users for select using (auth.uid() is not null);
+create policy "users: self insert"        on public.users for insert with check (auth.uid() = id);
 create policy "users: self update"        on public.users for update using (auth.uid() = id);
 
 -- Projects: owner full access

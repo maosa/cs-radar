@@ -32,6 +32,20 @@ export default function LoginPage() {
         .eq('id', data.user.id)
         .single()
 
+      // Defensive backfill: the handle_new_user trigger should have created
+      // this row at signup, but if it didn't (e.g. trigger wasn't in place yet)
+      // we create it now so the rest of the app can find the user.
+      if (!profile) {
+        await supabase.from('users').upsert({
+          id: data.user.id,
+          email: data.user.email!,
+          first_name: data.user.user_metadata?.first_name ?? null,
+          last_name: data.user.user_metadata?.last_name ?? null,
+          role: data.user.user_metadata?.role ?? null,
+          created_at: new Date().toISOString(),
+        }, { onConflict: 'id' })
+      }
+
       router.push(profile?.default_landing === 'manager_view' ? '/manager' : '/tasks')
     } else {
       router.push('/tasks')
