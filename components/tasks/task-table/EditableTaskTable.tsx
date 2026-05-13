@@ -67,6 +67,10 @@ export default function EditableTaskTable({
       if (wA !== wB) return wA - wB
       if (sortMode === 'product') return (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
       if (sortMode === 'project') return projectName(a).localeCompare(projectName(b))
+      if (sortMode === 'product_project') {
+        const pd = (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
+        return pd !== 0 ? pd : projectName(a).localeCompare(projectName(b))
+      }
       return a.sort_order - b.sort_order
     })
 

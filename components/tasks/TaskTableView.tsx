@@ -70,6 +70,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   // Filters and search
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
+  const [filterStatuses, setFilterStatuses] = useState<string[]>([])
   const [sortMode, setSortMode] = useState<SortMode>('drag')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<{ task: AnyTask; weekLabel: string }[]>([])
@@ -204,9 +205,18 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
     () => tasks.filter((t) => {
       if (filterProducts.length > 0 && !filterProducts.includes(t.product)) return false
       if (filterProjects.length > 0 && !filterProjects.includes(t.project_id ?? '')) return false
+      if (filterStatuses.length > 0) {
+        const match = filterStatuses.some((s) =>
+          s === 'open' ? t.status === 'open' :
+          s === 'complete' ? t.status === 'complete' :
+          s === 'flagged' ? t.is_flagged :
+          false
+        )
+        if (!match) return false
+      }
       return true
     }),
-    [tasks, filterProducts, filterProjects]
+    [tasks, filterProducts, filterProjects, filterStatuses]
   )
 
   const handleToggleProduct = useCallback((p: string) => {
@@ -217,9 +227,14 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
     setFilterProjects((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
   }, [])
 
+  const handleToggleStatus = useCallback((s: string) => {
+    setFilterStatuses((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s])
+  }, [])
+
   const handleClearFilters = useCallback(() => {
     setFilterProducts([])
     setFilterProjects([])
+    setFilterStatuses([])
   }, [])
 
   const handleSearchResultClick = useCallback((task: AnyTask) => {
@@ -229,6 +244,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
     setShowSearchDropdown(false)
     setFilterProducts([])
     setFilterProjects([])
+    setFilterStatuses([])
     setTimeout(() => setHighlightedTaskId(null), 2000)
   }, [])
 
@@ -273,9 +289,11 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
         uniqueProjects={uniqueProjects}
         filterProducts={filterProducts}
         filterProjects={filterProjects}
+        filterStatuses={filterStatuses}
         sortMode={sortMode}
         onToggleProduct={handleToggleProduct}
         onToggleProject={handleToggleProject}
+        onToggleStatus={handleToggleStatus}
         onSortMode={setSortMode}
         onClearFilters={readOnly ? undefined : handleClearFilters}
         hideDragSort={readOnly}
