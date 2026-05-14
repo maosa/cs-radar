@@ -1207,20 +1207,23 @@ function AccountHealthSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex items-start gap-3 cursor-pointer">
+      <div className="flex items-start gap-3">
         <input
+          id="account-health-toggle"
           type="checkbox"
           checked={enabled}
           onChange={handleToggle}
-          className="mt-0.5 accent-navy"
+          className="mt-0.5 accent-navy cursor-pointer"
         />
         <div className="flex flex-col gap-1">
-          <span className="text-[13px] font-medium text-navy">Enable account health</span>
-          <span className="text-[12px] text-text-secondary">
-            Turn this on if you manage client accounts and want to use the monthly risk assessment features. This adds an Account health page to your sidebar.
-          </span>
+          <label htmlFor="account-health-toggle" className="text-[13px] font-medium text-navy cursor-pointer">
+            Enable account health
+          </label>
+          <p className="text-[12px] text-text-secondary">
+            Turn this on if you manage client accounts and want to use the Account Health and Risk Assessment / Matrix features. This adds an Account Health page to your sidebar.
+          </p>
         </div>
-      </label>
+      </div>
     </div>
   )
 }
