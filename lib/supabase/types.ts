@@ -47,6 +47,25 @@ export interface TaskWithProject extends TaskRow {
 }
 
 export type Product = 'AH' | 'NURO' | 'EH' | 'N/A'
+
+export type EngagementType =
+  | 'monthly_review'
+  | 'qbr'
+  | 'training'
+  | 'project_call'
+  | 'spontaneous'
+  | 'other'
+
+export type AccountHealthMetadata = {
+  id: string
+  client_account_id: string
+  admin_user_id: string
+  renewal_date: string | null
+  last_engagement_date: string | null
+  engagement_type: EngagementType | null
+  updated_at: string | null
+  updated_by: string | null
+}
 export type TaskStatus = 'open' | 'complete'
 export type RelationshipStatus = 'pending' | 'accepted' | 'archived'
 export type DefaultLanding = 'task_list' | 'manager_view'
