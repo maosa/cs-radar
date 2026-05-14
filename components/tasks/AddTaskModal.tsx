@@ -157,7 +157,7 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
             <select
               value={product}
               onChange={(e) => { setProduct(e.target.value as Product | ''); setProjectId('') }}
-              className="px-3 py-2 text-[13px] border border-border rounded-[6px] bg-white text-navy focus:outline-none focus:border-navy-mid"
+              className="pl-3 pr-7 py-2 text-[13px] border border-border rounded-[6px] bg-white text-navy focus:outline-none focus:border-navy-mid"
             >
               <option value="">Select product…</option>
               {PRODUCTS.map((p) => (
@@ -173,7 +173,7 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
               disabled={!product}
-              className={`px-3 py-2 text-[13px] border border-border rounded-[6px] text-navy focus:outline-none focus:border-navy-mid ${!product ? 'bg-bg cursor-not-allowed' : 'bg-white'}`}
+              className={`pl-3 pr-7 py-2 text-[13px] border border-border rounded-[6px] text-navy focus:outline-none focus:border-navy-mid ${!product ? 'bg-bg cursor-not-allowed' : 'bg-white'}`}
             >
               <option value="">{product ? 'Select project…' : 'Select a product first'}</option>
               {projects

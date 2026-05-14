@@ -38,7 +38,7 @@ export default function DetailsForm({
             value={form.product}
             onChange={onProductChange}
             disabled={readOnly}
-            className={`flex-1 h-8 px-2 text-[13px] border border-border rounded-[6px] text-navy focus:outline-none focus:border-navy-mid ${readOnly ? 'bg-bg cursor-not-allowed' : 'bg-white'}`}
+            className={`flex-1 h-8 pl-2 pr-7 text-[13px] border border-border rounded-[6px] text-navy focus:outline-none focus:border-navy-mid ${readOnly ? 'bg-bg cursor-not-allowed' : 'bg-white'}`}
           >
             <option value="AH">Access Hub (AH)</option>
             <option value="NURO">NURO</option>
@@ -54,7 +54,7 @@ export default function DetailsForm({
             value={form.projectId ?? ''}
             onChange={onProjectChange}
             disabled={readOnly}
-            className={`flex-1 h-8 px-2 text-[13px] border border-border rounded-[6px] text-navy focus:outline-none focus:border-navy-mid ${readOnly ? 'bg-bg cursor-not-allowed' : 'bg-white'}`}
+            className={`flex-1 h-8 pl-2 pr-7 text-[13px] border border-border rounded-[6px] text-navy focus:outline-none focus:border-navy-mid ${readOnly ? 'bg-bg cursor-not-allowed' : 'bg-white'}`}
           >
             <option value="">No project</option>
             {projects

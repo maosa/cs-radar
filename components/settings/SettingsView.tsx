@@ -382,7 +382,7 @@ const SortableProjectRow = memo(function SortableProjectRow({
           <select
             value={editProduct ?? ''}
             onChange={(e) => onEditProductChange((e.target.value as Product) || null)}
-            className="px-2 py-1.5 rounded-[6px] border border-border text-[12px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
+            className="pl-2 pr-7 py-1.5 rounded-[6px] border border-border text-[12px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
           >
             <option value="">Unassigned</option>
             {PRODUCTS.map((p) => (
@@ -713,7 +713,7 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
             <select
               value={newProduct}
               onChange={(e) => { setNewProduct(e.target.value as Product | ''); setAddError('') }}
-              className="px-2 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
+              className="pl-2 pr-7 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
             >
               <option value="">Select product…</option>
               {PRODUCTS.map((p) => (
@@ -1297,7 +1297,7 @@ const SortableClientAccountRow = memo(function SortableClientAccountRow({
           <select
             value={editProduct ?? ''}
             onChange={(e) => onEditProductChange((e.target.value as Product) || null)}
-            className="px-2 py-1.5 rounded-[6px] border border-border text-[12px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
+            className="pl-2 pr-7 py-1.5 rounded-[6px] border border-border text-[12px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
           >
             <option value="">Unassigned</option>
             {PRODUCTS.map((p) => (
@@ -1601,7 +1601,7 @@ function ClientAccountsSection({ onToast }: { onToast: (msg: string, type?: 'suc
             <select
               value={newProduct}
               onChange={(e) => { setNewProduct(e.target.value as Product | ''); setAddError('') }}
-              className="px-2 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
+              className="pl-2 pr-7 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
             >
               <option value="">Select product…</option>
               {PRODUCTS.map((p) => (

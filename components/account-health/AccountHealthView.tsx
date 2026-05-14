@@ -151,7 +151,7 @@ export default function AccountHealthView({
             value={selectedAccountId}
             onChange={e => setSelectedAccountId(e.target.value)}
             disabled={readOnly && !viewAsUserId}
-            className="h-8 px-3 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed"
+            className="h-8 pl-3 pr-7 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed"
           >
             <option value="">Select a client account…</option>
             {accounts.map(a => (
@@ -196,7 +196,7 @@ export default function AccountHealthView({
                   saveEngagementType(val)
                 }}
                 disabled={readOnly}
-                className="h-8 px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed disabled:bg-bg"
+                className="h-8 pl-2 pr-7 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed disabled:bg-bg"
               >
                 <option value="">Select…</option>
                 {(Object.keys(ENGAGEMENT_TYPE_LABELS) as EngagementType[]).map(k => (
