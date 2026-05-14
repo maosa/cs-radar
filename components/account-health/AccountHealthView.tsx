@@ -155,7 +155,9 @@ export default function AccountHealthView({
           >
             <option value="">Select a client account…</option>
             {accounts.map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+              <option key={a.id} value={a.id}>
+                {a.product ? `${a.product} - ${a.name}` : a.name}
+              </option>
             ))}
           </select>
         </div>
