@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ListTodo, Users, Settings, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react'
+import { ListTodo, Users, Settings, ChevronRight, ChevronLeft, AlertCircle, Gauge } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useSidebarCounter } from '@/lib/sidebar-context'
@@ -23,6 +23,7 @@ export default function Sidebar() {
   const [mounted, setMounted] = useState(false)
   const [hasManagerRelationships, setHasManagerRelationships] = useState(false)
   const [pendingInviteCount, setPendingInviteCount] = useState(0)
+  const [accountHealthEnabled, setAccountHealthEnabled] = useState(false)
   const [fetchError, setFetchError] = useState(false)
   const pathname = usePathname()
 
@@ -36,7 +37,7 @@ export default function Sidebar() {
     if (!userId) return
 
     const fetchRelationshipData = async () => {
-      const [relResult, countResult] = await Promise.all([
+      const [relResult, countResult, userResult] = await Promise.all([
         supabase
           .from('manager_relationships')
           .select('id')
@@ -48,6 +49,11 @@ export default function Sidebar() {
           .select('id', { count: 'exact', head: true })
           .eq('manager_user_id', userId)
           .eq('status', 'pending'),
+        supabase
+          .from('users')
+          .select('account_health_enabled')
+          .eq('id', userId)
+          .single(),
       ])
 
       if (relResult.error || countResult.error) {
@@ -58,6 +64,7 @@ export default function Sidebar() {
       setFetchError(false)
       setHasManagerRelationships(Array.isArray(relResult.data) && relResult.data.length > 0)
       setPendingInviteCount(countResult.count ?? 0)
+      setAccountHealthEnabled(userResult.data?.account_health_enabled ?? false)
     }
 
     fetchRelationshipData()
@@ -73,6 +80,9 @@ export default function Sidebar() {
 
   const mainNavItems: NavItem[] = [
     { href: '/tasks', label: 'My tasks', icon: <ListTodo size={20} /> },
+    ...(accountHealthEnabled
+      ? [{ href: '/account-health', label: 'Account health', icon: <Gauge size={20} /> }]
+      : []),
     ...(hasManagerRelationships
       ? [{ href: '/manager', label: 'Manager view', icon: <Users size={20} /> }]
       : []),

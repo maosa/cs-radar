@@ -1,5 +1,17 @@
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
 
+export type ClientAccountRow = {
+  id: string
+  admin_user_id: string
+  name: string
+  product: Product | null
+  sort_order: number
+  is_visible: boolean
+  created_at: string
+  updated_at: string | null
+  deleted_at: string | null
+}
+
 // Convenience row types
 export type TaskRow = {
   id: string
@@ -50,6 +62,7 @@ export interface Database {
           email: string
           role: string | null
           default_landing: DefaultLanding
+          account_health_enabled: boolean
           created_at: string
           updated_at: string | null
         }
@@ -60,6 +73,7 @@ export interface Database {
           email: string
           role?: string | null
           default_landing?: DefaultLanding
+          account_health_enabled?: boolean
           created_at?: string
           updated_at?: string | null
         }
@@ -70,6 +84,7 @@ export interface Database {
           email?: string
           role?: string | null
           default_landing?: DefaultLanding
+          account_health_enabled?: boolean
           updated_at?: string | null
         }
       }
