@@ -61,8 +61,14 @@ export type AccountHealthMetadata = {
   client_account_id: string
   admin_user_id: string
   renewal_date: string | null
+  renewal_date_updated_at: string | null
+  renewal_date_updated_by: string | null
   last_engagement_date: string | null
+  last_engagement_date_updated_at: string | null
+  last_engagement_date_updated_by: string | null
   engagement_type: EngagementType | null
+  engagement_type_updated_at: string | null
+  engagement_type_updated_by: string | null
   updated_at: string | null
   updated_by: string | null
 }

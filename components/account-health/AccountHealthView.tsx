@@ -89,21 +89,44 @@ export default function AccountHealthView({
       })
   }, [selectedAccountId])
 
-  const upsertMetadata = async (patch: Partial<{
-    renewal_date: string | null
-    last_engagement_date: string | null
-    engagement_type: EngagementType | null
-  }>) => {
+  const actorId = managerUserId ?? loggedInUserId
+
+  const saveRenewalDate = async (value: string) => {
     if (!selectedAccountId || !effectiveUserId) return
     await supabase.from('account_health_metadata').upsert({
       client_account_id: selectedAccountId,
       admin_user_id: effectiveUserId,
-      renewal_date: renewalDate || null,
-      last_engagement_date: lastEngagementDate || null,
-      engagement_type: engagementType || null,
-      ...patch,
+      renewal_date: value || null,
+      renewal_date_updated_at: new Date().toISOString(),
+      renewal_date_updated_by: actorId,
       updated_at: new Date().toISOString(),
-      updated_by: managerUserId ?? loggedInUserId,
+      updated_by: actorId,
+    }, { onConflict: 'client_account_id' })
+  }
+
+  const saveLastEngagementDate = async (value: string) => {
+    if (!selectedAccountId || !effectiveUserId) return
+    await supabase.from('account_health_metadata').upsert({
+      client_account_id: selectedAccountId,
+      admin_user_id: effectiveUserId,
+      last_engagement_date: value || null,
+      last_engagement_date_updated_at: new Date().toISOString(),
+      last_engagement_date_updated_by: actorId,
+      updated_at: new Date().toISOString(),
+      updated_by: actorId,
+    }, { onConflict: 'client_account_id' })
+  }
+
+  const saveEngagementType = async (value: EngagementType | '') => {
+    if (!selectedAccountId || !effectiveUserId) return
+    await supabase.from('account_health_metadata').upsert({
+      client_account_id: selectedAccountId,
+      admin_user_id: effectiveUserId,
+      engagement_type: value || null,
+      engagement_type_updated_at: new Date().toISOString(),
+      engagement_type_updated_by: actorId,
+      updated_at: new Date().toISOString(),
+      updated_by: actorId,
     }, { onConflict: 'client_account_id' })
   }
 
@@ -142,7 +165,7 @@ export default function AccountHealthView({
                 type="date"
                 value={renewalDate}
                 onChange={e => setRenewalDate(e.target.value)}
-                onBlur={() => upsertMetadata({ renewal_date: renewalDate || null })}
+                onBlur={() => saveRenewalDate(renewalDate)}
                 readOnly={readOnly}
                 className="px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy read-only:cursor-default read-only:bg-bg"
               />
@@ -154,7 +177,7 @@ export default function AccountHealthView({
                 type="date"
                 value={lastEngagementDate}
                 onChange={e => setLastEngagementDate(e.target.value)}
-                onBlur={() => upsertMetadata({ last_engagement_date: lastEngagementDate || null })}
+                onBlur={() => saveLastEngagementDate(lastEngagementDate)}
                 readOnly={readOnly}
                 className="px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy read-only:cursor-default read-only:bg-bg"
               />
@@ -167,7 +190,7 @@ export default function AccountHealthView({
                 onChange={e => {
                   const val = e.target.value as EngagementType | ''
                   setEngagementType(val)
-                  upsertMetadata({ engagement_type: val || null })
+                  saveEngagementType(val)
                 }}
                 disabled={readOnly}
                 className="px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed disabled:bg-bg"
