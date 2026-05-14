@@ -144,18 +144,21 @@ export default function AccountHealthView({
       <h1 className="text-base font-medium text-navy">Account health</h1>
 
       {/* Account selector row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={selectedAccountId}
-          onChange={e => setSelectedAccountId(e.target.value)}
-          disabled={readOnly && !viewAsUserId}
-          className="px-3 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed"
-        >
-          <option value="">Select a client account…</option>
-          {accounts.map(a => (
-            <option key={a.id} value={a.id}>{a.name}</option>
-          ))}
-        </select>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[11px] text-text-muted">Client account</label>
+          <select
+            value={selectedAccountId}
+            onChange={e => setSelectedAccountId(e.target.value)}
+            disabled={readOnly && !viewAsUserId}
+            className="px-3 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed"
+          >
+            <option value="">Select a client account…</option>
+            {accounts.map(a => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </div>
 
         {selectedAccount && (
           <>
@@ -207,23 +210,27 @@ export default function AccountHealthView({
 
       {/* Month navigation — only shown when an account is selected */}
       {selectedAccount && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={prevMonth}
-            className="p-1 rounded hover:bg-bg text-text-secondary hover:text-navy transition-colors"
+            className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
             aria-label="Previous month"
           >
             <ChevronLeft size={16} />
           </button>
           <button
             onClick={goToToday}
-            className="px-2.5 py-1 rounded-[6px] border border-border text-[12px] font-medium text-navy bg-teal hover:opacity-90 transition-opacity"
+            className={`px-2.5 py-1 text-[12px] font-medium rounded border transition-colors ${
+              isCurrentMonth(currentMonth)
+                ? 'border-teal text-teal bg-white cursor-default'
+                : 'border-border text-text-secondary bg-white hover:border-teal hover:text-teal'
+            }`}
           >
             Today
           </button>
           <button
             onClick={nextMonth}
-            className="p-1 rounded hover:bg-bg text-text-secondary hover:text-navy transition-colors"
+            className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
             aria-label="Next month"
           >
             <ChevronRight size={16} />
