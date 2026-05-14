@@ -1,6 +1,6 @@
 # Task Tracker — Product Design & Engineering Specification
 
-**Access Infinity · Version 1.1 · May 2026**
+**Access Infinity · Version 1.2 · May 2026**
 
 > This document is the authoritative reference for the Task Tracker web application. It is written to be self-contained so that any agentic AI coding tool or developer can pick up the project at any point and continue development without additional context.
 
@@ -79,11 +79,9 @@ When a user is viewing someone else's task list (having been invited as their ma
 
 ### 2.4 Authentication Architecture
 
-Supabase Auth handles all authentication. Row Level Security (RLS) policies enforce permissions at the database level. The system is built auth-first even though an initial public/open mode will be used at launch.
+Supabase Auth handles all authentication. Row Level Security (RLS) policies enforce permissions at the database level. Auth is fully enforced.
 
-**Launch mode (short-term):** The application URL can be shared openly. Anyone with the URL can interact with the platform. RLS policies are present in the schema but a feature flag (`NEXT_PUBLIC_AUTH_ENFORCED=false`) disables enforcement. This allows a user to share their task list URL with their manager without requiring sign-up.
-
-**Full auth mode (future, one config change to enable):** Users must sign in. RLS policies enforce that each user only sees their own tasks. Manager context access is only granted where an accepted `manager_relationships` record exists. The invitation flow (described in Section 7) is already built and functional in this mode.
+**Current state:** Users must sign in. The Next.js middleware unconditionally redirects unauthenticated users to `/login`. Four auth pages are implemented: Login (`/login`), Sign-up (`/signup`), Forgot password (`/forgot-password`), and Reset password (`/reset-password`). All use Supabase `signInWithPassword` / `signUp` / `resetPasswordForEmail`. On successful login the user is redirected to their `default_landing` page (`'task_list'` or `'manager_view'`). A `handle_new_user` Supabase trigger creates the `users` row at signup; the login page defensively backfills it if the row is absent.
 
 ---
 
@@ -151,6 +149,8 @@ Tracks which manager has been invited to view which admin's task list.
 | `status` | `text` — `'pending'` \| `'accepted'` \| `'archived'` |
 | `invited_at` | `timestamptz` |
 | `accepted_at` | `timestamptz` |
+| `is_favorite` | `boolean` — default `false`. Set by the manager to pin the card to the top of their Manager landing page. |
+| `is_archived` | `boolean` — default `false`. Set by the manager to move a card to the Archive tab on their Manager landing page. |
 
 ### 4.4 `tasks`
 
@@ -244,7 +244,7 @@ Each row represents a single task. The product and project columns are sticky (`
 
 Week columns have no fixed start or end date. Navigation is open in both directions — users can scroll backward to any historical week and forward indefinitely. The initial view loads approximately 30 weeks centred on today; additional weeks are fetched automatically as the user navigates (see Section 12).
 
-### 5.3 Week Navigation
+### 5.4 Week Navigation
 
 - Left arrow button — navigate to previous set of weeks
 - Right arrow button — navigate to next set of weeks
@@ -252,43 +252,46 @@ Week columns have no fixed start or end date. Navigation is open in both directi
 - In Focused view: one column visible (current week)
 - In Expanded view: three columns visible (previous, current, next week). The current week column header is highlighted with a teal underline indicator and a `current` label badge.
 
-### 5.4 View Modes
+### 5.5 View Modes
 
 | Mode | Behaviour |
 |---|---|
 | **Focused** | Shows only the current week column. Clean, minimal view for daily use. |
 | **Expanded** | Shows three columns: previous week, current week, next week. Current week is visually distinguished by a teal underline on its column header and a small `current` badge. |
 
-### 5.5 Filter Bar
+### 5.6 Filter Bar
 
 A lightweight filter bar sits between the toolbar and the table. It filters which rows are visible — it does not paginate or hide week columns.
 
-- **Filter by product:** chip buttons for AH, EH, NURO. Multiple can be active simultaneously. Clicking an active chip deactivates it.
-- **Filter by project:** chip buttons for each project in the admin's project list. Multiple can be active.
+- **Filter by product:** chip buttons for AH, EH, NURO, N/A. Multiple can be active simultaneously. Clicking an active chip deactivates it.
+- **Filter by project:** chip buttons for each visible project in the admin's project list that has at least one task in the loaded window. Multiple can be active.
+- **Filter by status:** a "Status" dropdown chip showing checkboxes for Open, Completed, and Flagged. Multiple statuses can be active simultaneously.
 - When no filters are active, all tasks are shown.
-- Active filter chips are visually distinct (navy background, white text).
+- Active filter chips are visually distinct (navy background, white text). The Status chip shows a count badge when one or more status filters are active.
 
-### 5.6 Sort Modes
+### 5.7 Sort Modes
 
-Sort is applied per-week (within each week column independently).
+Sort is applied per-week (within each week column independently). Sort chips appear on the right side of the filter/sort bar.
 
 | Mode | Behaviour |
 |---|---|
-| **Drag & drop** | User can drag rows to reorder tasks within a week. Sort order is persisted to `tasks.sort_order`. Default mode. |
-| **By product** | Tasks within each week are grouped and ordered: AH → EH → NURO. |
+| **Drag & drop** | User can drag rows to reorder tasks within a week. Sort order is persisted to `tasks.sort_order`. Default mode. Hidden in the manager read-only view. |
+| **By product** | Tasks within each week are grouped and ordered: AH → EH → NURO → N/A. |
 | **By project** | Tasks within each week are grouped alphabetically by project name. |
+| **By product + project** | Both "By product" and "By project" are active simultaneously. Tasks are first grouped by product, then alphabetically by project within each product group. |
 
-Sort mode is selected via chip buttons in the filter/sort bar. Only one sort mode is active at a time. Drag-and-drop is disabled when a non-default sort mode is active.
+"By product" and "By project" are toggles that can be independently activated or combined. Drag-and-drop is disabled when either or both non-default sort modes are active. Activating "By product" while "By project" is already active (or vice-versa) enables the combined `product_project` mode.
 
-### 5.7 Global Search
+### 5.8 Global Search
 
 A search input in the toolbar provides global search across all tasks, all weeks.
 
 - Searches across: task description, product name, project name
 - Results appear in a dropdown below the search input
 - Results are ordered most recent first (by `week_start_date` descending)
+- Up to 8 results shown
 - Each result shows: task description, product badge, project name, week label
-- Clicking a result navigates to that week and highlights the task row
+- Clicking a result navigates to that week, clears all active filters, and briefly highlights the task row (2-second ring highlight)
 - Search is debounced (300ms). Minimum 2 characters to trigger.
 
 ---
@@ -309,17 +312,17 @@ New tasks are always created in the current week when opened via the toolbar but
 
 ### 6.2 Task Row Actions
 
-Each task row has a set of action icons. The checkbox is always visible. All other icons appear on hover.
+Each task row has a set of action icons. The checkbox is always visible. All other icons appear on hover, except the comment badge which is always visible when the task has comments.
 
 | Action | Behaviour |
 |---|---|
 | **Checkbox** | Tick/untick to mark complete. Always visible. |
-| **Flag icon** | Toggle flagged state. Click once to flag, again to unflag. |
-| **Arrow-left icon** | Move task to a past week. Opens a dropdown: Previous week (−1) / −2 weeks / −3 weeks / −4 weeks. |
-| **Arrow-right icon** | Move task to a future week. Opens a dropdown: Next week (+1) / +2 weeks / +3 weeks / +4 weeks. |
-| **Notes icon** | Opens the detail panel (right-side) and scrolls to the Notes section. |
-| **Comment icon** | Opens the detail panel and scrolls to the Comments section. |
-| **Delete icon** | Opens a confirmation dialog: "Are you sure you want to delete this task? This action cannot be undone." Confirm / Cancel. |
+| **Pencil icon** | Inline edit the task description. Clicking the icon enters edit mode — a text input replaces the description. Press Enter or blur to save; press Escape to cancel. Appears on hover. |
+| **Flag icon** | Toggle flagged state. Click once to flag, again to unflag. Appears on hover. |
+| **Move icon (`ChevronsLeftRight`)** | Opens a combined dropdown for moving the task to any adjacent week. The dropdown has two groups separated by a divider: forward options (Next week +1 / +2 / +3 / +4 weeks) and backward options (Previous week −1 / −2 / −3 / −4 weeks). Appears on hover. |
+| **Panel icon (`PanelRight`)** | Opens the detail panel (right-side). Appears on hover. |
+| **Comment badge (`MessageSquare`)** | Visible (not hover-only) when `comment_count > 0`. Opens the detail panel scrolled to the Comments section. |
+| **Delete icon** | Opens a confirmation dialog: "Are you sure you want to delete this task? This action cannot be undone." Confirm / Cancel. Appears on hover. |
 
 ### 6.3 Task States & Visual Treatment
 
@@ -341,9 +344,8 @@ On confirm, the task and all associated notes and comments are permanently delet
 ### 6.6 Detail Panel (Notes & Comments)
 
 The detail panel is a right-side slide-in panel (360px wide). It is **not** triggered by clicking a task row. It opens via:
-- The Notes icon on a task row (scrolls to Notes section)
-- The Comment icon on a task row (scrolls to Comments section)
-- A persistent panel-toggle icon in the top-right of the main view
+- The Panel icon (`PanelRight`) on a task row — opens with Notes as the default section
+- The Comment badge (`MessageSquare`) on a task row — opens scrolled to the Comments section
 
 Panel contents:
 - Task description and product/project metadata at the top
@@ -359,8 +361,8 @@ When typing in the task description field of the Add Task modal, an autocomplete
 
 - Searches previous task descriptions belonging to the same Admin user only
 - Scoped to the selected product if one has already been chosen in the modal; across all products if not
-- Keyword-based matching (not exact match). Results ranked by recency.
-- Up to 5 suggestions shown
+- Keyword-based `ilike` matching (case-insensitive substring). Results ranked by `created_at` descending (most recent first).
+- Up to 5 unique suggestions shown (de-duplicated)
 - Selecting a suggestion populates the description field; user can edit freely
 - Debounced at 300ms
 
@@ -375,30 +377,54 @@ Accessible from the left sidebar (Settings icon, pinned to bottom). Available to
 - First name — editable text input
 - Last name — editable text input
 - Email — editable text input
-- **Default landing page** — radio or toggle with two options:
+- **Current role** — editable text input (free text, e.g. "Product Manager"). Stored in `users.role`. Used to display role text on manager landing cards.
+- **Default landing page** — radio with two options:
   - `My task list` (default for all users)
   - `Manager view` — only selectable if the user has at least one accepted `manager_relationships` record. If not, this option is greyed out with a note beneath it: *"Manager view is available once you have an accepted manager relationship. Ask a colleague to invite you as their manager."*
-- Save button — updates the `users` table (`first_name`, `last_name`, `email`, `default_landing`)
+- Save button — updates the `users` table (`first_name`, `last_name`, `email`, `role`, `default_landing`)
 
 ### 7.2 Projects Configuration
 
 Admin users manage their project list here. Changes are reflected immediately in the task table's Project dropdown.
 
-- List of current projects — each row shows project name with Edit (pencil) and Delete (trash) icons
-- Add new project — text input + Add button. Duplicate names are rejected with an inline error.
-- Edit project — inline edit on the existing row, Save / Cancel
-- Delete project — confirmation dialog. If tasks reference this project: "X tasks reference this project. Deleting it will remove the project association from those tasks." Confirm / Cancel.
+- List of current projects — each row shows a product badge and project name, with drag handle (for reordering), visibility toggle (`Eye`/`EyeOff`), Edit (pencil), and Delete (trash) icons on hover.
+- **Drag to reorder** — projects can be dragged to change their `sort_order`, which controls display order in all dropdowns.
+- **Visibility toggle** — hidden projects (`is_visible = false`) are excluded from the filter bar and the project dropdowns in task forms. Tasks that already reference hidden projects are unaffected. The `EyeOff` icon is always visible for hidden projects; the `Eye` icon only appears on hover for visible ones.
+- **Product association** — each project has an optional product field. When adding or editing a project, a product select dropdown and a name text input are shown. Duplicate (name + product) pairs are rejected with an inline error.
+- Add new project — product dropdown + name input + Add button.
+- Edit project — inline edit on the existing row (product dropdown + name input), Save (`Check`) / Cancel (`X`).
+- Delete project — if the project has no tasks: confirmation dialog. If tasks reference the project: a blocking dialog explains that the project cannot be deleted until all tasks are reassigned. Soft-deletes via `deleted_at`.
 
-### 7.3 Manager Invitation
+### 7.3 Team Management
 
-Admin users can invite one or more managers to view their task list.
+The "Team management" section handles the full bidirectional manager relationship lifecycle. It is split into several subsections:
 
-- **Email input** — on blur or Enter, live validation fires:
-  - Email found in `users` table → subtle green confirmation: "User found — invitation will be sent."
-  - Email not found → subtle warning: "No account found for this email address."
-- **Send Invitation button** — creates a `manager_relationships` record with status `'pending'` and triggers an invitation email
-- Invitation email contains a link. Clicking the link sets status → `'accepted'` and logs the manager in. If the manager has no account, they are prompted to create one first.
-- **Current managers list** — shows all accepted relationships. Each row has a Remove button that sets status to `'archived'` and revokes access.
+**Add your manager** — An email input lets the current user invite someone to manage their task list:
+- On blur/Enter, debounced live validation fires:
+  - Email found in `users` → green message: "Registered user — invitation will be sent and they can accept it in Settings."
+  - Email not found → amber message: "User not found. You can still invite this email — the invitation will appear once they register."
+- **Invite manager button** — inserts a `manager_relationships` record (`status = 'pending'`, `admin_user_id = current user`, `manager_email = input`). If the email belongs to a known `users` row the `manager_user_id` is also set.
+- Duplicate or archived invitations are rejected with an error toast.
+
+**Accepted relationships** (shown when at least one exists):
+- *"You are managing"* — lists task lists this user has accepted an invitation to manage. Each row has a **Remove** button which hard-deletes the record and triggers a sidebar refresh.
+- *"You are being managed by"* — lists accepted managers for this user's own task list. Each row shows the manager's name, email, and acceptance date. Has a **Sever** button which hard-deletes the record.
+
+**Pending** (shown when invitations are in-flight):
+- *Incoming* — someone invited this user to be their manager. Shows the inviter's name/email and date. Actions: **Accept** (sets `status = 'accepted'`) and **Decline** (sets `status = 'archived'`).
+- *Outgoing* — this user sent an invitation that hasn't been accepted yet. Shows the invitee email and date. Action: **Delete** (hard-deletes record after confirmation).
+
+**Declined** — outgoing invitations that were declined (`status = 'archived'` from the invited person's perspective). Shows email and date. Actions: **Re-send** (sets `status = 'pending'` again) and **Delete** (hard-deletes after confirmation).
+
+### 7.4 Export Data
+
+Users can export all their tasks, notes, and comments as a CSV file.
+
+- A single **Export to CSV** button fetches all tasks for the current user (no week-window filter — all historical data), joined with notes and comments.
+- The downloaded file is named `tasks_YYYY-MM-DD.csv`.
+- Columns: Week, Product, Project, Task Description, Notes, Comments, Status, Flagged.
+- Comments are concatenated into a single cell in the format `[Author on Date] Text.` with multiple comments space-separated.
+- The file includes a UTF-8 BOM for Excel compatibility.
 
 ---
 
@@ -408,25 +434,24 @@ Admin users can invite one or more managers to view their task list.
 
 Accessible via the Manager view item in the left sidebar. This item is hidden entirely if the user has no accepted `manager_relationships` records. When a user with accepted relationships clicks Manager view, they land on a page showing all the users whose task lists they manage.
 
+If the user navigates to `/manager` but has no accepted relationships, they are automatically redirected to `/tasks` and their `default_landing` is reset to `'task_list'`.
+
 Each Admin is shown as a card containing:
-- Admin's full name
-- Admin's role/title (if provided)
-- Favourite star icon (top-left) — toggles to pin cards to the top of the list
-- Edit icon (top-right, appears on hover) — opens edit modal
+- Admin's full name and initials avatar
+- Admin's role/title (if set in `users.role`)
+- **Favourite star** (top-left) — toggles `is_favorite` on the `manager_relationships` row. Filled gold star = pinned to top.
+- **Archive / Unarchive button** (top-right, appears on hover) — `ArchiveX` icon on Home tab archives the card (`is_archived = true`); `ArchiveRestore` icon on Archive tab unarchives it.
+
+Clicking a card navigates to that admin's task list at `/manager/[adminUserId]`.
 
 Page controls:
-- **Search bar** — filters cards by name or role in real time
-- **Sort controls** — sort by name (A–Z), by role, or favourites first
-- **Home / Archive tabs** — Home shows active relationships; Archive shows relationships the manager has archived
-- **Add person button** (+) — opens Add Person modal
+- **Search bar** — filters cards by name, role, or email in real time
+- **Sort controls** — chip buttons: "Favourites first" (default), "Name A–Z", "By role"
+- **Home / Archive tabs** — Home shows non-archived cards; Archive shows archived cards
 
-### 8.2 Add / Edit Person Modal
+> Cards are populated automatically from accepted `manager_relationships` records. There is no manual "Add person" button — the relationship is always initiated by the Admin from their Settings page.
 
-Fields: First name, Last name, Email, Role. Save and Cancel buttons. Edit modal also has a Delete button that archives the card (moves to Archive tab).
-
-> Note: Adding a person here is the manager-side record of their direct report. It does not send an invitation. The invitation flow (which grants access to the task list) is initiated by the Admin from their Settings page.
-
-### 8.3 Manager Task View
+### 8.2 Manager Task View
 
 Clicking a card navigates to that user's task list. The view is identical to the owner's main task view with the following differences:
 
@@ -474,6 +499,7 @@ Colors are drawn from Access Infinity's PowerPoint brand palette. The applicatio
 | AH (Access Hub) | `#BDC7FF` | `#0020BA` |
 | EH (Evidence Hub) | `#FFF7CB` | `#7F6900` |
 | NURO | `#B4AFE4` | `#19153F` |
+| N/A | `#E8E8E8` | `#595959` |
 
 ### 9.3 Typography
 
@@ -504,13 +530,14 @@ All icons throughout the application use **[Lucide React](https://lucide.dev)** 
 |---|---|---|
 | Sidebar navigation | `size={20}` | `ListTodo`, `Users`, `Settings` |
 | Sidebar collapse/expand chevrons | `size={16}` | `ChevronLeft`, `ChevronRight` |
-| Toolbar buttons (tasks & manager views) | `size={14}–size={16}` | `Plus`, `Search`, `ChevronLeft/Right`, `PanelRight` |
-| Task row action icons | `size={14}` | `Flag`, `ArrowRight`, `Trash2`, `FileText`, `MessageSquare` |
+| Toolbar buttons (tasks & manager views) | `size={14}–size={16}` | `Plus`, `Search`, `ChevronLeft`, `ChevronRight`, `ArrowLeft` (Back button) |
+| Task row action icons | `size={14}` | `Pencil` (edit), `Flag`, `ChevronsLeftRight` (move), `PanelRight` (open panel), `MessageSquare` (comments), `Trash2` |
 | Drag handle | `size={12}` | `GripVertical` |
 | Detail panel | `size={12}–size={14}` | `X`, `Pencil`, `Trash2` |
-| Manager view cards | `size={13}–size={16}` | `Pencil`, `Star` |
+| Manager view cards | `size={13}–size={16}` | `Star`, `ArchiveX`, `ArchiveRestore` |
 | Manager view empty state | `size={28}` | `UserRound` |
-| Settings view | `size={12}–size={13}` | `Pencil`, `Trash2`, `Check`, `X` |
+| Settings — projects list | `size={13}–size={14}` | `GripVertical`, `Eye`, `EyeOff`, `Pencil`, `Trash2`, `Check`, `X` |
+| Filter bar status dropdown | `size={11}` | `ChevronDown`, `X` |
 
 **Fill states:** Icons that toggle between filled and unfilled (e.g. flag, star) use Tailwind's `fill-` utility class directly on the Lucide component — e.g. `className="text-[#FF0522] fill-[#FF0522]"`. No separate filled/unfilled SVG variants are needed.
 
@@ -522,80 +549,77 @@ Primary target is desktop browser. Week columns have a minimum width of 200px an
 
 ## 10. Phased Development Plan
 
-Phases are ordered by dependency. Each phase is independently shippable to Vercel. **Any agent picking up this project should confirm which phases are already complete before proceeding.**
+Phases are ordered by dependency. Each phase is independently shippable to Vercel. **Phases 1–8 are complete as of May 2026.**
 
-### Phase 1 — Project Scaffolding & Infrastructure
+### Phase 1 — Project Scaffolding & Infrastructure ✓
 
-- [ ] Initialise Next.js project with TypeScript and Tailwind CSS
-- [ ] Connect Supabase project; configure environment variables
-- [ ] Create full database schema (all tables from Section 4) with RLS policies defined but controlled by feature flag (`NEXT_PUBLIC_AUTH_ENFORCED=false`)
-- [ ] Set up Vercel project and confirm CI/CD pipeline from GitHub
-- [ ] Configure Supabase Auth (email provider, invite email template)
-- [ ] Implement base layout: left sidebar (collapsed rail, expandable), top bar, page shell
-- [ ] Implement sidebar navigation logic: My tasks always visible; Manager view hidden until accepted `manager_relationships` exist; Settings pinned to bottom
+- [x] Initialise Next.js project with TypeScript and Tailwind CSS
+- [x] Connect Supabase project; configure environment variables
+- [x] Create full database schema (all tables from Section 4) with RLS policies
+- [x] Set up Vercel project and confirm CI/CD pipeline from GitHub
+- [x] Configure Supabase Auth (email provider)
+- [x] Implement base layout: left sidebar (collapsed rail, expandable), top bar, page shell
+- [x] Implement sidebar navigation logic: My tasks always visible; Manager view hidden until accepted `manager_relationships` exist; Settings pinned to bottom; pending invite badge on Settings
 
-### Phase 2 — Core Task Table
+### Phase 2 — Core Task Table ✓
 
-- [ ] Build the week-column table component with dynamic week generation from Jan 5, 2026
-- [ ] Implement sticky Product and Project columns
-- [ ] Implement Focused and Expanded view modes
-- [ ] Implement week navigation (prev/next arrows, Today button)
-- [ ] Hard-code mock data to validate layout and scrolling behaviour
-- [ ] Apply full design system: colors, typography, badge styles, row heights
+- [x] Build the week-column table component with dynamic week generation
+- [x] Implement sticky Product and Project columns
+- [x] Implement Focused and Expanded view modes
+- [x] Implement week navigation (prev/next arrows, Today button)
+- [x] Apply full design system: colors, typography, badge styles, row heights
 
-### Phase 3 — Task CRUD
+### Phase 3 — Task CRUD ✓
 
-- [ ] Wire table to Supabase: fetch real tasks
-- [ ] Implement Add Task modal (product, project, description fields)
-- [ ] Implement task autocomplete (keyword search on description, scoped by product)
-- [ ] Implement inline task completion (checkbox toggle)
-- [ ] Implement task flagging (flag icon toggle)
-- [ ] Implement Move Task dropdown (+1 / +2 / +3 / +4 weeks)
-- [ ] Implement Delete Task with confirmation modal
-- [ ] Implement drag-and-drop row reordering within a week column (dnd-kit)
+- [x] Wire table to Supabase: fetch real tasks (with rolling week-window)
+- [x] Implement Add Task modal (product, project, description fields)
+- [x] Implement task autocomplete (keyword search on description, scoped by product)
+- [x] Implement inline task completion (checkbox toggle)
+- [x] Implement inline task description editing (pencil icon)
+- [x] Implement task flagging (flag icon toggle)
+- [x] Implement Move Task dropdown (combined ±1–±4 weeks)
+- [x] Implement Delete Task with confirmation modal
+- [x] Implement drag-and-drop row reordering within a week column (dnd-kit)
 
-### Phase 4 — Filter, Sort & Search
+### Phase 4 — Filter, Sort & Search ✓
 
-- [ ] Implement filter bar: product chips, project chips, multi-select logic
-- [ ] Implement sort modes: by product, by project, drag-and-drop default
-- [ ] Implement global search input with debounce, result dropdown, week navigation on selection
+- [x] Implement filter bar: product chips (AH/EH/NURO/N/A), project chips, status dropdown, multi-select logic
+- [x] Implement sort modes: by product, by project, combined product+project, drag-and-drop default
+- [x] Implement global search input with debounce, result dropdown (up to 8), week navigation and filter clear on selection
 
-### Phase 5 — Detail Panel (Notes & Comments)
+### Phase 5 — Detail Panel (Notes & Comments) ✓
 
-- [ ] Build the right-side slide-in panel component with open/close toggle
-- [ ] Notes section: fetch, display, edit, and auto-save `task_notes`
-- [ ] Comments section: fetch and display `task_comments` with author and timestamp
-- [ ] Add new comment (input + Save button)
-- [ ] Edit and delete own comments (hover actions)
-- [ ] Wire panel open to Notes icon and Comment icon on task rows
+- [x] Build the right-side slide-in panel component with open/close
+- [x] Notes section: fetch, display, edit, and auto-save `task_notes`
+- [x] Comments section: fetch and display `task_comments` with author and timestamp
+- [x] Add new comment (input + Save button)
+- [x] Edit and delete own comments (hover actions)
+- [x] Wire panel open to PanelRight icon (notes) and MessageSquare badge (comments) on task rows
 
-### Phase 6 — Settings Page
+### Phase 6 — Settings Page ✓
 
-- [ ] Build Settings page layout with Account, Projects, and Manager sections
-- [ ] Account details: read and update first name, last name, email
-- [ ] Default landing page preference: toggle between `'task_list'` and `'manager_view'`; Manager view option greyed out with explanatory note if no accepted manager relationships exist
-- [ ] Projects: list, add, edit, delete with confirmation and task-reference warning
-- [ ] Manager invitation: email input with live validation, send invitation, current managers list
+- [x] Build Settings page layout with Account, Projects, Team management, and Export sections
+- [x] Account details: read and update first name, last name, email, role, default landing
+- [x] Projects: list, add, edit, delete, reorder (drag-and-drop), show/hide (visibility toggle)
+- [x] Team management: full bidirectional invitation flow (send, accept, decline, re-send, remove)
+- [x] Export data: CSV export of all tasks with notes and comments
 
-### Phase 7 — Manager Experience
+### Phase 7 — Manager Experience ✓
 
-- [ ] Build Manager landing page (accessible via left sidebar Manager view item)
-- [ ] Implement favouriting, sorting, search, and Home/Archive tabs on landing page
-- [ ] Implement Add/Edit Person modal
-- [ ] Build Manager task view (read-only task table, comment-only panel, sidebar remains active)
-- [ ] Implement Back navigation from task view to Manager landing page
-- [ ] Implement default landing page redirect on sign-in (reads `users.default_landing`)
-- [ ] Test invitation acceptance flow end-to-end
-- [ ] Validate sidebar Manager view item appears/disappears correctly based on relationship status
+- [x] Build Manager landing page (accessible via left sidebar Manager view item)
+- [x] Implement favouriting, sorting, search, and Home/Archive tabs on landing page
+- [x] Build Manager task view (read-only task table, comment-capable panel, sidebar remains active)
+- [x] Implement Back navigation from task view to Manager landing page
+- [x] Implement default landing page redirect on sign-in (reads `users.default_landing`)
+- [x] Validate sidebar Manager view item appears/disappears correctly based on relationship status
 
-### Phase 8 — Auth Enforcement (Future)
+### Phase 8 — Auth Enforcement ✓
 
-- [ ] Set `NEXT_PUBLIC_AUTH_ENFORCED=true` in Vercel environment
-- [ ] Add sign-in page (email + password or magic link)
-- [ ] Add sign-up page
-- [ ] Validate RLS policies enforce correct data isolation between users
-- [ ] Test manager invitation flow with auth fully enabled
-- [ ] Remove any temporary open-access bypasses
+- [x] Next.js middleware unconditionally redirects unauthenticated users to `/login`
+- [x] Sign-in page (email + password)
+- [x] Sign-up page
+- [x] Forgot-password and reset-password pages
+- [x] `handle_new_user` Supabase trigger creates `users` row on signup
 
 ---
 
@@ -604,24 +628,29 @@ Phases are ordered by dependency. Each phase is independently shippable to Verce
 | Decision | Resolution |
 |---|---|
 | **Dual-role model** | Every user can operate as both task list owner and manager. There is no fixed account type. Access to each context is determined by data (what task lists they own, what `manager_relationships` they have). |
-| **Left sidebar visibility** | Manager view item in the sidebar is hidden entirely until the user has at least one accepted `manager_relationships` record. |
+| **Left sidebar visibility** | Manager view item in the sidebar is hidden entirely until the user has at least one accepted `manager_relationships` record. The Settings icon shows a pending-invite badge count. |
 | **Default landing page** | Stored in `users.default_landing`. Options: `'task_list'` (default) or `'manager_view'`. Manager view option is greyed out in settings with an explanatory note if no accepted manager relationships exist. |
-| **Task creation target week** | Toolbar "Add task" always creates in the current week. Inline "Add task" in a week column footer creates in that specific week. |
+| **Task creation target week** | Toolbar "Add task" always creates in the current (center) week. Inline "Add task" link at the bottom of a week column creates in that specific week. |
 | **Autocomplete scope** | Scoped to the viewing user's own tasks only. Product-filtered if product is selected in the modal. Project-agnostic. |
+| **Move task — combined icon** | A single `ChevronsLeftRight` icon opens a unified dropdown with both forward and backward options in two groups (divider-separated). There are no separate left/right arrow icons. |
 | **Move task — original week** | No placeholder left. Task disappears from source week and appears in target week. |
 | **Task ownership** | Each user sees only their own tasks in owner context. No shared team task lists in v1. |
-| **Manager relationship init** | Task list owner invites manager from Settings. Manager's landing page auto-populates from accepted relationships. |
-| **Global search ordering** | Results ordered by `week_start_date` descending (most recent week first). |
+| **Manager relationship init** | Task list owner invites manager from Settings (Team management section). Manager's landing page auto-populates from accepted relationships. Adding people on the manager side is not supported — the flow is always owner-initiated. |
+| **Manager landing page data** | Cards are derived solely from accepted `manager_relationships` rows. `is_favorite` and `is_archived` are additional columns on `manager_relationships` controlled by the manager. |
+| **Global search ordering** | Results ordered by `week_start_date` descending (most recent week first), capped at 8 results. |
 | **Sort scope** | Sort (drag-and-drop, by product, by project) is applied per-week, not globally across the full table. |
+| **Sort multi-select** | "By product" and "By project" can be active simultaneously (`product_project` combined mode). Clicking one while the other is already active enables the combined mode; clicking it again removes only that dimension. |
 | **Week definition** | Monday–Sunday. No fixed start or end date. Navigation is open in both directions. The week epoch used internally is January 3, 2000 (the first Monday of 2000), giving a practical floor far enough back for any historical import. |
 | **Week-window data loading** | The tasks query fetches a rolling window of weeks rather than all tasks. The initial window is approximately today −26 weeks to today +4 weeks. The window auto-expands by 13 weeks in either direction as the user navigates toward the boundary. This keeps initial load fast for users with years of task history. |
 | **Realtime live updates** | The manager task view uses a Supabase Realtime Postgres changes subscription scoped to the task owner's `admin_user_id`. Any change to the tasks table triggers a React Query cache invalidation, refreshing the manager view within ~1 second. |
 | **Row structure** | One row = one task. Product and project columns repeat per row. Multiple tasks for the same product/project in the same week each have their own row. |
-| **Detail panel trigger** | Not auto-opened on row click. Opened via Notes/Comment icon on task row, or panel toggle button. |
+| **Detail panel trigger** | Not auto-opened on row click. Opened via the `PanelRight` icon (notes) or the `MessageSquare` comment badge on a task row. The `MessageSquare` badge is only visible when `comment_count > 0`. |
 | **Flagged task visibility** | Flag is visible to both task owner and manager. |
 | **Comment editing** | Task list owner can edit or delete any comment (including manager comments). Intentional by design. Audit trail captured in `updated_by` and `updated_at`. |
-| **Product list** | Fixed: Access Hub (AH), NURO, Evidence Hub (EH). Not user-configurable in v1. |
-| **Project list** | Owner-configurable via Settings. Reflected immediately in task table dropdown. |
+| **Product list** | Fixed: Access Hub (AH), NURO, Evidence Hub (EH), N/A. Not user-configurable in v1. |
+| **Project list** | Owner-configurable via Settings. Projects have a product association, a name, a visibility flag, and a drag-reorderable `sort_order`. Duplicate (name + product) pairs are rejected. Projects with active tasks cannot be deleted. |
+| **Auth enforcement** | Fully enforced via Next.js middleware. No `NEXT_PUBLIC_AUTH_ENFORCED` feature flag exists. All routes except `/login`, `/signup`, `/forgot-password`, and `/reset-password` require an authenticated session. |
+| **User role field** | `users.role` stores a free-text job title (e.g. "Product Manager"). Displayed on manager landing cards. Editable in Settings → Account details. |
 
 ---
 
@@ -649,8 +678,10 @@ Drag-and-drop reordering within a week column persists sort order to the databas
 
 ---
 
-*Task Tracker Specification · Access Infinity · v1.1 · May 2026*
+*Task Tracker Specification · Access Infinity · v1.2 · May 2026*
 
-*Update this document as decisions are made or requirements change. Version the file (v1.2, v1.3, etc.) with a brief change note when significant updates are made.*
+*Update this document as decisions are made or requirements change. Version the file (v1.3, v1.4, etc.) with a brief change note when significant updates are made.*
 
 **v1.1 changes (May 2026):** Added N/A product option; open week navigation (no fixed start date); move-task backward action; corrected column widths; updated tech stack to TanStack Query v5; added `sort_order`, `product`, `is_visible` to projects schema; fixed search ordering; added Realtime live updates (§8.3); added Section 12 (Data Loading & Performance).
+
+**v1.2 changes (May 2026):** Reconciled spec with actual codebase — all phases now marked complete. Updated §2.4 (auth is fully enforced, no feature flag). Updated §4.3 (added `is_favorite`/`is_archived` to `manager_relationships`). Fixed duplicate §5.3 numbering (renumbered §5.4–§5.8). Updated §5.6 Filter Bar (added N/A chip and Status dropdown). Updated §5.7 Sort Modes (multi-select product+project combined mode). Updated §6.2 Task Row Actions (single ChevronsLeftRight move icon, Pencil edit icon, PanelRight/MessageSquare panel triggers). Updated §6.6 Detail Panel triggers. Updated §6.7 autocomplete details. Updated §7.1 Account (added role field). Replaced §7.3 Manager Invitation with full "Team management" bidirectional flow. Added §7.4 Export data. Rewrote §8.1 Manager Landing (removed non-existent Add Person button); removed §8.2 Add/Edit Person Modal. Added N/A badge to §9.2. Updated §9.5 icon table. Added new Resolved Decisions entries.
