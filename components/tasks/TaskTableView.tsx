@@ -71,8 +71,9 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
   const [filterStatuses, setFilterStatuses] = useState<string[]>([])
-  // Owner: per-week sort modes persisted to localStorage; Manager: single global sort mode
+  // Owner: per-week sort modes persisted to DB (users.preferences); Manager: single global sort mode
   const [weekSortModes, setWeekSortModes] = useState<Record<number, SortMode>>({})
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   const [managerSortMode, setManagerSortMode] = useState<SortMode>('drag')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<{ task: AnyTask; weekLabel: string }[]>([])
@@ -100,20 +101,32 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
-  // Load per-week sort modes from localStorage once userId is known (owner only)
+  // Load per-week sort modes from DB once userId is known (owner only)
   useEffect(() => {
     if (readOnly || !userId) return
-    const stored = localStorage.getItem(`task_week_sort_modes_${userId}`)
-    if (stored) {
-      try { setWeekSortModes(JSON.parse(stored)) } catch {}
-    }
+    supabase
+      .from('users')
+      .select('preferences')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => {
+        const prefs = data?.preferences as Record<string, unknown> | null
+        if (prefs?.task_week_sort_modes) {
+          setWeekSortModes(prefs.task_week_sort_modes as Record<number, SortMode>)
+        }
+        setPreferencesLoaded(true)
+      })
   }, [userId, readOnly])
 
-  // Persist per-week sort modes to localStorage whenever they change (owner only)
+  // Persist per-week sort modes to DB whenever they change (owner only, debounced)
+  const debouncedWeekSortModes = useDebounce(weekSortModes, 1000)
   useEffect(() => {
-    if (readOnly || !userId) return
-    localStorage.setItem(`task_week_sort_modes_${userId}`, JSON.stringify(weekSortModes))
-  }, [weekSortModes, userId, readOnly])
+    if (readOnly || !userId || !preferencesLoaded) return
+    supabase
+      .from('users')
+      .update({ preferences: { task_week_sort_modes: debouncedWeekSortModes } })
+      .eq('id', userId)
+  }, [debouncedWeekSortModes, userId, readOnly, preferencesLoaded])
 
   // Mutations — always called (hooks must not be conditional); only invoked in owner mode
   const { toggleComplete, toggleFlag, moveTask, editDescription, deleteTask, reorderTasks, taskCreated, updateTaskLocally } =

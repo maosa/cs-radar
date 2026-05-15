@@ -108,6 +108,7 @@ export interface Database {
           role: string | null
           default_landing: DefaultLanding
           account_health_enabled: boolean
+          preferences: Json
           created_at: string
           updated_at: string | null
         }
@@ -119,6 +120,7 @@ export interface Database {
           role?: string | null
           default_landing?: DefaultLanding
           account_health_enabled?: boolean
+          preferences?: Json
           created_at?: string
           updated_at?: string | null
         }
@@ -130,6 +132,7 @@ export interface Database {
           role?: string | null
           default_landing?: DefaultLanding
           account_health_enabled?: boolean
+          preferences?: Json
           updated_at?: string | null
         }
       }
