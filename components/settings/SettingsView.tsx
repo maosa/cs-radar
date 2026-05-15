@@ -1729,6 +1729,17 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
   const { userId } = useAuth()
   const [exporting, setExporting] = useState(false)
   const [exportingAH, setExportingAH] = useState(false)
+  const [accountHealthEnabled, setAccountHealthEnabled] = useState(false)
+
+  useEffect(() => {
+    if (!userId) return
+    supabase
+      .from('users')
+      .select('account_health_enabled')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => setAccountHealthEnabled(data?.account_health_enabled ?? false))
+  }, [userId])
 
   const handleExport = async () => {
     if (!userId) return
@@ -1932,17 +1943,21 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
       >
         {exporting ? 'Exporting…' : 'Export to CSV'}
       </button>
-      <hr className="border-border my-4" />
-      <p className="text-[13px] text-text-secondary mb-4">
-        Download all your Account Health data as a CSV file.
-      </p>
-      <button
-        onClick={handleExportAccountHealth}
-        disabled={exportingAH}
-        className="px-4 py-2 text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        {exportingAH ? 'Exporting…' : 'Export Account Health to CSV'}
-      </button>
+      {accountHealthEnabled && (
+        <>
+          <hr className="border-border my-4" />
+          <p className="text-[13px] text-text-secondary mb-4">
+            Download all your Account Health data as a CSV file.
+          </p>
+          <button
+            onClick={handleExportAccountHealth}
+            disabled={exportingAH}
+            className="px-4 py-2 text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {exportingAH ? 'Exporting…' : 'Export Account Health to CSV'}
+          </button>
+        </>
+      )}
     </div>
   )
 }
