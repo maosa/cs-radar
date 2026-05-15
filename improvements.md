@@ -1082,85 +1082,82 @@ Option 1 is preferred because it preserves current visible UI exactly.
 
 ---
 
-### F2. Clarify Manager Write Permissions For Account Health Comments
+### F2. Manager Write Permissions For Account Health Comments
 
 **Priority:** Medium  
-**Difficulty:** Easy to Medium  
+**Difficulty:** Medium  
 **Primary files:**
 - `components/account-health/RiskAssessmentTable.tsx`
-- `supabase/migrations/account_health_phase_c.sql`
-- New Supabase migration if changing RLS
+- New Supabase migration: `supabase/migrations/account_health_manager_cp_comment.sql`
 
-**Problem**
+**Required behaviour**
 
-The manager account-health route passes:
+When a manager views another user's account health page through the manager route (`/manager/[adminUserId]/account-health`), the page must enforce these exact permissions:
 
-```tsx
-<AccountHealthView
-  viewAsUserId={adminUserId}
-  readOnly={true}
-  managerUserId={userId}
-/>
+| Field | Manager can edit? |
+|---|---|
+| Risk response dropdowns | No — disabled |
+| CS Lead comment column | No — read-only |
+| Client Partner comment column | **Yes — editable** |
+| Metadata (renewal date, engagement date, etc.) | No — read-only |
+
+The owner viewing their own account health page (`/account-health`) retains full edit access to every field.
+
+**Why a direct RLS UPDATE policy is not sufficient**
+
+`account_health_phase_c.sql` grants managers only `SELECT` on `account_health_responses`. Adding a broad `UPDATE` policy would allow managers to modify every column, including risk responses and CS Lead comments. Postgres RLS cannot restrict which columns a policy covers, so column-level restrictions require a dedicated `security definer` RPC.
+
+**Implementation**
+
+**1. Migration — `account_health_manager_cp_comment.sql`**
+
+Create a `security definer` RPC `public.upsert_client_partner_comment` that:
+
+1. Reads `auth.uid()` as the actor — never trusts a caller-supplied user id.
+2. Raises an exception if the caller is unauthenticated.
+3. Raises an exception if the caller is neither the `admin_user_id` nor an accepted manager for that admin (checked via `manager_relationships`).
+4. Upserts **only** `client_partner_comment`, `client_partner_updated_at`, `client_partner_updated_by`, `updated_at`, and `updated_by` — never touches response values or CS Lead fields.
+5. Sets `search_path = public, pg_temp`.
+6. Revokes `execute` from `public`; grants it to `authenticated` only.
+
+Signature:
+
+```sql
+public.upsert_client_partner_comment(
+  p_client_account_id uuid,
+  p_admin_user_id     uuid,
+  p_month             text,   -- 'YYYY-MM-DD', cast to date inside the function
+  p_question_id       text,
+  p_comment           text
+)
+returns void
 ```
 
-Most controls are read-only, but the Client Partner comment cell uses:
+**2. `RiskAssessmentTable.tsx` — `readOnly` prop for the Client Partner cell**
 
 ```tsx
+// Editable for the owner (readOnly=false) and for managers
+// (readOnly=true, actorUserId ≠ adminUserId). Read-only in any other case.
 readOnly={readOnly && actorUserId === adminUserId}
 ```
 
-For a manager viewing another user's account health, `readOnly` is true and `actorUserId !== adminUserId`, so that cell can appear editable. However, RLS currently grants managers only `select` on `account_health_responses`, not update/insert.
+The CS Lead comment cell remains `readOnly={readOnly}` — managers always see it as read-only.
 
-**Decision required**
+**3. `RiskAssessmentTable.tsx` — `onSave` handler for the Client Partner cell**
 
-Choose one of these two paths:
+Split on the `readOnly` flag:
 
-#### Option A: Make manager view fully read-only
+- **Manager path (`readOnly === true`):** call `supabase.rpc('upsert_client_partner_comment', {...})`. After the RPC succeeds, immediately update `responsesMap` optimistically with the new comment value and timestamps — do not wait for the realtime event, as that delay causes visible flickering.
+- **Owner path (`readOnly === false`):** keep the existing direct upsert against `account_health_responses`, which returns the updated row and updates `responsesMap` in one step.
 
-Set both comment cells to `readOnly={readOnly}`.
+**Acceptance criteria**
 
-This is easiest and matches the route's "Read only" badge.
-
-#### Option B: Allow managers to edit only Client Partner comments
-
-Add narrow RLS policies for accepted managers to insert/update account health response rows for admins they manage.
-
-Because Postgres RLS cannot easily restrict which columns are updated by policy alone, this option may require a dedicated RPC such as:
-
-```sql
-public.update_account_health_client_partner_comment(
-  p_client_account_id uuid,
-  p_month date,
-  p_question_id text,
-  p_comment text
-)
-```
-
-The RPC should:
-
-1. Use `auth.uid()` as actor.
-2. Verify the caller is an accepted manager for the target `admin_user_id`.
-3. Upsert only `client_partner_comment`, `client_partner_updated_at`, `client_partner_updated_by`, `updated_at`, and `updated_by`.
-4. Not allow editing risk responses or CS lead comments.
-
-**Preferred recommendation**
-
-Option A unless the product explicitly intends managers to write Client Partner comments.
-
-**Acceptance criteria for Option A**
-
-1. Manager account-health view is fully read-only.
-2. Owner account-health view remains editable.
-3. No failed Supabase writes from manager read-only pages.
-4. `npm run build` passes.
-
-**Acceptance criteria for Option B**
-
-1. Managers can edit only Client Partner comments.
-2. Managers cannot edit responses, CS Lead comments, metadata, or unrelated users' rows.
-3. Owners retain existing edit behavior.
-4. RPC rejects unauthenticated or unrelated users.
-5. `npm run build` passes.
+1. Manager can type and save text in the Client Partner comment column; the cell updates immediately with no flicker.
+2. Manager cannot interact with risk response dropdowns, CS Lead comments, or metadata fields.
+3. Owner can edit every field as before.
+4. RPC rejects unauthenticated callers and callers with no accepted manager relationship.
+5. No failed Supabase writes occur on the manager account-health page.
+6. `npm run build` passes.
 
 ---
 
