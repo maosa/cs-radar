@@ -28,7 +28,7 @@ export default function TableHeader({ visibleWeekIndices, currentWeekIndex }: Ta
               className="sticky top-0 z-20 border-t border-b border-r border-border px-3 py-2 text-left text-[13px] font-medium text-navy bg-bg"
             >
               <div className="flex items-center gap-2">
-                <span className={isCurrent ? 'pb-0.5 border-b-2 border-teal' : ''}>{formatWeekHeader(wi)}</span>
+                <span className={`pb-0.5 border-b-2 ${isCurrent ? 'border-teal' : 'border-transparent'}`}>{formatWeekHeader(wi)}</span>
                 <span className={`inline-flex items-center justify-center px-1.5 py-[3px] rounded text-[10px] font-medium bg-teal text-navy ${isCurrent ? '' : 'invisible'}`}>
                   current
                 </span>
