@@ -413,36 +413,51 @@ export default function RiskAssessmentTable({
                   />
                 </div>
 
-                {/* Column 4: Client Partner Comments */}
+                {/* Column 4: Client Partner Comments — editable by the owner and
+                    by accepted managers (via RPC to restrict to this column only) */}
                 <div className="flex-1 min-w-[200px]">
                   <CommentCell
                     key={`cp-${question.id}-${clientAccountId}-${monthStr}`}
                     initialValue={rowData?.client_partner_comment ?? null}
-                    readOnly={readOnly}
+                    readOnly={readOnly && actorUserId === adminUserId}
                     onSave={async (value) => {
-                      const now = new Date().toISOString()
-                      const { data, error } = await supabase
-                        .from('account_health_responses')
-                        .upsert({
-                          client_account_id: clientAccountId,
-                          admin_user_id: adminUserId,
-                          month: monthStr,
-                          question_id: question.id,
-                          client_partner_comment: value,
-                          client_partner_updated_at: now,
-                          client_partner_updated_by: actorUserId,
-                          updated_at: now,
-                          updated_by: actorUserId,
-                        }, { onConflict: 'client_account_id,month,question_id' })
-                        .select()
-                        .single()
-                      if (error) throw error
-                      if (data) {
-                        setResponsesMap(prev => {
-                          const next = new Map(prev)
-                          next.set(question.id, data as AccountHealthResponse)
-                          return next
+                      if (readOnly) {
+                        // Manager path: RPC enforces column-level restriction server-side
+                        const { error } = await supabase.rpc('upsert_client_partner_comment', {
+                          p_client_account_id: clientAccountId,
+                          p_admin_user_id:     adminUserId,
+                          p_month:             monthStr,
+                          p_question_id:       question.id,
+                          p_comment:           value,
                         })
+                        if (error) throw error
+                        // State update arrives via the existing realtime subscription
+                      } else {
+                        // Owner path: direct upsert, returns the updated row immediately
+                        const now = new Date().toISOString()
+                        const { data, error } = await supabase
+                          .from('account_health_responses')
+                          .upsert({
+                            client_account_id: clientAccountId,
+                            admin_user_id: adminUserId,
+                            month: monthStr,
+                            question_id: question.id,
+                            client_partner_comment: value,
+                            client_partner_updated_at: now,
+                            client_partner_updated_by: actorUserId,
+                            updated_at: now,
+                            updated_by: actorUserId,
+                          }, { onConflict: 'client_account_id,month,question_id' })
+                          .select()
+                          .single()
+                        if (error) throw error
+                        if (data) {
+                          setResponsesMap(prev => {
+                            const next = new Map(prev)
+                            next.set(question.id, data as AccountHealthResponse)
+                            return next
+                          })
+                        }
                       }
                     }}
                   />
