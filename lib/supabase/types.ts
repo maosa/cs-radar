@@ -72,6 +72,26 @@ export type AccountHealthMetadata = {
   updated_at: string | null
   updated_by: string | null
 }
+export type ResponseValue = 'yes' | 'no' | 'low' | 'medium' | 'high'
+
+export type AccountHealthResponse = {
+  id: string
+  client_account_id: string
+  admin_user_id: string
+  month: string
+  question_id: string
+  response: ResponseValue | null
+  cs_lead_comment: string | null
+  cs_lead_updated_at: string | null
+  cs_lead_updated_by: string | null
+  client_partner_comment: string | null
+  client_partner_updated_at: string | null
+  client_partner_updated_by: string | null
+  created_at: string
+  updated_at: string | null
+  updated_by: string | null
+}
+
 export type TaskStatus = 'open' | 'complete'
 export type RelationshipStatus = 'pending' | 'accepted' | 'archived'
 export type DefaultLanding = 'task_list' | 'manager_view'

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Gauge } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import type { ClientAccountRow, AccountHealthMetadata, EngagementType } from '@/lib/supabase/types'
+import RiskAssessmentTable from './RiskAssessmentTable'
 
 const ENGAGEMENT_TYPE_LABELS: Record<EngagementType, string> = {
   monthly_review: 'Monthly review',
@@ -255,7 +256,12 @@ export default function AccountHealthView({
           <p className="text-[13px] text-text-muted">Select a client account above to begin.</p>
         </div>
       ) : (
-        <div className="text-[13px] text-text-muted">Risk assessment table coming in Phase C.</div>
+        <RiskAssessmentTable
+          clientAccountId={selectedAccount.id}
+          adminUserId={effectiveUserId!}
+          month={currentMonth}
+          readOnly={readOnly}
+        />
       )}
     </div>
   )
