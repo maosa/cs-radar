@@ -1,13 +1,27 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+function isPublicPath(pathname: string) {
+  return (
+    pathname === '/login' ||
+    pathname === '/signup' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon')
+  )
+}
+
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Fail open if env vars are missing (prevents crashing the entire app)
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.next()
+    if (isPublicPath(pathname) || process.env.NODE_ENV !== 'production') {
+      return NextResponse.next()
+    }
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   let supabaseResponse = NextResponse.next({ request })
@@ -33,21 +47,14 @@ export async function middleware(request: NextRequest) {
     const { data } = await supabase.auth.getUser()
     user = data.user
   } catch {
-    // If Supabase is unreachable, fail open rather than blocking all traffic
-    return supabaseResponse
+    if (isPublicPath(pathname) || process.env.NODE_ENV !== 'production') {
+      return supabaseResponse
+    }
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  const { pathname } = request.nextUrl
-
   // Allow auth pages and public assets through unconditionally
-  if (
-    pathname === '/login' ||
-    pathname === '/signup' ||
-    pathname === '/forgot-password' ||
-    pathname === '/reset-password' ||
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon')
-  ) {
+  if (isPublicPath(pathname)) {
     return supabaseResponse
   }
 

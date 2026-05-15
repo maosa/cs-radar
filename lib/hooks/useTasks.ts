@@ -233,7 +233,6 @@ export function useTasks(userId: string | null, addToast: (msg: string, type?: '
       const { error } = await supabase.rpc('batch_update_sort_order', {
         task_ids: orderedIds,
         sort_orders: orderedIds.map((_, i) => i),
-        updated_by_user: userId,
       })
       if (error) throw error
     },
