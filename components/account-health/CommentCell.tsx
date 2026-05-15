@@ -131,19 +131,19 @@ export default function CommentCell({
   if (hasContent) {
     return (
       <div
-        className={`group relative px-4 py-3 flex flex-col gap-1 ${!readOnly ? 'cursor-pointer hover:bg-[#F7F7F7]' : ''}`}
+        className={`group px-4 py-3 flex items-start gap-2 ${!readOnly ? 'cursor-pointer hover:bg-[#F7F7F7]' : ''}`}
         onClick={!readOnly ? enterEdit : undefined}
       >
+        <p className="text-[13px] text-navy whitespace-pre-wrap flex-1 min-w-0">{initialValue}</p>
         {!readOnly && (
           <button
             onClick={e => { e.stopPropagation(); enterEdit() }}
-            className="absolute top-2 right-2 p-1 rounded text-text-muted opacity-0 group-hover:opacity-100 hover:text-navy hover:bg-[#EBEBEB] transition-all"
+            className="flex-shrink-0 p-1 rounded text-text-muted opacity-0 group-hover:opacity-100 hover:text-navy hover:bg-[#EBEBEB] transition-all"
             title="Edit comment"
           >
             <Pencil size={12} />
           </button>
         )}
-        <p className="text-[13px] text-navy whitespace-pre-wrap">{initialValue}</p>
       </div>
     )
   }
