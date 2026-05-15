@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { X, Info } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import type { AccountHealthResponse, ResponseValue } from '@/lib/supabase/types'
+import CommentCell from './CommentCell'
 
 type QuestionType = 'yes_no' | 'risk_level'
 
@@ -80,7 +81,7 @@ const RISK_ASSESSMENT_SECTIONS: Section[] = [
     id: 'risk_factor',
     label: 'Risk Factor',
     questions: [
-      { id: 'risk_flagged_high',           text: 'Is the client flagged as high risk in the CS risk review?',                                        type: 'yes_no' },
+      { id: 'risk_flagged_high',           text: 'Is the client flagged as High-Risk in the CS risk review?',                                        type: 'yes_no' },
       { id: 'risk_admin_left',             text: 'Has the primary admin, sponsor, or power user left and not been replaced?',                        type: 'yes_no' },
       { id: 'risk_usage_dropped',          text: 'Has product usage dropped significantly (30% or more decline) over a 4-week period?',             type: 'yes_no' },
       { id: 'risk_renewal_low_engagement', text: 'Is renewal within 3 months with low engagement?',                                                  type: 'yes_no' },
@@ -349,11 +350,79 @@ export default function RiskAssessmentTable({
                   )}
                 </div>
 
-                {/* Column 3: CS Lead Comments (placeholder for Phase D) */}
-                <div className="flex-1 min-w-0 px-4 py-3 bg-[#FAFAFA]" />
+                {/* Column 3: CS Lead Comments */}
+                <div className="flex-1 min-w-[200px]">
+                  <CommentCell
+                    key={`cs-${question.id}-${clientAccountId}-${monthStr}`}
+                    initialValue={rowData?.cs_lead_comment ?? null}
+                    updatedAt={rowData?.cs_lead_updated_at ?? null}
+                    updatedByUserId={rowData?.cs_lead_updated_by ?? null}
+                    readOnly={readOnly}
+                    onSave={async (value) => {
+                      const now = new Date().toISOString()
+                      const { data, error } = await supabase
+                        .from('account_health_responses')
+                        .upsert({
+                          client_account_id: clientAccountId,
+                          admin_user_id: adminUserId,
+                          month: monthStr,
+                          question_id: question.id,
+                          cs_lead_comment: value,
+                          cs_lead_updated_at: now,
+                          cs_lead_updated_by: adminUserId,
+                          updated_at: now,
+                          updated_by: adminUserId,
+                        }, { onConflict: 'client_account_id,month,question_id' })
+                        .select()
+                        .single()
+                      if (error) throw error
+                      if (data) {
+                        setResponsesMap(prev => {
+                          const next = new Map(prev)
+                          next.set(question.id, data as AccountHealthResponse)
+                          return next
+                        })
+                      }
+                    }}
+                  />
+                </div>
 
-                {/* Column 4: Client Partner Comments (placeholder for Phase D) */}
-                <div className="flex-1 min-w-0 px-4 py-3 bg-[#FAFAFA]" />
+                {/* Column 4: Client Partner Comments */}
+                <div className="flex-1 min-w-[200px]">
+                  <CommentCell
+                    key={`cp-${question.id}-${clientAccountId}-${monthStr}`}
+                    initialValue={rowData?.client_partner_comment ?? null}
+                    updatedAt={rowData?.client_partner_updated_at ?? null}
+                    updatedByUserId={rowData?.client_partner_updated_by ?? null}
+                    readOnly={readOnly}
+                    onSave={async (value) => {
+                      const now = new Date().toISOString()
+                      const { data, error } = await supabase
+                        .from('account_health_responses')
+                        .upsert({
+                          client_account_id: clientAccountId,
+                          admin_user_id: adminUserId,
+                          month: monthStr,
+                          question_id: question.id,
+                          client_partner_comment: value,
+                          client_partner_updated_at: now,
+                          client_partner_updated_by: adminUserId,
+                          updated_at: now,
+                          updated_by: adminUserId,
+                        }, { onConflict: 'client_account_id,month,question_id' })
+                        .select()
+                        .single()
+                      if (error) throw error
+                      if (data) {
+                        setResponsesMap(prev => {
+                          const next = new Map(prev)
+                          next.set(question.id, data as AccountHealthResponse)
+                          return next
+                        })
+                      }
+                    }}
+                  />
+                </div>
               </div>
             )
           })}

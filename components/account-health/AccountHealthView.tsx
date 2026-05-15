@@ -266,7 +266,7 @@ export default function AccountHealthView({
         {selectedAccount && (
           <div className="px-6 pt-3">
             <div className="flex bg-[#E8E8E8] border-x border-t border-b border-border rounded-t-[8px]">
-              <div className="w-[280px] shrink-0 px-4 py-2.5 text-[13px] font-medium text-navy">Risk category</div>
+              <div className="w-[280px] shrink-0 px-4 py-2.5 text-[13px] font-medium text-navy">Risk Category</div>
               <div className="w-[160px] shrink-0 px-4 py-2.5 text-[13px] font-medium text-navy">Response</div>
               <div className="flex-1 px-4 py-2.5 text-[13px] font-medium text-navy">CS Lead Comments</div>
               <div className="flex-1 px-4 py-2.5 text-[13px] font-medium text-navy">Client Partner Comments</div>
