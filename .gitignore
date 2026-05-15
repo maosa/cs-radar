@@ -39,6 +39,9 @@ prompts.txt
 # claude
 .claude/
 
+# supabase
+supabase/.temp/
+
 # vercel
 .vercel
 
