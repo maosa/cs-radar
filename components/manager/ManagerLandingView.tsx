@@ -98,6 +98,7 @@ export default function ManagerLandingView() {
   const router = useRouter()
   const [people, setPeople] = useState<PersonCard[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('home')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortMode, setSortMode] = useState<SortMode>('favorites')
@@ -111,19 +112,17 @@ export default function ManagerLandingView() {
     }
 
     async function loadPeople() {
-      // Fetch accepted relationships where current user is the manager
+      // Use select('*') so the query succeeds even if optional columns like
+      // is_favorite / is_archived haven't been added by a migration yet.
       const { data: relationships, error } = await supabase
         .from('manager_relationships')
-        .select('id, admin_user_id, is_favorite, is_archived')
+        .select('*')
         .eq('manager_user_id', userId)
         .eq('status', 'accepted')
 
-      // Only redirect when we are certain there are no accepted relationships.
-      // A query error (network issue, schema mismatch, etc.) must not be treated
-      // as "no relationships" — that would wrongly redirect and overwrite the user's
-      // default_landing preference.
       if (error) {
         console.error('Failed to load manager relationships', error)
+        setFetchError(true)
         setLoading(false)
         return
       }
@@ -133,18 +132,19 @@ export default function ManagerLandingView() {
         return
       }
 
-      // 3. Fetch user details for all admin_user_ids in those relationships
-      const adminUserIds: string[] = relationships.map((r: { admin_user_id: string }) => r.admin_user_id)
+      const adminUserIds: string[] = relationships.map((r: any) => r.admin_user_id as string)
+
+      // Use select('*') for the same reason — account_health_enabled was added
+      // in a later migration and may not exist in all environments.
       const { data: users } = await supabase
         .from('users')
-        .select('id, first_name, last_name, email, role, account_health_enabled')
+        .select('*')
         .in('id', adminUserIds)
 
-      const usersMap = new Map<string, { id: string; first_name: string | null; last_name: string | null; email: string; role: string | null; account_health_enabled: boolean }>(
-        (users ?? []).map((u: { id: string; first_name: string | null; last_name: string | null; email: string; role: string | null; account_health_enabled: boolean }) => [u.id, u])
+      const usersMap = new Map<string, any>(
+        (users ?? []).map((u: any) => [u.id, u])
       )
 
-      // 4. Build PersonCard[] from combined data
       const cards: PersonCard[] = relationships.map((rel: any) => {
         const user = usersMap.get(rel.admin_user_id)
         return {
@@ -294,6 +294,11 @@ export default function ManagerLandingView() {
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <p className="text-[13px] text-text-muted">Loading…</p>
+          </div>
+        ) : fetchError ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-text-muted">
+            <UserRound size={28} />
+            <p className="text-[13px]">Failed to load direct reports. Please refresh the page.</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-text-muted">
