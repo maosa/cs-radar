@@ -1217,7 +1217,7 @@ function AccountHealthSection({
         />
         <div className="flex flex-col gap-1">
           <label htmlFor="account-health-toggle" className="text-[13px] font-medium text-navy cursor-pointer">
-            Enable account health
+            Enable Account Health
           </label>
           <p className="text-[12px] text-text-secondary">
             Turn this on if you manage client accounts and want to use the Account Health and Risk Assessment / Matrix features. This adds an Account Health page to your sidebar.
