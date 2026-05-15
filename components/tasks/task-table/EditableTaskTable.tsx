@@ -28,7 +28,8 @@ interface EditableTaskTableProps {
   tasks: AnyTask[]
   visibleWeekIndices: number[]
   currentWeekIndex: number
-  sortMode: SortMode
+  weekSortModes: Record<number, SortMode>
+  defaultSortMode: SortMode
   highlightedTaskId: string | null
   onToggleComplete: (id: string) => void
   onToggleFlag: (id: string) => void
@@ -44,7 +45,8 @@ export default function EditableTaskTable({
   tasks,
   visibleWeekIndices,
   currentWeekIndex,
-  sortMode,
+  weekSortModes,
+  defaultSortMode,
   highlightedTaskId,
   onToggleComplete,
   onToggleFlag,
@@ -65,9 +67,10 @@ export default function EditableTaskTable({
       const wA = dateStringToWeekIndex(a.week_start_date)
       const wB = dateStringToWeekIndex(b.week_start_date)
       if (wA !== wB) return wA - wB
-      if (sortMode === 'product') return (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
-      if (sortMode === 'project') return projectName(a).localeCompare(projectName(b))
-      if (sortMode === 'product_project') {
+      const mode = weekSortModes[wA] ?? defaultSortMode
+      if (mode === 'product') return (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
+      if (mode === 'project') return projectName(a).localeCompare(projectName(b))
+      if (mode === 'product_project') {
         const pd = (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
         return pd !== 0 ? pd : projectName(a).localeCompare(projectName(b))
       }
@@ -125,7 +128,7 @@ export default function EditableTaskTable({
                   onDelete={onDelete}
                   onOpenPanel={onOpenPanel}
                   onEditDescription={onEditDescription}
-                  isDragMode={sortMode === 'drag'}
+                  isDragMode={(weekSortModes[dateStringToWeekIndex(task.week_start_date)] ?? defaultSortMode) === 'drag'}
                   isHighlighted={task.id === highlightedTaskId}
                 />
               ))}

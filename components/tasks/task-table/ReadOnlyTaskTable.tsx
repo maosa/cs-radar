@@ -11,7 +11,8 @@ interface ReadOnlyTaskTableProps {
   tasks: AnyTask[]
   visibleWeekIndices: number[]
   currentWeekIndex: number
-  sortMode: SortMode
+  weekSortModes: Record<number, SortMode>
+  defaultSortMode: SortMode
   highlightedTaskId: string | null
   onOpenPanel: (id: string, section: 'notes' | 'comments') => void
 }
@@ -20,7 +21,8 @@ export default function ReadOnlyTaskTable({
   tasks,
   visibleWeekIndices,
   currentWeekIndex,
-  sortMode,
+  weekSortModes,
+  defaultSortMode,
   highlightedTaskId,
   onOpenPanel,
 }: ReadOnlyTaskTableProps) {
@@ -31,9 +33,10 @@ export default function ReadOnlyTaskTable({
       const wA = dateStringToWeekIndex(a.week_start_date)
       const wB = dateStringToWeekIndex(b.week_start_date)
       if (wA !== wB) return wA - wB
-      if (sortMode === 'product') return (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
-      if (sortMode === 'project') return projectName(a).localeCompare(projectName(b))
-      if (sortMode === 'product_project') {
+      const mode = weekSortModes[wA] ?? defaultSortMode
+      if (mode === 'product') return (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
+      if (mode === 'project') return projectName(a).localeCompare(projectName(b))
+      if (mode === 'product_project') {
         const pd = (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
         return pd !== 0 ? pd : projectName(a).localeCompare(projectName(b))
       }

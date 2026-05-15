@@ -71,7 +71,9 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
   const [filterStatuses, setFilterStatuses] = useState<string[]>([])
-  const [sortMode, setSortMode] = useState<SortMode>(readOnly ? 'drag' : 'product_project')
+  // Owner: per-week sort modes persisted to localStorage; Manager: single global sort mode
+  const [weekSortModes, setWeekSortModes] = useState<Record<number, SortMode>>({})
+  const [managerSortMode, setManagerSortMode] = useState<SortMode>('drag')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<{ task: AnyTask; weekLabel: string }[]>([])
   const [showSearchDropdown, setShowSearchDropdown] = useState(false)
@@ -97,6 +99,21 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
+
+  // Load per-week sort modes from localStorage once userId is known (owner only)
+  useEffect(() => {
+    if (readOnly || !userId) return
+    const stored = localStorage.getItem(`task_week_sort_modes_${userId}`)
+    if (stored) {
+      try { setWeekSortModes(JSON.parse(stored)) } catch {}
+    }
+  }, [userId, readOnly])
+
+  // Persist per-week sort modes to localStorage whenever they change (owner only)
+  useEffect(() => {
+    if (readOnly || !userId) return
+    localStorage.setItem(`task_week_sort_modes_${userId}`, JSON.stringify(weekSortModes))
+  }, [weekSortModes, userId, readOnly])
 
   // Mutations — always called (hooks must not be conditional); only invoked in owner mode
   const { toggleComplete, toggleFlag, moveTask, editDescription, deleteTask, reorderTasks, taskCreated, updateTaskLocally } =
@@ -217,6 +234,24 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
       ? [centerWeekIndex]
       : [centerWeekIndex - 1, centerWeekIndex, centerWeekIndex + 1].filter((w) => w >= 0)
 
+  // Sort mode reflected in the filter bar — center week's mode for owner, global for manager
+  const currentSortMode: SortMode = readOnly
+    ? managerSortMode
+    : (weekSortModes[centerWeekIndex] ?? 'product_project')
+
+  // Clicking a sort button updates all currently visible weeks (owner) or the global mode (manager)
+  const handleSortMode = useCallback((mode: SortMode) => {
+    if (readOnly) {
+      setManagerSortMode(mode)
+    } else {
+      setWeekSortModes((prev) => {
+        const next = { ...prev }
+        visibleWeekIndices.forEach((wi) => { next[wi] = mode })
+        return next
+      })
+    }
+  }, [readOnly, visibleWeekIndices])
+
   const filteredTasks = useMemo(
     () => tasks.filter((t) => {
       if (filterProducts.length > 0 && !filterProducts.includes(t.product)) return false
@@ -306,11 +341,11 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
         filterProducts={filterProducts}
         filterProjects={filterProjects}
         filterStatuses={filterStatuses}
-        sortMode={sortMode}
+        sortMode={currentSortMode}
         onToggleProduct={handleToggleProduct}
         onToggleProject={handleToggleProject}
         onToggleStatus={handleToggleStatus}
-        onSortMode={setSortMode}
+        onSortMode={handleSortMode}
         onClearFilters={readOnly ? undefined : handleClearFilters}
         hideDragSort={readOnly}
       />
@@ -326,7 +361,8 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
               tasks={filteredTasks}
               visibleWeekIndices={visibleWeekIndices}
               currentWeekIndex={todayWeekIndex}
-              sortMode={sortMode}
+              weekSortModes={{}}
+              defaultSortMode={managerSortMode}
               highlightedTaskId={highlightedTaskId}
               onOpenPanel={handleOpenPanel}
             />
@@ -335,7 +371,8 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
               tasks={filteredTasks}
               visibleWeekIndices={visibleWeekIndices}
               currentWeekIndex={todayWeekIndex}
-              sortMode={sortMode}
+              weekSortModes={weekSortModes}
+              defaultSortMode="product_project"
               highlightedTaskId={highlightedTaskId}
               onToggleComplete={toggleComplete}
               onToggleFlag={toggleFlag}
