@@ -22,7 +22,7 @@ import ProductBadge from '../ProductBadge'
 import TableHeader from './TableHeader'
 import SortableTaskRow from './SortableTaskRow'
 import { PRODUCT_ORDER, type AnyTask } from './types'
-import type { SortMode } from '../shared/SharedFilterBar'
+import { parseSortMode, type SortMode } from '../shared/SharedFilterBar'
 
 interface EditableTaskTableProps {
   tasks: AnyTask[]
@@ -67,12 +67,14 @@ export default function EditableTaskTable({
       const wA = dateStringToWeekIndex(a.week_start_date)
       const wB = dateStringToWeekIndex(b.week_start_date)
       if (wA !== wB) return wA - wB
-      const mode = weekSortModes[wA] ?? defaultSortMode
-      if (mode === 'product') return (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
-      if (mode === 'project') return projectName(a).localeCompare(projectName(b))
-      if (mode === 'product_project') {
+      const f = parseSortMode(weekSortModes[wA] ?? defaultSortMode)
+      if (f.product) {
         const pd = (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
-        return pd !== 0 ? pd : projectName(a).localeCompare(projectName(b))
+        if (pd !== 0) return pd
+      }
+      if (f.project) {
+        const pj = projectName(a).localeCompare(projectName(b))
+        if (pj !== 0) return pj
       }
       return a.sort_order - b.sort_order
     })
@@ -88,6 +90,10 @@ export default function EditableTaskTable({
     const draggedTask = visibleTasks.find((t) => t.id === active.id)
     const targetTask = visibleTasks.find((t) => t.id === over.id)
     if (!draggedTask || !targetTask || draggedTask.week_start_date !== targetTask.week_start_date) return
+    const weekIdx = dateStringToWeekIndex(draggedTask.week_start_date)
+    const f = parseSortMode(weekSortModes[weekIdx] ?? defaultSortMode)
+    if (f.product && draggedTask.product !== targetTask.product) return
+    if (f.project && draggedTask.project_id !== targetTask.project_id) return
     const weekStr = draggedTask.week_start_date
     const weekTasks = visibleTasks.filter((t) => t.week_start_date === weekStr)
     const reordered = arrayMove(
@@ -128,7 +134,7 @@ export default function EditableTaskTable({
                   onDelete={onDelete}
                   onOpenPanel={onOpenPanel}
                   onEditDescription={onEditDescription}
-                  isDragMode={(weekSortModes[dateStringToWeekIndex(task.week_start_date)] ?? defaultSortMode) === 'drag'}
+                  isDragMode={parseSortMode(weekSortModes[dateStringToWeekIndex(task.week_start_date)] ?? defaultSortMode).drag}
                   isHighlighted={task.id === highlightedTaskId}
                 />
               ))}

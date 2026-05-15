@@ -3,7 +3,34 @@
 import { useRef, useState, useEffect } from 'react'
 import { X, ChevronDown } from 'lucide-react'
 
-export type SortMode = 'drag' | 'product' | 'project' | 'product_project'
+export type SortMode =
+  | 'none'
+  | 'drag'
+  | 'product'
+  | 'project'
+  | 'product_project'
+  | 'drag_product'
+  | 'drag_project'
+  | 'drag_product_project'
+
+export function parseSortMode(mode: SortMode) {
+  return {
+    drag:    mode === 'drag'    || mode === 'drag_product' || mode === 'drag_project' || mode === 'drag_product_project',
+    product: mode === 'product' || mode === 'product_project' || mode === 'drag_product' || mode === 'drag_product_project',
+    project: mode === 'project' || mode === 'product_project' || mode === 'drag_project' || mode === 'drag_product_project',
+  }
+}
+
+export function buildSortMode(drag: boolean, product: boolean, project: boolean): SortMode {
+  if (drag && product && project) return 'drag_product_project'
+  if (drag && product)            return 'drag_product'
+  if (drag && project)            return 'drag_project'
+  if (product && project)         return 'product_project'
+  if (drag)                       return 'drag'
+  if (product)                    return 'product'
+  if (project)                    return 'project'
+  return 'none'
+}
 
 export interface UniqueProject {
   id: string
@@ -226,22 +253,14 @@ export default function SharedFilterBar({
   const hasActiveFilters =
     filterProducts.length > 0 || filterProjects.length > 0 || filterStatuses.length > 0
 
-  const isProductSort = sortMode === 'product' || sortMode === 'product_project'
-  const isProjectSort = sortMode === 'project' || sortMode === 'product_project'
+  const flags = parseSortMode(sortMode)
+  const isProductSort = flags.product
+  const isProjectSort = flags.project
+  const isDragSort    = flags.drag
 
-  const handleSortProduct = () => {
-    if (sortMode === 'drag') onSortMode('product')
-    else if (sortMode === 'product') onSortMode('drag')
-    else if (sortMode === 'project') onSortMode('product_project')
-    else onSortMode('project') // product_project → remove product
-  }
-
-  const handleSortProject = () => {
-    if (sortMode === 'drag') onSortMode('project')
-    else if (sortMode === 'project') onSortMode('drag')
-    else if (sortMode === 'product') onSortMode('product_project')
-    else onSortMode('product') // product_project → remove project
-  }
+  const handleSortProduct = () => onSortMode(buildSortMode(flags.drag, !flags.product, flags.project))
+  const handleSortProject = () => onSortMode(buildSortMode(flags.drag, flags.product, !flags.project))
+  const handleSortDrag    = () => onSortMode(buildSortMode(!flags.drag, flags.product, flags.project))
 
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 bg-white border-b border-border flex-shrink-0">
@@ -308,8 +327,8 @@ export default function SharedFilterBar({
         {/* Drag & drop chip */}
         {!hideDragSort && (
           <button
-            onClick={() => onSortMode('drag')}
-            className={`${chipBase} ${sortMode === 'drag' ? chipActive : chipInactive}`}
+            onClick={handleSortDrag}
+            className={`${chipBase} ${isDragSort ? chipActive : chipInactive}`}
           >
             Drag &amp; drop
           </button>

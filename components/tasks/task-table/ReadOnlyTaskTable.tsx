@@ -5,7 +5,7 @@ import { projectName } from '@/lib/taskUtils'
 import TableHeader from './TableHeader'
 import ReadOnlyTaskRow from './ReadOnlyTaskRow'
 import { PRODUCT_ORDER, type AnyTask } from './types'
-import type { SortMode } from '../shared/SharedFilterBar'
+import { parseSortMode, type SortMode } from '../shared/SharedFilterBar'
 
 interface ReadOnlyTaskTableProps {
   tasks: AnyTask[]
@@ -33,12 +33,14 @@ export default function ReadOnlyTaskTable({
       const wA = dateStringToWeekIndex(a.week_start_date)
       const wB = dateStringToWeekIndex(b.week_start_date)
       if (wA !== wB) return wA - wB
-      const mode = weekSortModes[wA] ?? defaultSortMode
-      if (mode === 'product') return (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
-      if (mode === 'project') return projectName(a).localeCompare(projectName(b))
-      if (mode === 'product_project') {
+      const f = parseSortMode(weekSortModes[wA] ?? defaultSortMode)
+      if (f.product) {
         const pd = (PRODUCT_ORDER[a.product] ?? 99) - (PRODUCT_ORDER[b.product] ?? 99)
-        return pd !== 0 ? pd : projectName(a).localeCompare(projectName(b))
+        if (pd !== 0) return pd
+      }
+      if (f.project) {
+        const pj = projectName(a).localeCompare(projectName(b))
+        if (pj !== 0) return pj
       }
       return a.sort_order - b.sort_order
     })
