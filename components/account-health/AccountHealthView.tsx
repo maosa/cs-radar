@@ -220,39 +220,42 @@ export default function AccountHealthView({
                 <div className="w-px h-4 bg-border mx-0.5 flex-shrink-0 mb-2" />
 
                 {/* Month navigation */}
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={prevMonth}
-                    className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
-                    aria-label="Previous month"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    onClick={goToToday}
-                    className={`px-2.5 py-1 text-[12px] font-medium rounded border transition-colors ${
-                      isCurrentMonth(currentMonth)
-                        ? 'border-teal text-teal bg-white cursor-default'
-                        : 'border-border text-text-secondary bg-white hover:border-teal hover:text-teal'
-                    }`}
-                  >
-                    Today
-                  </button>
-                  <button
-                    onClick={nextMonth}
-                    className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
-                    aria-label="Next month"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                  <span className="text-[14px] font-medium text-navy ml-2">
-                    {formatMonthLabel(currentMonth)}
-                  </span>
-                  {isCurrentMonth(currentMonth) && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-teal text-navy">
-                      current
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[11px] text-text-muted">Month</label>
+                  <div className="h-8 flex items-center gap-1">
+                    <button
+                      onClick={prevMonth}
+                      className="flex items-center justify-center w-7 h-8 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
+                      aria-label="Previous month"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={goToToday}
+                      className={`h-8 flex items-center px-2.5 text-[12px] font-medium rounded border transition-colors ${
+                        isCurrentMonth(currentMonth)
+                          ? 'border-teal text-teal bg-white cursor-default'
+                          : 'border-border text-text-secondary bg-white hover:border-teal hover:text-teal'
+                      }`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      onClick={nextMonth}
+                      className="flex items-center justify-center w-7 h-8 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
+                      aria-label="Next month"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                    <span className="text-[14px] font-medium text-navy ml-2">
+                      {formatMonthLabel(currentMonth)}
                     </span>
-                  )}
+                    {isCurrentMonth(currentMonth) && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-teal text-navy">
+                        current
+                      </span>
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -261,12 +264,12 @@ export default function AccountHealthView({
 
         {/* Table column header — only when an account is selected */}
         {selectedAccount && (
-          <div className="px-6">
+          <div className="px-6 pt-3">
             <div className="flex bg-[#E8E8E8] border-x border-t border-b border-border rounded-t-[8px]">
-              <div className="w-[280px] shrink-0 px-4 py-2.5 text-[12px] font-medium text-navy">Risk category</div>
-              <div className="w-[160px] shrink-0 px-4 py-2.5 text-[12px] font-medium text-navy">Response</div>
-              <div className="flex-1 px-4 py-2.5 text-[12px] font-medium text-navy">CS Lead Comments</div>
-              <div className="flex-1 px-4 py-2.5 text-[12px] font-medium text-navy">Client Partner Comments</div>
+              <div className="w-[280px] shrink-0 px-4 py-2.5 text-[13px] font-medium text-navy">Risk category</div>
+              <div className="w-[160px] shrink-0 px-4 py-2.5 text-[13px] font-medium text-navy">Response</div>
+              <div className="flex-1 px-4 py-2.5 text-[13px] font-medium text-navy">CS Lead Comments</div>
+              <div className="flex-1 px-4 py-2.5 text-[13px] font-medium text-navy">Client Partner Comments</div>
             </div>
           </div>
         )}
@@ -279,7 +282,7 @@ export default function AccountHealthView({
           <p className="text-[13px] text-text-muted">Select a client account above to begin.</p>
         </div>
       ) : (
-        <div className="px-6 pb-6">
+        <div className="px-6 pb-6 bg-white">
           <RiskAssessmentTable
             clientAccountId={selectedAccount.id}
             adminUserId={effectiveUserId!}
