@@ -69,7 +69,7 @@ export default function SignupPage() {
       {confirmMessage ? (
         <div className="space-y-4 text-center">
           <div className="mb-6">
-            <h1 className="text-[18px] font-medium text-navy">Confirm your email address</h1>
+            <h1 className="text-[18px] font-medium text-navy">Confirm Your Email Address</h1>
             <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
           </div>
           <p className="text-[13px] text-text-secondary">A confirmation email has been sent to <span className="font-medium text-navy">{email}</span></p>
@@ -81,7 +81,7 @@ export default function SignupPage() {
       ) : (
         <>
         <div className="mb-6">
-          <h1 className="text-[18px] font-medium text-navy">Create account</h1>
+          <h1 className="text-[18px] font-medium text-navy">Create Account</h1>
           <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">

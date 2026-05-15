@@ -14,7 +14,7 @@ export default function DeleteConfirmModal({
   onConfirm,
   onCancel,
   deleting,
-  title = 'Delete task?',
+  title = 'Delete Task?',
   message = 'Are you sure you want to delete this task? This action cannot be undone.',
 }: DeleteConfirmModalProps) {
   useEffect(() => {

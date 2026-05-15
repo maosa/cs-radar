@@ -55,7 +55,7 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-sm bg-white rounded-xl border border-border p-8 shadow-sm">
       <div className="mb-6">
-        <h1 className="text-[18px] font-medium text-navy">Sign in</h1>
+        <h1 className="text-[18px] font-medium text-navy">Sign In</h1>
         <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
       </div>
 

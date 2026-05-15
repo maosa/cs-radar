@@ -224,7 +224,7 @@ export default function ManagerLandingView() {
       <div className="bg-white border-b border-border px-6 py-4 flex-shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex-1">
-            <h1 className="text-[16px] font-medium text-navy">Manager view</h1>
+            <h1 className="text-[16px] font-medium text-navy">Manager View</h1>
             <p className="text-[12px] text-text-muted mt-0.5">Task lists of your direct reports</p>
           </div>
 

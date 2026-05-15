@@ -147,7 +147,7 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
       onMouseDown={handleBackdrop}
     >
       <div className="bg-white rounded-[12px] shadow-xl w-full max-w-md mx-4 p-6">
-        <h2 className="text-[15px] font-medium text-navy mb-1">Add task</h2>
+        <h2 className="text-[15px] font-medium text-navy mb-1">Add Task</h2>
         <p className="text-[12px] text-text-muted mb-5">{formatWeekHeader(weekIndex)}</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
