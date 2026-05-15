@@ -1633,15 +1633,26 @@ function ClientAccountsSection({ onToast }: { onToast: (msg: string, type?: 'suc
 
 // ─── Account Health Settings Block ────────────────────────────────────────────
 
-function AccountHealthSettingsBlock({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
+function AccountHealthSettingsBlock({
+  onToast,
+  onEnabledChange,
+}: {
+  onToast: (msg: string, type?: 'success' | 'error') => void
+  onEnabledChange: (enabled: boolean) => void
+}) {
   const [accountHealthEnabled, setAccountHealthEnabled] = useState(false)
+
+  const handleEnabledChange = (val: boolean) => {
+    setAccountHealthEnabled(val)
+    onEnabledChange(val)
+  }
 
   return (
     <>
       <SectionCard title="Account Health">
         <AccountHealthSection
           onToast={onToast}
-          onEnabledChange={setAccountHealthEnabled}
+          onEnabledChange={handleEnabledChange}
         />
       </SectionCard>
       {accountHealthEnabled && (
@@ -1725,21 +1736,16 @@ const AH_QUESTION_ORDER = Object.fromEntries(
 
 // ─── Export section ───────────────────────────────────────────────────────────
 
-function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
+function ExportSection({
+  onToast,
+  accountHealthEnabled,
+}: {
+  onToast: (msg: string, type?: 'success' | 'error') => void
+  accountHealthEnabled: boolean
+}) {
   const { userId } = useAuth()
   const [exporting, setExporting] = useState(false)
   const [exportingAH, setExportingAH] = useState(false)
-  const [accountHealthEnabled, setAccountHealthEnabled] = useState(false)
-
-  useEffect(() => {
-    if (!userId) return
-    supabase
-      .from('users')
-      .select('account_health_enabled')
-      .eq('id', userId)
-      .single()
-      .then(({ data }) => setAccountHealthEnabled(data?.account_health_enabled ?? false))
-  }, [userId])
 
   const handleExport = async () => {
     if (!userId) return
@@ -1966,6 +1972,7 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
 
 export default function SettingsView() {
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [accountHealthEnabled, setAccountHealthEnabled] = useState(false)
 
   const addToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).slice(2)
@@ -1989,9 +1996,9 @@ export default function SettingsView() {
       <SectionCard title="Team Management">
         <TeamManagementSection onToast={addToast} />
       </SectionCard>
-      <AccountHealthSettingsBlock onToast={addToast} />
+      <AccountHealthSettingsBlock onToast={addToast} onEnabledChange={setAccountHealthEnabled} />
       <SectionCard title="Export Data">
-        <ExportSection onToast={addToast} />
+        <ExportSection onToast={addToast} accountHealthEnabled={accountHealthEnabled} />
       </SectionCard>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
