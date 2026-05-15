@@ -431,7 +431,42 @@ export default function RiskAssessmentTable({
                           p_comment:           value,
                         })
                         if (error) throw error
-                        // State update arrives via the existing realtime subscription
+                        // Optimistically update local state so the cell reflects the
+                        // new value immediately, without waiting for the realtime event.
+                        const now = new Date().toISOString()
+                        setResponsesMap(prev => {
+                          const next = new Map(prev)
+                          const existing = next.get(question.id)
+                          if (existing) {
+                            next.set(question.id, {
+                              ...existing,
+                              client_partner_comment:    value || null,
+                              client_partner_updated_at: now,
+                              client_partner_updated_by: actorUserId,
+                              updated_at: now,
+                              updated_by: actorUserId,
+                            })
+                          } else {
+                            next.set(question.id, {
+                              id: '',
+                              client_account_id: clientAccountId,
+                              admin_user_id: adminUserId,
+                              month: monthStr,
+                              question_id: question.id,
+                              response: null,
+                              cs_lead_comment: null,
+                              cs_lead_updated_at: null,
+                              cs_lead_updated_by: null,
+                              client_partner_comment:    value || null,
+                              client_partner_updated_at: now,
+                              client_partner_updated_by: actorUserId,
+                              created_at: now,
+                              updated_at: now,
+                              updated_by: actorUserId,
+                            })
+                          }
+                          return next
+                        })
                       } else {
                         // Owner path: direct upsert, returns the updated row immediately
                         const now = new Date().toISOString()
