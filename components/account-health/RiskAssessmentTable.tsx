@@ -141,6 +141,32 @@ export default function RiskAssessmentTable({
       })
   }, [clientAccountId, monthStr])
 
+  // Live updates — reflect changes made by either the owner or their manager without a page refresh.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`ahr:${clientAccountId}:${monthStr}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'account_health_responses',
+          filter: `client_account_id=eq.${clientAccountId}`,
+        },
+        (payload) => {
+          const row = payload.new as AccountHealthResponse
+          if (!row?.question_id || row.month !== monthStr) return
+          setResponsesMap(prev => {
+            const next = new Map(prev)
+            next.set(row.question_id, row)
+            return next
+          })
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [clientAccountId, monthStr])
+
   useEffect(() => {
     if (!openPopoverId) return
     const handler = (e: MouseEvent) => {
