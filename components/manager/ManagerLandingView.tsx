@@ -112,11 +112,21 @@ export default function ManagerLandingView() {
 
     async function loadPeople() {
       // Fetch accepted relationships where current user is the manager
-      const { data: relationships } = await supabase
+      const { data: relationships, error } = await supabase
         .from('manager_relationships')
         .select('id, admin_user_id, is_favorite, is_archived')
         .eq('manager_user_id', userId)
         .eq('status', 'accepted')
+
+      // Only redirect when we are certain there are no accepted relationships.
+      // A query error (network issue, schema mismatch, etc.) must not be treated
+      // as "no relationships" — that would wrongly redirect and overwrite the user's
+      // default_landing preference.
+      if (error) {
+        console.error('Failed to load manager relationships', error)
+        setLoading(false)
+        return
+      }
 
       if (!relationships || relationships.length === 0) {
         await supabase.from('users').update({ default_landing: 'task_list' }).eq('id', userId)

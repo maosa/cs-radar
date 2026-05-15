@@ -147,7 +147,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
           .eq('manager_user_id', userId)
           .eq('status', 'accepted'),
       ])
-      if ((relRes.count ?? 0) === 0) {
+      if (!relRes.error && (relRes.count ?? 0) === 0) {
         await supabase.from('users').update({ default_landing: 'task_list' }).eq('id', userId)
         router.replace('/tasks')
         return
