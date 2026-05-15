@@ -185,7 +185,11 @@ export default function AccountHealthView({
               <label className="text-[11px] text-text-muted">Client account</label>
               <select
                 value={selectedAccountId}
-                onChange={e => setSelectedAccountId(e.target.value)}
+                onChange={e => {
+                  setSelectedAccountId(e.target.value)
+                  const now = new Date()
+                  setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1))
+                }}
                 disabled={readOnly && !viewAsUserId}
                 className="h-8 min-w-max pl-3 pr-7 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed"
               >
