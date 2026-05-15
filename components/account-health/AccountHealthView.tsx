@@ -72,7 +72,7 @@ export default function AccountHealthView({
     if (!effectiveUserId) return
     supabase
       .from('client_accounts')
-      .select('*')
+      .select('id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at')
       .eq('admin_user_id', effectiveUserId)
       .eq('is_visible', true)
       .is('deleted_at', null)
@@ -92,7 +92,7 @@ export default function AccountHealthView({
     }
     supabase
       .from('account_health_metadata')
-      .select('*')
+      .select('id, client_account_id, admin_user_id, renewal_date, renewal_date_updated_at, renewal_date_updated_by, last_engagement_date, last_engagement_date_updated_at, last_engagement_date_updated_by, engagement_type, engagement_type_updated_at, engagement_type_updated_by, updated_at, updated_by')
       .eq('client_account_id', selectedAccountId)
       .maybeSingle()
       .then(({ data }) => {

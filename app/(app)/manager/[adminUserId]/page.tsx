@@ -51,7 +51,7 @@ export default async function ManagerTaskPage({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
-        .select('*, projects(name)')
+        .select('id, admin_user_id, product, project_id, description, week_start_date, status, is_flagged, sort_order, created_by, created_at, updated_at, updated_by, projects(name), task_comments(count)')
         .eq('admin_user_id', adminUserId)
         .gte('week_start_date', fromDate)
         .lte('week_start_date', toDate)
@@ -60,8 +60,13 @@ export default async function ManagerTaskPage({
       if (error) throw error
       return data.map((row: any) => {
         const proj = row.projects as { name: string } | null
-        const { projects: _p, ...rest } = row
-        return { ...rest, project_name: proj?.name ?? null }
+        const tc = row.task_comments as { count: number }[] | null
+        const { projects: _p, task_comments: _tc, ...rest } = row
+        return {
+          ...rest,
+          project_name: proj?.name ?? null,
+          comment_count: Array.isArray(tc) ? (tc[0]?.count ?? 0) : 0,
+        }
       })
     },
   })

@@ -138,7 +138,7 @@ export default function DetailPanel({
       setNoteLoading(true)
       const { data } = await supabase
         .from('task_notes')
-        .select('*')
+        .select('id, task_id, content, created_by, created_at, updated_at, updated_by')
         .eq('task_id', taskId)
         .maybeSingle()
       if (data) {

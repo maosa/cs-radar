@@ -10,7 +10,7 @@ export function useProjectsQuery(adminUserId: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select('id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at')
         .eq('admin_user_id', adminUserId)
         .is('deleted_at', null)
         .order('sort_order')
@@ -85,7 +85,7 @@ export function useTasksQuery(
       const range = weekRangeRef.current
       let query = supabase
         .from('tasks')
-        .select('*, projects(name), task_comments(count)')
+        .select('id, admin_user_id, product, project_id, description, week_start_date, status, is_flagged, sort_order, created_by, created_at, updated_at, updated_by, projects(name), task_comments(count)')
         .eq('admin_user_id', adminUserId)
         .order('week_start_date')
         .order('sort_order')

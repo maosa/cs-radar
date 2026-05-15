@@ -133,7 +133,7 @@ export default function RiskAssessmentTable({
   useEffect(() => {
     supabase
       .from('account_health_responses')
-      .select('*')
+      .select('id, client_account_id, admin_user_id, month, question_id, response, cs_lead_comment, cs_lead_updated_at, cs_lead_updated_by, client_partner_comment, client_partner_updated_at, client_partner_updated_by, created_at, updated_at, updated_by')
       .eq('client_account_id', clientAccountId)
       .eq('month', monthStr)
       .then(({ data }) => {

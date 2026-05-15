@@ -488,7 +488,7 @@ function ProjectsSection({ onToast }: { onToast: (msg: string, type?: 'success' 
     if (!userId) { setLoading(false); return }
     const { data } = await supabase
       .from('projects')
-      .select('*')
+      .select('id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at')
       .eq('admin_user_id', userId)
       .is('deleted_at', null)
       .order('sort_order', { ascending: true })
@@ -1400,7 +1400,7 @@ function ClientAccountsSection({ onToast }: { onToast: (msg: string, type?: 'suc
     if (!userId) { setLoading(false); return }
     const { data } = await supabase
       .from('client_accounts')
-      .select('*')
+      .select('id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at')
       .eq('admin_user_id', userId)
       .is('deleted_at', null)
       .order('sort_order', { ascending: true })
@@ -1754,7 +1754,7 @@ function ExportSection({
       // 1. Fetch all tasks with project names
       const { data: tasksRaw, error: tasksErr } = await supabase
         .from('tasks')
-        .select('*, projects(name)')
+        .select('id, admin_user_id, product, project_id, description, week_start_date, status, is_flagged, sort_order, created_by, created_at, updated_at, updated_by, projects(name)')
         .eq('admin_user_id', userId)
         .order('week_start_date')
         .order('sort_order')
@@ -1771,8 +1771,8 @@ function ExportSection({
 
       // 2. Parallel fetch notes + comments
       const [notesRes, commentsRes] = await Promise.all([
-        supabase.from('task_notes').select('*').in('task_id', taskIds),
-        supabase.from('task_comments').select('*').in('task_id', taskIds).order('created_at'),
+        supabase.from('task_notes').select('task_id, content').in('task_id', taskIds),
+        supabase.from('task_comments').select('task_id, content, created_by, updated_by, created_at, updated_at').in('task_id', taskIds).order('created_at'),
       ])
       if (notesRes.error) throw notesRes.error
       if (commentsRes.error) throw commentsRes.error
@@ -1816,7 +1816,7 @@ function ExportSection({
       // 5. Build rows
       const headers = ['Week', 'Product', 'Project', 'Task Description', 'Notes', 'Comments', 'Status', 'Flagged']
       const rows = tasks.map((task) => {
-        const proj = task.projects as { name: string } | null
+        const proj = task.projects as unknown as { name: string } | null
         return [
           task.week_start_date,
           task.product,

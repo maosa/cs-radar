@@ -114,7 +114,7 @@ export default function ManagerLandingView() {
       // Fetch accepted relationships where current user is the manager
       const { data: relationships } = await supabase
         .from('manager_relationships')
-        .select('*')
+        .select('id, admin_user_id, is_favorite, is_archived')
         .eq('manager_user_id', userId)
         .eq('status', 'accepted')
 
