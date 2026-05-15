@@ -18,12 +18,12 @@ export default function ManagerViewTabs({ adminUserId, accountHealthEnabled }: M
     <div className="flex items-center gap-0 border-b border-border bg-white px-6">
       <TabLink
         href={`/manager/${adminUserId}`}
-        label="Task list"
+        label="Task List"
         active={!isAccountHealth}
       />
       <TabLink
         href={`/manager/${adminUserId}/account-health`}
-        label="Account health"
+        label="Account Health"
         active={isAccountHealth}
       />
     </div>

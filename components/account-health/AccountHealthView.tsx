@@ -143,7 +143,7 @@ export default function AccountHealthView({
       {/* Sticky header: controls + table column header */}
       <div className="sticky top-0 z-10 bg-white">
         <div className="px-6 pt-6 pb-4 flex flex-col gap-3 border-b border-border">
-          <h1 className="text-base font-medium text-navy">Account health</h1>
+          {!readOnly && <h1 className="text-base font-medium text-navy">Account health</h1>}
 
           {/* Single combined row */}
           <div className="flex items-end gap-3">
