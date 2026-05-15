@@ -33,6 +33,13 @@ export default async function ManagerTaskPage({
 
   if (!rel) redirect('/manager')
 
+  const { data: adminUserData } = await supabase
+    .from('users')
+    .select('account_health_enabled')
+    .eq('id', adminUserId)
+    .single()
+  const accountHealthEnabled = adminUserData?.account_health_enabled ?? false
+
   // Match the same initial window used by TaskTableView so the prefetched data
   // is consumed directly by the client query without a redundant refetch.
   const todayIndex = getCurrentWeekIndex()
@@ -61,7 +68,7 @@ export default async function ManagerTaskPage({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ManagerTaskView adminUserId={adminUserId} />
+      <ManagerTaskView adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} />
     </HydrationBoundary>
   )
 }

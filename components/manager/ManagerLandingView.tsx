@@ -17,6 +17,7 @@ interface PersonCard {
   isFavorite: boolean
   isArchived: boolean
   adminUserId: string
+  accountHealthEnabled: boolean
 }
 
 type SortMode = 'name' | 'role' | 'favorites'
@@ -127,11 +128,11 @@ export default function ManagerLandingView() {
       const adminUserIds: string[] = relationships.map((r: { admin_user_id: string }) => r.admin_user_id)
       const { data: users } = await supabase
         .from('users')
-        .select('id, first_name, last_name, email, role')
+        .select('id, first_name, last_name, email, role, account_health_enabled')
         .in('id', adminUserIds)
 
-      const usersMap = new Map<string, { id: string; first_name: string | null; last_name: string | null; email: string; role: string | null }>(
-        (users ?? []).map((u: { id: string; first_name: string | null; last_name: string | null; email: string; role: string | null }) => [u.id, u])
+      const usersMap = new Map<string, { id: string; first_name: string | null; last_name: string | null; email: string; role: string | null; account_health_enabled: boolean }>(
+        (users ?? []).map((u: { id: string; first_name: string | null; last_name: string | null; email: string; role: string | null; account_health_enabled: boolean }) => [u.id, u])
       )
 
       // 4. Build PersonCard[] from combined data
@@ -146,6 +147,7 @@ export default function ManagerLandingView() {
           role: user?.role ?? '',
           isFavorite: !!rel.is_favorite,
           isArchived: !!rel.is_archived,
+          accountHealthEnabled: !!user?.account_health_enabled,
         }
       })
 
