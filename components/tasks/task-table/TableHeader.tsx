@@ -29,11 +29,9 @@ export default function TableHeader({ visibleWeekIndices, currentWeekIndex }: Ta
             >
               <div className="flex items-center gap-2">
                 <span className={isCurrent ? 'pb-0.5 border-b-2 border-teal' : ''}>{formatWeekHeader(wi)}</span>
-                {isCurrent && (
-                  <span className="inline-flex items-center justify-center px-1.5 py-[3px] rounded text-[10px] font-medium bg-teal text-navy">
-                    current
-                  </span>
-                )}
+                <span className={`inline-flex items-center justify-center px-1.5 py-[3px] rounded text-[10px] font-medium bg-teal text-navy ${isCurrent ? '' : 'invisible'}`}>
+                  current
+                </span>
               </div>
             </th>
           )
