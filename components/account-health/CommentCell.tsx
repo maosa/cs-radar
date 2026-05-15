@@ -144,11 +144,6 @@ export default function CommentCell({
           </button>
         )}
         <p className="text-[13px] text-navy whitespace-pre-wrap">{initialValue}</p>
-        {updatedAt && (
-          <p className="text-[11px] text-text-muted">
-            Updated{userName ? ` by ${userName}` : ''} on {formatDateTime(updatedAt)}
-          </p>
-        )}
       </div>
     )
   }
