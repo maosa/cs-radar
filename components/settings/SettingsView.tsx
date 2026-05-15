@@ -1934,14 +1934,14 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
       </button>
       <hr className="border-border my-4" />
       <p className="text-[13px] text-text-secondary mb-4">
-        Download all your account health data as a CSV file.
+        Download all your Account Health data as a CSV file.
       </p>
       <button
         onClick={handleExportAccountHealth}
         disabled={exportingAH}
         className="px-4 py-2 text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {exportingAH ? 'Exporting…' : 'Export account health to CSV'}
+        {exportingAH ? 'Exporting…' : 'Export Account Health to CSV'}
       </button>
     </div>
   )
