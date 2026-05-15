@@ -248,115 +248,117 @@ export default function RiskAssessmentTable({
   }
 
   return (
-    <div className="bg-white rounded-[8px] border border-border overflow-x-auto">
-      {/* Table header */}
-      <div className="flex min-w-max border-b border-border bg-[#F2F2F2]">
-        <div className="w-[280px] shrink-0 px-4 py-2.5 text-[12px] font-medium text-navy">Risk category</div>
-        <div className="w-[160px] shrink-0 px-4 py-2.5 text-[12px] font-medium text-navy">Response</div>
-        <div className="w-[200px] shrink-0 px-4 py-2.5 text-[12px] font-medium text-navy">CS lead comments</div>
-        <div className="w-[200px] shrink-0 px-4 py-2.5 text-[12px] font-medium text-navy">Client partner comments</div>
-      </div>
-
-      <div className="min-w-max">
-        {RISK_ASSESSMENT_SECTIONS.map(section => (
-          <div key={section.id}>
-            {/* Section header row */}
-            <div className="flex border-t border-border bg-[#F2F2F2]">
-              <div className="w-full px-4 py-2.5 text-[13px] font-medium text-navy">{section.label}</div>
-            </div>
-
-            {/* Info box for Risk Matrix */}
+    <div className="bg-white rounded-b-[8px] border-x border-b border-border">
+      {RISK_ASSESSMENT_SECTIONS.map((section, sectionIndex) => (
+        <div key={section.id}>
+          {/* Section header row */}
+          <div className={`flex items-center gap-1.5 bg-[#F2F2F2] px-4 py-2.5 ${sectionIndex > 0 ? 'border-t border-border' : ''}`}>
+            <span className="text-[13px] font-medium text-navy">{section.label}</span>
             {section.infoBox && (
-              <div className="mx-4 my-2 px-3 py-2 bg-[#F2F2F2] rounded-[6px] text-[12px] text-text-secondary">
-                {section.infoBox}
+              <div className="relative">
+                <button
+                  onClick={() => setOpenPopoverId(openPopoverId === 'matrix_section_info' ? null : 'matrix_section_info')}
+                  className="text-text-muted hover:text-navy transition-colors"
+                  aria-label="More information"
+                >
+                  <Info size={13} />
+                </button>
+                {openPopoverId === 'matrix_section_info' && (
+                  <div
+                    ref={popoverRef}
+                    className="absolute left-5 top-0 z-10 bg-white rounded-[8px] shadow-lg border border-border p-3 w-72 text-[12px] text-text-secondary"
+                  >
+                    {section.infoBox}
+                  </div>
+                )}
               </div>
             )}
-
-            {/* Question rows */}
-            {section.questions.map(question => {
-              const rowData = responsesMap.get(question.id)
-              const currentResponse = rowData?.response ?? null
-              const isMatrixQuestion = section.id === 'matrix'
-              const popoverText = MATRIX_POPOVERS[question.id]
-
-              return (
-                <div key={question.id} className="flex border-t border-border hover:bg-[#FAFAFA] transition-colors">
-                  {/* Column 1: Question text */}
-                  <div className="w-[280px] shrink-0 px-4 py-3 flex items-start gap-1.5">
-                    <span className="text-[13px] text-text-secondary flex-1">{question.text}</span>
-                    {isMatrixQuestion && popoverText && (
-                      <div className="relative flex-shrink-0 mt-0.5">
-                        <button
-                          onClick={() => setOpenPopoverId(openPopoverId === question.id ? null : question.id)}
-                          className="text-text-muted hover:text-navy transition-colors"
-                          aria-label="More information"
-                        >
-                          <Info size={13} />
-                        </button>
-                        {openPopoverId === question.id && (
-                          <div
-                            ref={popoverRef}
-                            className="absolute left-5 top-0 z-10 bg-white rounded-[8px] shadow-lg border border-border p-3 w-60 text-[12px] text-text-secondary"
-                          >
-                            {popoverText}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Column 2: Response dropdown */}
-                  <div className="w-[160px] shrink-0 flex items-center gap-1.5 px-4 py-3">
-                    <select
-                      value={currentResponse ?? ''}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        if (val === '') {
-                          handleClear(question.id)
-                        } else {
-                          handleResponseChange(question.id, val as ResponseValue)
-                        }
-                      }}
-                      disabled={readOnly}
-                      style={getResponseStyle(currentResponse)}
-                      className="flex-1 px-2 py-1.5 rounded-[6px] border border-border text-[13px] outline-none focus:border-navy disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select…</option>
-                      {question.type === 'yes_no' ? (
-                        <>
-                          <option value="yes">Yes</option>
-                          <option value="no">No</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
-                        </>
-                      )}
-                    </select>
-                    {currentResponse && !readOnly && (
-                      <button
-                        onClick={() => handleClear(question.id)}
-                        className="flex-shrink-0 p-1 rounded text-text-muted hover:text-navy hover:bg-bg transition-colors"
-                        title="Clear response"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Column 3: CS lead comments (placeholder for Phase D) */}
-                  <div className="w-[200px] shrink-0 px-4 py-3 bg-[#FAFAFA]" />
-
-                  {/* Column 4: Client partner comments (placeholder for Phase D) */}
-                  <div className="w-[200px] shrink-0 px-4 py-3 bg-[#FAFAFA]" />
-                </div>
-              )
-            })}
           </div>
-        ))}
-      </div>
+
+          {/* Question rows */}
+          {section.questions.map(question => {
+            const rowData = responsesMap.get(question.id)
+            const currentResponse = rowData?.response ?? null
+            const isMatrixQuestion = section.id === 'matrix'
+            const popoverText = MATRIX_POPOVERS[question.id]
+
+            return (
+              <div key={question.id} className="flex border-t border-border hover:bg-[#FAFAFA] transition-colors">
+                {/* Column 1: Question text */}
+                <div className="w-[280px] shrink-0 px-4 py-3 flex items-start gap-1.5">
+                  <span className="text-[13px] text-text-secondary flex-1">{question.text}</span>
+                  {isMatrixQuestion && popoverText && (
+                    <div className="relative flex-shrink-0 mt-0.5">
+                      <button
+                        onClick={() => setOpenPopoverId(openPopoverId === question.id ? null : question.id)}
+                        className="text-text-muted hover:text-navy transition-colors"
+                        aria-label="More information"
+                      >
+                        <Info size={13} />
+                      </button>
+                      {openPopoverId === question.id && (
+                        <div
+                          ref={popoverRef}
+                          className="absolute left-5 top-0 z-10 bg-white rounded-[8px] shadow-lg border border-border p-3 w-60 text-[12px] text-text-secondary"
+                        >
+                          {popoverText}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Column 2: Response dropdown */}
+                <div className="w-[160px] shrink-0 flex items-center gap-1.5 px-4 py-3">
+                  <select
+                    value={currentResponse ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (val === '') {
+                        handleClear(question.id)
+                      } else {
+                        handleResponseChange(question.id, val as ResponseValue)
+                      }
+                    }}
+                    disabled={readOnly}
+                    style={getResponseStyle(currentResponse)}
+                    className="flex-1 px-2 py-1.5 rounded-[6px] border border-border text-[13px] outline-none focus:border-navy disabled:cursor-not-allowed"
+                  >
+                    <option value="">Select…</option>
+                    {question.type === 'yes_no' ? (
+                      <>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </>
+                    )}
+                  </select>
+                  {currentResponse && !readOnly && (
+                    <button
+                      onClick={() => handleClear(question.id)}
+                      className="flex-shrink-0 p-1 rounded text-text-muted hover:text-navy hover:bg-bg transition-colors"
+                      title="Clear response"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Column 3: CS Lead Comments (placeholder for Phase D) */}
+                <div className="flex-1 min-w-0 px-4 py-3 bg-[#FAFAFA]" />
+
+                {/* Column 4: Client Partner Comments (placeholder for Phase D) */}
+                <div className="flex-1 min-w-0 px-4 py-3 bg-[#FAFAFA]" />
+              </div>
+            )
+          })}
+        </div>
+      ))}
     </div>
   )
 }

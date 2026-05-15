@@ -52,7 +52,6 @@ export default function AccountHealthView({
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
 
-  // Load client accounts
   useEffect(() => {
     if (!effectiveUserId) return
     supabase
@@ -67,7 +66,6 @@ export default function AccountHealthView({
       })
   }, [effectiveUserId])
 
-  // Load metadata when account changes
   useEffect(() => {
     if (!selectedAccountId) {
       setMetadata(null)
@@ -141,127 +139,154 @@ export default function AccountHealthView({
   const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
 
   return (
-    <div className="p-6 flex flex-col gap-5">
-      <h1 className="text-base font-medium text-navy">Account health</h1>
+    <div className="flex flex-col">
+      {/* Sticky header: controls + table column header */}
+      <div className="sticky top-0 z-10 bg-white">
+        <div className="px-6 pt-6 pb-4 flex flex-col gap-3 border-b border-border">
+          <h1 className="text-base font-medium text-navy">Account health</h1>
 
-      {/* Account selector row */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-0.5">
-          <label className="text-[11px] text-text-muted">Client account</label>
-          <select
-            value={selectedAccountId}
-            onChange={e => setSelectedAccountId(e.target.value)}
-            disabled={readOnly && !viewAsUserId}
-            className="h-8 min-w-max pl-3 pr-7 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed"
-          >
-            <option value="">Select a client account…</option>
-            {accounts.map(a => (
-              <option key={a.id} value={a.id}>
-                {a.product ? `${a.product} - ${a.name}` : a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {selectedAccount && (
-          <>
+          {/* Single combined row */}
+          <div className="flex items-end gap-3">
+            {/* Client account selector */}
             <div className="flex flex-col gap-0.5">
-              <label className="text-[11px] text-text-muted">Renewal date</label>
-              <input
-                type="date"
-                value={renewalDate}
-                onChange={e => setRenewalDate(e.target.value)}
-                onBlur={() => saveRenewalDate(renewalDate)}
-                readOnly={readOnly}
-                className="h-8 px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy read-only:cursor-default read-only:bg-bg"
-              />
-            </div>
-
-            <div className="flex flex-col gap-0.5">
-              <label className="text-[11px] text-text-muted">Last engagement</label>
-              <input
-                type="date"
-                value={lastEngagementDate}
-                onChange={e => setLastEngagementDate(e.target.value)}
-                onBlur={() => saveLastEngagementDate(lastEngagementDate)}
-                readOnly={readOnly}
-                className="h-8 px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy read-only:cursor-default read-only:bg-bg"
-              />
-            </div>
-
-            <div className="flex flex-col gap-0.5">
-              <label className="text-[11px] text-text-muted">Type of engagement</label>
+              <label className="text-[11px] text-text-muted">Client account</label>
               <select
-                value={engagementType}
-                onChange={e => {
-                  const val = e.target.value as EngagementType | ''
-                  setEngagementType(val)
-                  saveEngagementType(val)
-                }}
-                disabled={readOnly}
-                className="h-8 min-w-max pl-2 pr-7 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed disabled:bg-bg"
+                value={selectedAccountId}
+                onChange={e => setSelectedAccountId(e.target.value)}
+                disabled={readOnly && !viewAsUserId}
+                className="h-8 min-w-max pl-3 pr-7 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed"
               >
-                <option value="">Select…</option>
-                {(Object.keys(ENGAGEMENT_TYPE_LABELS) as EngagementType[]).map(k => (
-                  <option key={k} value={k}>{ENGAGEMENT_TYPE_LABELS[k]}</option>
+                <option value="">Select a client account…</option>
+                {accounts.map(a => (
+                  <option key={a.id} value={a.id}>
+                    {a.product ? `${a.product} - ${a.name}` : a.name}
+                  </option>
                 ))}
               </select>
             </div>
-          </>
+
+            {selectedAccount && (
+              <>
+                {/* Separator 1: between client account and renewal date */}
+                <div className="w-px h-4 bg-border mx-0.5 flex-shrink-0 mb-2" />
+
+                {/* Renewal date */}
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[11px] text-text-muted">Renewal date</label>
+                  <input
+                    type="date"
+                    value={renewalDate}
+                    onChange={e => setRenewalDate(e.target.value)}
+                    onBlur={() => saveRenewalDate(renewalDate)}
+                    readOnly={readOnly}
+                    className="h-8 px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy read-only:cursor-default read-only:bg-bg"
+                  />
+                </div>
+
+                {/* Last engagement */}
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[11px] text-text-muted">Last engagement</label>
+                  <input
+                    type="date"
+                    value={lastEngagementDate}
+                    onChange={e => setLastEngagementDate(e.target.value)}
+                    onBlur={() => saveLastEngagementDate(lastEngagementDate)}
+                    readOnly={readOnly}
+                    className="h-8 px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy read-only:cursor-default read-only:bg-bg"
+                  />
+                </div>
+
+                {/* Type of engagement */}
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[11px] text-text-muted">Type of engagement</label>
+                  <select
+                    value={engagementType}
+                    onChange={e => {
+                      const val = e.target.value as EngagementType | ''
+                      setEngagementType(val)
+                      saveEngagementType(val)
+                    }}
+                    disabled={readOnly}
+                    className="h-8 min-w-max pl-2 pr-7 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy disabled:cursor-not-allowed disabled:bg-bg"
+                  >
+                    <option value="">Select…</option>
+                    {(Object.keys(ENGAGEMENT_TYPE_LABELS) as EngagementType[]).map(k => (
+                      <option key={k} value={k}>{ENGAGEMENT_TYPE_LABELS[k]}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Separator 2: between type of engagement and month navigation */}
+                <div className="w-px h-4 bg-border mx-0.5 flex-shrink-0 mb-2" />
+
+                {/* Month navigation */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={prevMonth}
+                    className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
+                    aria-label="Previous month"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    onClick={goToToday}
+                    className={`px-2.5 py-1 text-[12px] font-medium rounded border transition-colors ${
+                      isCurrentMonth(currentMonth)
+                        ? 'border-teal text-teal bg-white cursor-default'
+                        : 'border-border text-text-secondary bg-white hover:border-teal hover:text-teal'
+                    }`}
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={nextMonth}
+                    className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
+                    aria-label="Next month"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                  <span className="text-[14px] font-medium text-navy ml-2">
+                    {formatMonthLabel(currentMonth)}
+                  </span>
+                  {isCurrentMonth(currentMonth) && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-teal text-navy">
+                      current
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Table column header — only when an account is selected */}
+        {selectedAccount && (
+          <div className="px-6">
+            <div className="flex bg-[#E8E8E8] border-x border-t border-b border-border rounded-t-[8px]">
+              <div className="w-[280px] shrink-0 px-4 py-2.5 text-[12px] font-medium text-navy">Risk category</div>
+              <div className="w-[160px] shrink-0 px-4 py-2.5 text-[12px] font-medium text-navy">Response</div>
+              <div className="flex-1 px-4 py-2.5 text-[12px] font-medium text-navy">CS Lead Comments</div>
+              <div className="flex-1 px-4 py-2.5 text-[12px] font-medium text-navy">Client Partner Comments</div>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Month navigation — only shown when an account is selected */}
-      {selectedAccount && (
-        <div className="flex items-center gap-1">
-          <button
-            onClick={prevMonth}
-            className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
-            aria-label="Previous month"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <button
-            onClick={goToToday}
-            className={`px-2.5 py-1 text-[12px] font-medium rounded border transition-colors ${
-              isCurrentMonth(currentMonth)
-                ? 'border-teal text-teal bg-white cursor-default'
-                : 'border-border text-text-secondary bg-white hover:border-teal hover:text-teal'
-            }`}
-          >
-            Today
-          </button>
-          <button
-            onClick={nextMonth}
-            className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
-            aria-label="Next month"
-          >
-            <ChevronRight size={16} />
-          </button>
-          <span className="text-[14px] font-medium text-navy ml-2">
-            {formatMonthLabel(currentMonth)}
-          </span>
-          {isCurrentMonth(currentMonth) && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-teal text-navy">
-              current
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Empty state or table placeholder */}
+      {/* Body */}
       {!selectedAccount ? (
         <div className="flex flex-col items-center justify-center py-20 gap-2">
           <Gauge size={28} className="text-border" />
           <p className="text-[13px] text-text-muted">Select a client account above to begin.</p>
         </div>
       ) : (
-        <RiskAssessmentTable
-          clientAccountId={selectedAccount.id}
-          adminUserId={effectiveUserId!}
-          month={currentMonth}
-          readOnly={readOnly}
-        />
+        <div className="px-6 pb-6">
+          <RiskAssessmentTable
+            clientAccountId={selectedAccount.id}
+            adminUserId={effectiveUserId!}
+            month={currentMonth}
+            readOnly={readOnly}
+          />
+        </div>
       )}
     </div>
   )
