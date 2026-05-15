@@ -383,8 +383,6 @@ export default function RiskAssessmentTable({
                   <CommentCell
                     key={`cs-${question.id}-${clientAccountId}-${monthStr}`}
                     initialValue={rowData?.cs_lead_comment ?? null}
-                    updatedAt={rowData?.cs_lead_updated_at ?? null}
-                    updatedByUserId={rowData?.cs_lead_updated_by ?? null}
                     readOnly={readOnly}
                     onSave={async (value) => {
                       const now = new Date().toISOString()
@@ -420,9 +418,7 @@ export default function RiskAssessmentTable({
                   <CommentCell
                     key={`cp-${question.id}-${clientAccountId}-${monthStr}`}
                     initialValue={rowData?.client_partner_comment ?? null}
-                    updatedAt={rowData?.client_partner_updated_at ?? null}
-                    updatedByUserId={rowData?.client_partner_updated_by ?? null}
-                    readOnly={readOnly && actorUserId === adminUserId}
+                    readOnly={readOnly}
                     onSave={async (value) => {
                       const now = new Date().toISOString()
                       const { data, error } = await supabase

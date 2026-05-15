@@ -1,28 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { Pencil } from 'lucide-react'
-import { supabase } from '@/lib/supabase/client'
 
 interface CommentCellProps {
   initialValue: string | null
-  updatedAt: string | null
-  updatedByUserId: string | null
   onSave: (value: string) => Promise<void>
   readOnly?: boolean
 }
 
-function formatDateTime(dateStr: string): string {
-  const d = new Date(dateStr)
-  const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  return `${date} at ${time}`
-}
-
 export default function CommentCell({
   initialValue,
-  updatedAt,
-  updatedByUserId,
   onSave,
   readOnly = false,
 }: CommentCellProps) {
@@ -30,24 +18,7 @@ export default function CommentCell({
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [userName, setUserName] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fetchedUserIdRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (!updatedByUserId || updatedByUserId === fetchedUserIdRef.current) return
-    fetchedUserIdRef.current = updatedByUserId
-    supabase
-      .from('users')
-      .select('first_name, last_name')
-      .eq('id', updatedByUserId)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setUserName([data.first_name, data.last_name].filter(Boolean).join(' ') || null)
-        }
-      })
-  }, [updatedByUserId])
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = 'auto'
