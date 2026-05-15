@@ -319,6 +319,7 @@ export default function AccountHealthView({
           <RiskAssessmentTable
             clientAccountId={selectedAccount.id}
             adminUserId={effectiveUserId!}
+            actorUserId={actorId!}
             month={currentMonth}
             readOnly={readOnly}
           />

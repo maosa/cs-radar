@@ -112,6 +112,7 @@ function getResponseStyle(value: ResponseValue | null): React.CSSProperties {
 interface RiskAssessmentTableProps {
   clientAccountId: string
   adminUserId: string
+  actorUserId: string
   month: Date
   readOnly?: boolean
 }
@@ -119,6 +120,7 @@ interface RiskAssessmentTableProps {
 export default function RiskAssessmentTable({
   clientAccountId,
   adminUserId,
+  actorUserId,
   month,
   readOnly = false,
 }: RiskAssessmentTableProps) {
@@ -217,7 +219,7 @@ export default function RiskAssessmentTable({
         question_id: questionId,
         response: newValue,
         updated_at: new Date().toISOString(),
-        updated_by: adminUserId,
+        updated_by: actorUserId,
       }, { onConflict: 'client_account_id,month,question_id' })
       .select()
       .single()
@@ -262,7 +264,7 @@ export default function RiskAssessmentTable({
         question_id: questionId,
         response: null,
         updated_at: new Date().toISOString(),
-        updated_by: adminUserId,
+        updated_by: actorUserId,
       }, { onConflict: 'client_account_id,month,question_id' })
 
     if (error) {
@@ -395,9 +397,9 @@ export default function RiskAssessmentTable({
                           question_id: question.id,
                           cs_lead_comment: value,
                           cs_lead_updated_at: now,
-                          cs_lead_updated_by: adminUserId,
+                          cs_lead_updated_by: actorUserId,
                           updated_at: now,
-                          updated_by: adminUserId,
+                          updated_by: actorUserId,
                         }, { onConflict: 'client_account_id,month,question_id' })
                         .select()
                         .single()
@@ -420,7 +422,7 @@ export default function RiskAssessmentTable({
                     initialValue={rowData?.client_partner_comment ?? null}
                     updatedAt={rowData?.client_partner_updated_at ?? null}
                     updatedByUserId={rowData?.client_partner_updated_by ?? null}
-                    readOnly={readOnly}
+                    readOnly={readOnly && actorUserId === adminUserId}
                     onSave={async (value) => {
                       const now = new Date().toISOString()
                       const { data, error } = await supabase
@@ -432,9 +434,9 @@ export default function RiskAssessmentTable({
                           question_id: question.id,
                           client_partner_comment: value,
                           client_partner_updated_at: now,
-                          client_partner_updated_by: adminUserId,
+                          client_partner_updated_by: actorUserId,
                           updated_at: now,
-                          updated_by: adminUserId,
+                          updated_by: actorUserId,
                         }, { onConflict: 'client_account_id,month,question_id' })
                         .select()
                         .single()
