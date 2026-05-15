@@ -153,16 +153,32 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
     setShowSearchDropdown(results.length > 0)
   }, [debouncedSearchQuery, tasks])
 
-  // Unique projects for the filter bar
+  // Date strings for the currently visible weeks — used to scope the project filter
+  const visibleWeekDates = useMemo(() => {
+    const indices =
+      viewMode === 'focused'
+        ? [centerWeekIndex]
+        : [centerWeekIndex - 1, centerWeekIndex, centerWeekIndex + 1].filter((w) => w >= 0)
+    return new Set(indices.map(weekIndexToDateString))
+  }, [viewMode, centerWeekIndex])
+
+  // Unique projects for the filter bar — scoped to the visible weeks
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
     if (readOnly) {
       const seen = new Map<string, string>()
-      tasks.forEach((t) => { if (t.project_id && !seen.has(t.project_id)) seen.set(t.project_id, projectName(t)) })
+      tasks
+        .filter((t) => visibleWeekDates.has(t.week_start_date))
+        .forEach((t) => { if (t.project_id && !seen.has(t.project_id)) seen.set(t.project_id, projectName(t)) })
       return Array.from(seen.entries())
         .map(([id, name]) => ({ id, name, displayName: name }))
         .sort((a, b) => a.name.localeCompare(b.name))
     }
-    const usedProjectIds = new Set(tasks.map((t) => t.project_id).filter(Boolean))
+    const usedProjectIds = new Set(
+      tasks
+        .filter((t) => visibleWeekDates.has(t.week_start_date))
+        .map((t) => t.project_id)
+        .filter(Boolean)
+    )
     const filtered = projects.filter((p) => usedProjectIds.has(p.id) && p.is_visible !== false)
     const nameCounts = filtered.reduce<Record<string, number>>((acc, p) => {
       const key = p.name.toLowerCase()
@@ -177,7 +193,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
           ? `${p.name} (${p.product ?? 'Unassigned'})`
           : p.name,
     }))
-  }, [readOnly, tasks, projects])
+  }, [readOnly, tasks, projects, visibleWeekDates])
 
   // Auto-clear stale filters
   useEffect(() => {
