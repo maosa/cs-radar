@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import QueryProvider from '@/components/QueryProvider'
 
 export const metadata: Metadata = {
   title: 'Task Tracker — Access Infinity',
@@ -11,9 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="h-full">
       <body className="h-full">
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+        {children}
       </body>
     </html>
   )
