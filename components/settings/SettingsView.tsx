@@ -1675,11 +1675,60 @@ function formatExportDate(ts: string): string {
   )
 }
 
+function triggerDownload(csv: string, filename: string) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// ─── Account health question map (mirrors RiskAssessmentTable sections) ───────
+
+const ACCOUNT_HEALTH_QUESTIONS: { category: string; questionId: string; question: string }[] = [
+  { category: 'Engagement',       questionId: 'engagement_usage_declining',     question: 'Is platform usage declining or inactive for 4+ weeks?' },
+  { category: 'Engagement',       questionId: 'engagement_milestone_weakening', question: 'Are milestone or KPI tracking habits weakening?' },
+  { category: 'Engagement',       questionId: 'engagement_qbr_missed',          question: 'Are QBRs consistently missed or poorly attended?' },
+  { category: 'Engagement',       questionId: 'engagement_feedback_passive',    question: 'Is client feedback passive or negative? Are NPS scores low?' },
+  { category: 'Stakeholder Risk', questionId: 'stakeholder_key_left',              question: 'Have key admins, sponsors, or power users left or changed roles?' },
+  { category: 'Stakeholder Risk', questionId: 'stakeholder_ownership_unclear',     question: 'Is there unclear ownership or missing champions?' },
+  { category: 'Stakeholder Risk', questionId: 'stakeholder_csm_changed',           question: 'Have CSMs been regularly changed?' },
+  { category: 'Stakeholder Risk', questionId: 'stakeholder_ai_sponsor_missing',    question: 'Are they missing an internal AI sponsor?' },
+  { category: 'Stakeholder Risk', questionId: 'stakeholder_relationship_unstable', question: 'Is there an unstable relationship with sales, CS, product owner, or sponsor?' },
+  { category: 'Strategic Fit',    questionId: 'strategic_nonessential',            question: 'Is the product seen as non-essential or misaligned with client priorities?' },
+  { category: 'Operational Risk', questionId: 'operational_rollout_delayed',       question: 'Has roll-out been delayed due to inattentive or unresponsive admins?' },
+  { category: 'Operational Risk', questionId: 'operational_feedback_passive',      question: 'Is client feedback passive or negative? Are NPS scores low?' },
+  { category: 'Commercial Risk',  questionId: 'commercial_renewal_delayed',        question: 'Are renewal conversations delayed or stalled?' },
+  { category: 'Risk Matrix',      questionId: 'matrix_engagement',                 question: 'Engagement risk' },
+  { category: 'Risk Matrix',      questionId: 'matrix_stakeholder',                question: 'Stakeholder risk' },
+  { category: 'Risk Matrix',      questionId: 'matrix_strategic_fit',              question: 'Strategic fit' },
+  { category: 'Risk Matrix',      questionId: 'matrix_operational',                question: 'Operational risk' },
+  { category: 'Risk Matrix',      questionId: 'matrix_commercial',                 question: 'Commercial risk' },
+  { category: 'Risk Factor',      questionId: 'risk_flagged_high',                 question: 'Is the client flagged as High-Risk in the CS risk review?' },
+  { category: 'Risk Factor',      questionId: 'risk_admin_left',                   question: 'Has the primary admin, sponsor, or power user left and not been replaced?' },
+  { category: 'Risk Factor',      questionId: 'risk_usage_dropped',                question: 'Has product usage dropped significantly (30% or more decline) over a 4-week period?' },
+  { category: 'Risk Factor',      questionId: 'risk_renewal_low_engagement',       question: 'Is renewal within 3 months with low engagement?' },
+  { category: 'Risk Factor',      questionId: 'risk_confirmed_misalignment',       question: 'Is there a confirmed commercial, strategic, or stakeholder misalignment?' },
+]
+
+const AH_QUESTION_MAP = Object.fromEntries(
+  ACCOUNT_HEALTH_QUESTIONS.map((q) => [q.questionId, q])
+)
+
+const AH_QUESTION_ORDER = Object.fromEntries(
+  ACCOUNT_HEALTH_QUESTIONS.map((q, i) => [q.questionId, i])
+)
+
 // ─── Export section ───────────────────────────────────────────────────────────
 
 function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
   const { userId } = useAuth()
   const [exporting, setExporting] = useState(false)
+  const [exportingAH, setExportingAH] = useState(false)
 
   const handleExport = async () => {
     if (!userId) return
@@ -1699,7 +1748,7 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
       if (taskIds.length === 0) {
         // No tasks — still produce a headers-only CSV
         const csv = '﻿' + ['Week', 'Product', 'Project', 'Task Description', 'Notes', 'Comments', 'Status', 'Flagged'].join(',')
-        triggerDownload(csv)
+        triggerDownload(csv, `tasks_${new Date().toISOString().slice(0, 10)}.csv`)
         return
       }
 
@@ -1765,7 +1814,7 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
 
       // 6. Serialise + download (BOM for Excel UTF-8 compatibility)
       const csv = '﻿' + [headers, ...rows].map((row) => row.map(csvEscape).join(',')).join('\n')
-      triggerDownload(csv)
+      triggerDownload(csv, `tasks_${new Date().toISOString().slice(0, 10)}.csv`)
       onToast('Export downloaded.')
     } catch {
       onToast('Export failed. Please try again.', 'error')
@@ -1774,16 +1823,101 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
     }
   }
 
-  function triggerDownload(csv: string) {
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `tasks_${new Date().toISOString().slice(0, 10)}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+  const handleExportAccountHealth = async () => {
+    if (!userId) return
+    setExportingAH(true)
+    try {
+      const headers = [
+        'Client Account', 'Month', 'Risk Category', 'Question', 'Response',
+        'CS Lead Comment', 'Client Partner Comment', 'Renewal Date', 'Last Engagement', 'Type of Engagement',
+      ]
+
+      // 1. Parallel fetch accounts, metadata, and responses
+      const [accountsRes, metadataRes, responsesRes] = await Promise.all([
+        supabase
+          .from('client_accounts')
+          .select('id, name')
+          .eq('admin_user_id', userId)
+          .is('deleted_at', null)
+          .order('sort_order'),
+        supabase
+          .from('account_health_metadata')
+          .select('client_account_id, renewal_date, last_engagement_date, engagement_type')
+          .eq('admin_user_id', userId),
+        supabase
+          .from('account_health_responses')
+          .select('client_account_id, month, question_id, response, cs_lead_comment, client_partner_comment')
+          .eq('admin_user_id', userId),
+      ])
+      if (accountsRes.error) throw accountsRes.error
+      if (metadataRes.error) throw metadataRes.error
+      if (responsesRes.error) throw responsesRes.error
+
+      const accounts = accountsRes.data ?? []
+
+      if (accounts.length === 0) {
+        const csv = '﻿' + headers.join(',')
+        triggerDownload(csv, `account_health_${new Date().toISOString().slice(0, 10)}.csv`)
+        return
+      }
+
+      // 2. Build lookup maps
+      const metadataMap: Record<string, { renewal_date: string | null; last_engagement_date: string | null; engagement_type: string | null }> = {}
+      ;(metadataRes.data ?? []).forEach((m) => { metadataMap[m.client_account_id] = m })
+
+      const responsesMap: Record<string, typeof responsesRes.data> = {}
+      ;(responsesRes.data ?? []).forEach((r) => {
+        if (!responsesMap[r.client_account_id]) responsesMap[r.client_account_id] = []
+        responsesMap[r.client_account_id]!.push(r)
+      })
+
+      // 3. Build rows per account
+      const rows: string[][] = []
+      for (const account of accounts) {
+        const meta = metadataMap[account.id]
+
+        // Metadata row — account-level fields, risk columns empty
+        rows.push([
+          account.name, '', '', '', '', '', '',
+          meta?.renewal_date ?? '',
+          meta?.last_engagement_date ?? '',
+          meta?.engagement_type ?? '',
+        ])
+
+        // Response rows — sorted by month then by canonical question order
+        const accountResponses = (responsesMap[account.id] ?? []).slice().sort((a, b) => {
+          const monthDiff = a.month.localeCompare(b.month)
+          if (monthDiff !== 0) return monthDiff
+          return (AH_QUESTION_ORDER[a.question_id] ?? 999) - (AH_QUESTION_ORDER[b.question_id] ?? 999)
+        })
+
+        for (const r of accountResponses) {
+          const q = AH_QUESTION_MAP[r.question_id]
+          const month = new Date(r.month + 'T12:00:00')
+            .toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+            .replace(' ', '-')
+          rows.push([
+            account.name,
+            month,
+            q?.category ?? r.question_id,
+            q?.question ?? r.question_id,
+            r.response ?? '',
+            r.cs_lead_comment ?? '',
+            r.client_partner_comment ?? '',
+            '', '', '',
+          ])
+        }
+      }
+
+      // 4. Serialise + download (BOM for Excel UTF-8 compatibility)
+      const csv = '﻿' + [headers, ...rows].map((row) => row.map(csvEscape).join(',')).join('\n')
+      triggerDownload(csv, `account_health_${new Date().toISOString().slice(0, 10)}.csv`)
+      onToast('Export downloaded.')
+    } catch {
+      onToast('Export failed. Please try again.', 'error')
+    } finally {
+      setExportingAH(false)
+    }
   }
 
   return (
@@ -1797,6 +1931,17 @@ function ExportSection({ onToast }: { onToast: (msg: string, type?: 'success' | 
         className="px-4 py-2 text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {exporting ? 'Exporting…' : 'Export to CSV'}
+      </button>
+      <hr className="border-border my-4" />
+      <p className="text-[13px] text-text-secondary mb-4">
+        Download all your account health data as a CSV file.
+      </p>
+      <button
+        onClick={handleExportAccountHealth}
+        disabled={exportingAH}
+        className="px-4 py-2 text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {exportingAH ? 'Exporting…' : 'Export account health to CSV'}
       </button>
     </div>
   )
