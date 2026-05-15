@@ -264,6 +264,9 @@ export default function SharedFilterBar({
 
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 bg-white border-b border-border flex-shrink-0">
+      {/* Filter label */}
+      <span className="text-[11px] text-text-muted">Filter:</span>
+
       {/* Product dropdown */}
       <ProductDropdown filterProducts={filterProducts} onToggleProduct={onToggleProduct} />
 

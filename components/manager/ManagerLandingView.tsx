@@ -94,7 +94,7 @@ function PersonCardItem({ person, onToggleFavorite, onArchive, onUnarchive, onCl
 // ─── Main view ────────────────────────────────────────────────────────────────
 
 export default function ManagerLandingView() {
-  const { userId } = useAuth()
+  const { userId, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [people, setPeople] = useState<PersonCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -106,10 +106,13 @@ export default function ManagerLandingView() {
   // ─── Load from Supabase on mount ─────────────────────────────────────────
 
   useEffect(() => {
+    if (authLoading) return
     if (!userId) {
       setLoading(false)
       return
     }
+
+    setLoading(true)
 
     async function loadPeople() {
       // Use select('*') so the query succeeds even if optional columns like
@@ -165,7 +168,7 @@ export default function ManagerLandingView() {
     }
 
     loadPeople()
-  }, [userId])
+  }, [userId, authLoading])
 
   // ─── Prefs helpers ────────────────────────────────────────────────────────
 

@@ -73,7 +73,7 @@ export default function SharedToolbar({
             Back
           </Link>
           <span className="text-[13px] font-medium text-navy truncate max-w-[200px]">
-            {adminName}&rsquo;s tasks
+            {adminName}&rsquo;s Task List
           </span>
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-bg text-text-muted border border-border">
             Read only
