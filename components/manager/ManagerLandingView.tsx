@@ -129,7 +129,6 @@ export default function ManagerLandingView() {
       }
 
       if (!relationships || relationships.length === 0) {
-        await supabase.from('users').update({ default_landing: 'task_list' }).eq('id', userId)
         router.replace('/tasks')
         return
       }
