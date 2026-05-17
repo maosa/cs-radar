@@ -127,7 +127,12 @@ export default function TeamManagementSection({ onToast }: { onToast: (msg: stri
     })
     setSending(false)
     if (error) {
-      onToast('Failed to send invitation.', 'error')
+      onToast(
+        error.code === '23505'
+          ? 'An invitation or relationship already exists for this email.'
+          : 'Failed to send invitation.',
+        'error',
+      )
     } else {
       onToast('Invitation sent.')
       setInviteEmail('')

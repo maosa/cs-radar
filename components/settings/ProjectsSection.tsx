@@ -237,7 +237,12 @@ export default function ProjectsSection({ onToast }: { onToast: (msg: string, ty
       .single()
     setAdding(false)
     if (error || !data) {
-      onToast('Failed to add project.', 'error')
+      onToast(
+        error?.code === '23505'
+          ? 'A project with this name already exists for the selected product.'
+          : 'Failed to add project.',
+        'error',
+      )
     } else {
       setProjects((prev) => [...prev, data as ProjectRow])
       setNewName('')
@@ -278,7 +283,12 @@ export default function ProjectsSection({ onToast }: { onToast: (msg: string, ty
       .update({ name, product: editProduct, updated_at: new Date().toISOString() })
       .eq('id', id)
     if (error) {
-      onToast('Failed to save project.', 'error')
+      onToast(
+        error.code === '23505'
+          ? 'A project with this name already exists for the selected product.'
+          : 'Failed to save project.',
+        'error',
+      )
     } else {
       setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name, product: editProduct } : p)))
       onToast('Project saved.')

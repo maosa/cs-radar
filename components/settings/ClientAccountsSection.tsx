@@ -231,7 +231,12 @@ export default function ClientAccountsSection({ onToast }: { onToast: (msg: stri
       .single()
     setAdding(false)
     if (error || !data) {
-      onToast('Failed to add client account.', 'error')
+      onToast(
+        error?.code === '23505'
+          ? 'A client account with this name already exists for the selected product.'
+          : 'Failed to add client account.',
+        'error',
+      )
     } else {
       setAccounts((prev) => [...prev, data as ClientAccountRow])
       setNewName('')
@@ -252,7 +257,12 @@ export default function ClientAccountsSection({ onToast }: { onToast: (msg: stri
       .update({ name, product: editProduct, updated_at: new Date().toISOString() })
       .eq('id', id)
     if (error) {
-      onToast('Failed to save client account.', 'error')
+      onToast(
+        error.code === '23505'
+          ? 'A client account with this name already exists for the selected product.'
+          : 'Failed to save client account.',
+        'error',
+      )
     } else {
       setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, name, product: editProduct } : a)))
       onToast('Client account saved.')
