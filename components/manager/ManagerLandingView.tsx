@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Star, Search, UserRound, ArchiveX, ArchiveRestore } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth-context'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -93,82 +92,12 @@ function PersonCardItem({ person, onToggleFavorite, onArchive, onUnarchive, onCl
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 
-export default function ManagerLandingView() {
-  const { userId, isLoading: authLoading } = useAuth()
+export default function ManagerLandingView({ initialPeople }: { initialPeople: PersonCard[] }) {
   const router = useRouter()
-  const [people, setPeople] = useState<PersonCard[]>([])
-  const [loading, setLoading] = useState(true)
-  const [fetchError, setFetchError] = useState(false)
+  const [people, setPeople] = useState<PersonCard[]>(initialPeople)
   const [activeTab, setActiveTab] = useState<Tab>('home')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortMode, setSortMode] = useState<SortMode>('favorites')
-
-  // ─── Load from Supabase on mount ─────────────────────────────────────────
-
-  useEffect(() => {
-    if (authLoading) return
-    if (!userId) {
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-
-    async function loadPeople() {
-      // Use select('*') so the query succeeds even if optional columns like
-      // is_favorite / is_archived haven't been added by a migration yet.
-      const { data: relationships, error } = await supabase
-        .from('manager_relationships')
-        .select('*')
-        .eq('manager_user_id', userId)
-        .eq('status', 'accepted')
-
-      if (error) {
-        console.error('Failed to load manager relationships', error)
-        setFetchError(true)
-        setLoading(false)
-        return
-      }
-
-      if (!relationships || relationships.length === 0) {
-        router.replace('/tasks')
-        return
-      }
-
-      const adminUserIds: string[] = relationships.map((r: any) => r.admin_user_id as string)
-
-      // Use select('*') for the same reason — account_health_enabled was added
-      // in a later migration and may not exist in all environments.
-      const { data: users } = await supabase
-        .from('users')
-        .select('*')
-        .in('id', adminUserIds)
-
-      const usersMap = new Map<string, any>(
-        (users ?? []).map((u: any) => [u.id, u])
-      )
-
-      const cards: PersonCard[] = relationships.map((rel: any) => {
-        const user = usersMap.get(rel.admin_user_id)
-        return {
-          id: rel.id,
-          adminUserId: rel.admin_user_id,
-          firstName: user?.first_name ?? '',
-          lastName: user?.last_name ?? '',
-          email: user?.email ?? '',
-          role: user?.role ?? '',
-          isFavorite: !!rel.is_favorite,
-          isArchived: !!rel.is_archived,
-          accountHealthEnabled: !!user?.account_health_enabled,
-        }
-      })
-
-      setPeople(cards)
-      setLoading(false)
-    }
-
-    loadPeople()
-  }, [userId, authLoading])
 
   // ─── Prefs helpers ────────────────────────────────────────────────────────
 
@@ -294,16 +223,7 @@ export default function ManagerLandingView() {
 
       {/* Cards grid */}
       <div className="flex-1 overflow-y-auto p-6">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <p className="text-[13px] text-text-muted">Loading…</p>
-          </div>
-        ) : fetchError ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-text-muted">
-            <UserRound size={28} />
-            <p className="text-[13px]">Failed to load direct reports. Please refresh the page.</p>
-          </div>
-        ) : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-text-muted">
             <UserRound size={28} />
             <p className="text-[13px]">

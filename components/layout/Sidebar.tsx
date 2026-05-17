@@ -16,20 +16,46 @@ interface NavItem {
   icon: React.ReactNode
 }
 
-export default function Sidebar() {
+interface SidebarInitialData {
+  profile: {
+    first_name: string | null
+    last_name: string | null
+    email: string
+    account_health_enabled: boolean
+  } | null
+  hasManagerRelationships: boolean
+  pendingInviteCount: number
+}
+
+function deriveNameAndInitials(profile: SidebarInitialData['profile']): { fullName: string; initials: string } {
+  if (!profile) return { fullName: '', initials: '?' }
+  const first = profile.first_name ?? ''
+  const last = profile.last_name ?? ''
+  const fullName = [first, last].filter(Boolean).join(' ') || profile.email
+  const initials = [(first[0] ?? ''), (last[0] ?? '')].filter(Boolean).join('').toUpperCase() || (profile.email?.[0]?.toUpperCase() ?? '?')
+  return { fullName, initials }
+}
+
+export default function Sidebar({ initialData }: { initialData: SidebarInitialData }) {
   const { userId } = useAuth()
   const refreshCounter = useSidebarCounter()
   const [expanded, setExpanded] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [hasManagerRelationships, setHasManagerRelationships] = useState(false)
-  const [pendingInviteCount, setPendingInviteCount] = useState(0)
-  const [accountHealthEnabled, setAccountHealthEnabled] = useState(false)
+
+  const derived = deriveNameAndInitials(initialData.profile)
+  const [hasManagerRelationships, setHasManagerRelationships] = useState(initialData.hasManagerRelationships)
+  const [pendingInviteCount, setPendingInviteCount] = useState(initialData.pendingInviteCount)
+  const [accountHealthEnabled, setAccountHealthEnabled] = useState(initialData.profile?.account_health_enabled ?? false)
   const [fetchError, setFetchError] = useState(false)
-  const [initials, setInitials] = useState('?')
-  const [fullName, setFullName] = useState('')
+  const [initials, setInitials] = useState(derived.initials)
+  const [fullName, setFullName] = useState(derived.fullName)
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
   const avatarMenuRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
+
+  // Skip the first run of these effects when server-provided initial data is available.
+  const skipInitialRelFetch = useRef(true)
+  const skipInitialProfileFetch = useRef(true)
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -39,6 +65,11 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (!userId) return
+
+    if (skipInitialRelFetch.current) {
+      skipInitialRelFetch.current = false
+      return
+    }
 
     const fetchRelationshipData = async () => {
       const [relResult, countResult, userResult] = await Promise.all([
@@ -76,6 +107,12 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (!userId) return
+
+    if (skipInitialProfileFetch.current) {
+      skipInitialProfileFetch.current = false
+      return
+    }
+
     supabase
       .from('users')
       .select('first_name, last_name, email')

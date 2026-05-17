@@ -8,27 +8,26 @@ interface AuthContextType {
   isLoading: boolean
 }
 
-const AuthContext = createContext<AuthContextType>({ userId: null, isLoading: true })
+const AuthContext = createContext<AuthContextType>({ userId: null, isLoading: false })
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [userId, setUserId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export function AuthProvider({
+  children,
+  initialUserId,
+}: {
+  children: React.ReactNode
+  initialUserId: string
+}) {
+  const [userId, setUserId] = useState<string | null>(initialUserId)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id ?? null)
-      setIsLoading(false)
-    })
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUserId(session?.user?.id ?? null)
     })
-
     return () => subscription.unsubscribe()
   }, [])
 
   return (
-    <AuthContext.Provider value={{ userId, isLoading }}>
+    <AuthContext.Provider value={{ userId, isLoading: false }}>
       {children}
     </AuthContext.Provider>
   )
