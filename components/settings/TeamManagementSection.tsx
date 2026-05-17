@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useSidebarRefresh } from '@/lib/sidebar-context'
@@ -11,7 +11,6 @@ import type {
   PendingIncomingRow,
   PendingOutgoingRow,
   DeclinedRow,
-  ValidationState,
 } from './settings-types'
 
 function personLabel(
@@ -44,9 +43,7 @@ export default function TeamManagementSection({ onToast }: { onToast: (msg: stri
   } | null>(null)
   // "Add your manager" form
   const [inviteEmail, setInviteEmail] = useState('')
-  const [validation, setValidation] = useState<ValidationState>('idle')
   const [sending, setSending] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const loadAll = useCallback(async () => {
     if (!userId) { setLoading(false); return }
@@ -77,67 +74,26 @@ export default function TeamManagementSection({ onToast }: { onToast: (msg: stri
 
   useEffect(() => { loadAll() }, [loadAll])
 
-  // ── Email validation (debounced) ─────────────────────────────────────────────
-  const validateEmail = useCallback(async (email: string) => {
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setValidation('idle'); return
-    }
-    const { data } = await supabase.from('users').select('id').eq('email', email).single()
-    setValidation(data ? 'found' : 'not_found')
-  }, [])
-
-  const handleEmailChange = (val: string) => {
-    setInviteEmail(val)
-    setValidation('idle')
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => validateEmail(val), 300)
-  }
-
-  const handleEmailBlur = () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    validateEmail(inviteEmail)
-  }
-
   // ── Send invitation ──────────────────────────────────────────────────────────
   const handleSendInvitation = async () => {
-    const email = inviteEmail.trim().toLowerCase()
-    if (!email || !userId) return
+    const email = inviteEmail.trim()
+    if (!email) return
     setSending(true)
 
-    const { data: existing } = await supabase
-      .from('manager_relationships').select('id, status')
-      .eq('admin_user_id', userId).eq('manager_email', email).maybeSingle()
-
-    if (existing) {
-      if (existing.status === 'archived') {
-        onToast('This invitation was previously declined. Re-send it from the Declined section below.', 'error')
-      } else {
-        onToast('An invitation or relationship already exists for this email.', 'error')
-      }
-      setSending(false); return
-    }
-
-    const { data: managerUser } = await supabase.from('users').select('id').eq('email', email).single()
-    const { error } = await supabase.from('manager_relationships').insert({
-      admin_user_id: userId,
-      manager_email: email,
-      manager_user_id: managerUser?.id ?? null,
-      status: 'pending',
-      invited_at: new Date().toISOString(),
+    const res = await fetch('/api/invitations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
     })
+
     setSending(false)
-    if (error) {
-      onToast(
-        error.code === '23505'
-          ? 'An invitation or relationship already exists for this email.'
-          : 'Failed to send invitation.',
-        'error',
-      )
-    } else {
+    if (res.ok) {
       onToast('Invitation sent.')
       setInviteEmail('')
-      setValidation('idle')
       loadAll()
+    } else {
+      const body = await res.json().catch(() => ({}))
+      onToast(body.error ?? 'Failed to send invitation.', 'error')
     }
   }
 
@@ -224,18 +180,11 @@ export default function TeamManagementSection({ onToast }: { onToast: (msg: stri
               <input
                 type="email"
                 value={inviteEmail}
-                onChange={(e) => handleEmailChange(e.target.value)}
-                onBlur={handleEmailBlur}
+                onChange={(e) => setInviteEmail(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSendInvitation() }}
                 placeholder="manager@example.com"
                 className="px-3 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy placeholder:text-text-muted"
               />
-              {validation === 'found' && (
-                <p className="text-[12px] text-[#1B8C7A]">✓ Registered user — invitation will be sent and they can accept it in Settings.</p>
-              )}
-              {validation === 'not_found' && (
-                <p className="text-[12px] text-[#B38600]">User not found. You can still invite this email — the invitation will appear once they register.</p>
-              )}
             </div>
             <button
               onClick={handleSendInvitation}

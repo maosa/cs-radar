@@ -43,8 +43,6 @@ export interface DeclinedRow {
   invited_at: string
 }
 
-export type ValidationState = 'idle' | 'found' | 'not_found'
-
 export const PRODUCTS: { value: Product; label: string }[] = [
   { value: 'AH', label: 'Access Hub (AH)' },
   { value: 'NURO', label: 'NURO' },
