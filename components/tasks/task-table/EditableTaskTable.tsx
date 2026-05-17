@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -60,9 +60,14 @@ export default function EditableTaskTable({
   const [activeId, setActiveId] = useState<string | null>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
-  const visibleWeekStrings = new Set(visibleWeekIndices.map(weekIndexToDateString))
-  const visibleTasks = tasks
+  const visibleWeekStrings = useMemo(
+    () => new Set(visibleWeekIndices.map(weekIndexToDateString)),
+    [visibleWeekIndices],
+  )
+
+  const visibleTasks = useMemo(() => tasks
     .filter((t) => visibleWeekStrings.has(t.week_start_date))
+    .slice()
     .sort((a, b) => {
       const wA = dateStringToWeekIndex(a.week_start_date)
       const wB = dateStringToWeekIndex(b.week_start_date)
@@ -77,7 +82,7 @@ export default function EditableTaskTable({
         if (pj !== 0) return pj
       }
       return a.sort_order - b.sort_order
-    })
+    }), [tasks, visibleWeekStrings, weekSortModes, defaultSortMode])
 
   const activeTask = activeId ? visibleTasks.find((t) => t.id === activeId) : null
 

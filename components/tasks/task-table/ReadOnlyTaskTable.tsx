@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { weekIndexToDateString, dateStringToWeekIndex } from '@/lib/weeks'
 import { projectName } from '@/lib/taskUtils'
 import TableHeader from './TableHeader'
@@ -26,9 +27,14 @@ export default function ReadOnlyTaskTable({
   highlightedTaskId,
   onOpenPanel,
 }: ReadOnlyTaskTableProps) {
-  const visibleWeekStrings = new Set(visibleWeekIndices.map(weekIndexToDateString))
-  const visibleTasks = tasks
+  const visibleWeekStrings = useMemo(
+    () => new Set(visibleWeekIndices.map(weekIndexToDateString)),
+    [visibleWeekIndices],
+  )
+
+  const visibleTasks = useMemo(() => tasks
     .filter((t) => visibleWeekStrings.has(t.week_start_date))
+    .slice()
     .sort((a, b) => {
       const wA = dateStringToWeekIndex(a.week_start_date)
       const wB = dateStringToWeekIndex(b.week_start_date)
@@ -43,7 +49,7 @@ export default function ReadOnlyTaskTable({
         if (pj !== 0) return pj
       }
       return a.sort_order - b.sort_order
-    })
+    }), [tasks, visibleWeekStrings, weekSortModes, defaultSortMode])
 
   return (
     <div className="overflow-y-auto flex-1">
