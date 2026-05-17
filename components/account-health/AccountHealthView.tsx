@@ -30,18 +30,20 @@ interface AccountHealthViewProps {
   viewAsUserId?: string
   readOnly?: boolean
   managerUserId?: string
+  initialAccounts?: ClientAccountRow[]
 }
 
 export default function AccountHealthView({
   viewAsUserId,
   readOnly = false,
   managerUserId,
+  initialAccounts,
 }: AccountHealthViewProps) {
   const { userId: loggedInUserId } = useAuth()
   const effectiveUserId = viewAsUserId ?? loggedInUserId
 
   const [adminName, setAdminName] = useState('')
-  const [accounts, setAccounts] = useState<ClientAccountRow[]>([])
+  const [accounts, setAccounts] = useState<ClientAccountRow[]>(initialAccounts ?? [])
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [metadata, setMetadata] = useState<AccountHealthMetadata | null>(null)
 
@@ -70,6 +72,7 @@ export default function AccountHealthView({
 
   useEffect(() => {
     if (!effectiveUserId) return
+    if (initialAccounts && !viewAsUserId) return
     supabase
       .from('client_accounts')
       .select('id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at')

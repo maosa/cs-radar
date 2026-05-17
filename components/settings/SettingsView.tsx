@@ -8,10 +8,26 @@ import ProjectsSection from './ProjectsSection'
 import TeamManagementSection from './TeamManagementSection'
 import AccountHealthSettingsBlock from './AccountHealthSection'
 import ExportSection from './ExportSection'
+import type { DefaultLanding } from '@/lib/supabase/types'
 
-export default function SettingsView() {
+interface InitialProfile {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  email: string
+  role: string | null
+  default_landing: DefaultLanding
+  account_health_enabled: boolean
+}
+
+interface SettingsViewProps {
+  initialProfile?: InitialProfile | null
+  initialHasManagerRole?: boolean
+}
+
+export default function SettingsView({ initialProfile, initialHasManagerRole }: SettingsViewProps) {
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [accountHealthEnabled, setAccountHealthEnabled] = useState(false)
+  const [accountHealthEnabled, setAccountHealthEnabled] = useState(initialProfile?.account_health_enabled ?? false)
 
   const addToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).slice(2)
@@ -27,7 +43,7 @@ export default function SettingsView() {
     <div className="p-6 max-w-2xl flex flex-col gap-5">
       <h1 className="text-base font-medium text-navy">Settings</h1>
       <SectionCard title="Account Details">
-        <AccountSection onToast={addToast} />
+        <AccountSection onToast={addToast} initialProfile={initialProfile ?? null} initialHasManagerRole={initialHasManagerRole ?? false} />
       </SectionCard>
       <SectionCard title="Projects">
         <ProjectsSection onToast={addToast} />
@@ -35,7 +51,7 @@ export default function SettingsView() {
       <SectionCard title="Team Management">
         <TeamManagementSection onToast={addToast} />
       </SectionCard>
-      <AccountHealthSettingsBlock onToast={addToast} onEnabledChange={setAccountHealthEnabled} />
+      <AccountHealthSettingsBlock onToast={addToast} onEnabledChange={setAccountHealthEnabled} initialEnabled={initialProfile?.account_health_enabled} />
       <SectionCard title="Export Data">
         <ExportSection onToast={addToast} accountHealthEnabled={accountHealthEnabled} />
       </SectionCard>

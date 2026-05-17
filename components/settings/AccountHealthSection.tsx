@@ -10,17 +10,19 @@ import ClientAccountsSection from './ClientAccountsSection'
 export function AccountHealthSection({
   onToast,
   onEnabledChange,
+  initialEnabled,
 }: {
   onToast: (msg: string, type?: 'success' | 'error') => void
   onEnabledChange: (enabled: boolean) => void
+  initialEnabled?: boolean
 }) {
   const { userId } = useAuth()
   const triggerSidebarRefresh = useSidebarRefresh()
-  const [enabled, setEnabled] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [enabled, setEnabled] = useState(initialEnabled ?? false)
+  const [loading, setLoading] = useState(initialEnabled === undefined)
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId || initialEnabled !== undefined) return
     supabase
       .from('users')
       .select('account_health_enabled')
@@ -80,11 +82,13 @@ export function AccountHealthSection({
 export default function AccountHealthSettingsBlock({
   onToast,
   onEnabledChange,
+  initialEnabled,
 }: {
   onToast: (msg: string, type?: 'success' | 'error') => void
   onEnabledChange: (enabled: boolean) => void
+  initialEnabled?: boolean
 }) {
-  const [accountHealthEnabled, setAccountHealthEnabled] = useState(false)
+  const [accountHealthEnabled, setAccountHealthEnabled] = useState(initialEnabled ?? false)
 
   const handleEnabledChange = (val: boolean) => {
     setAccountHealthEnabled(val)
@@ -97,6 +101,7 @@ export default function AccountHealthSettingsBlock({
         <AccountHealthSection
           onToast={onToast}
           onEnabledChange={handleEnabledChange}
+          initialEnabled={initialEnabled}
         />
       </SectionCard>
       {accountHealthEnabled && (

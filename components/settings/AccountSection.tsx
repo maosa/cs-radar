@@ -15,20 +15,27 @@ interface UserRow {
   default_landing: DefaultLanding
 }
 
-export default function AccountSection({ onToast }: { onToast: (msg: string, type?: 'success' | 'error') => void }) {
+interface AccountSectionProps {
+  onToast: (msg: string, type?: 'success' | 'error') => void
+  initialProfile?: UserRow | null
+  initialHasManagerRole?: boolean
+}
+
+export default function AccountSection({ onToast, initialProfile, initialHasManagerRole = false }: AccountSectionProps) {
   const { userId } = useAuth()
   const sidebarCounter = useSidebarCounter()
-  const [user, setUser] = useState<UserRow | null>(null)
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
-  const [role, setRole] = useState('')
-  const [defaultLanding, setDefaultLanding] = useState<DefaultLanding>('task_list')
-  const [hasManagerRole, setHasManagerRole] = useState(false)
+  const [user, setUser] = useState<UserRow | null>(initialProfile ?? null)
+  const [firstName, setFirstName] = useState(initialProfile?.first_name ?? '')
+  const [lastName, setLastName] = useState(initialProfile?.last_name ?? '')
+  const [email, setEmail] = useState(initialProfile?.email ?? '')
+  const [role, setRole] = useState(initialProfile?.role ?? '')
+  const [defaultLanding, setDefaultLanding] = useState<DefaultLanding>(initialProfile?.default_landing ?? 'task_list')
+  const [hasManagerRole, setHasManagerRole] = useState(initialHasManagerRole)
   const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialProfile)
 
   useEffect(() => {
+    if (initialProfile) return
     async function load() {
       if (!userId) return
 
