@@ -49,13 +49,14 @@ export function useTasksQuery(
 
   // Live updates when comments are added or deleted by any party — keeps comment_count
   // in sync across both the owner's and manager's views without a page refresh.
+  // Filtered by admin_user_id so only events for this user's tasks arrive.
   useEffect(() => {
     if (!adminUserId) return
     const channel = supabase
       .channel(`task_comments:${scope}:${adminUserId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'task_comments' },
+        { event: '*', schema: 'public', table: 'task_comments', filter: `admin_user_id=eq.${adminUserId}` },
         () => { queryClient.invalidateQueries({ queryKey: ['tasks', scope, adminUserId] }) }
       )
       .subscribe()

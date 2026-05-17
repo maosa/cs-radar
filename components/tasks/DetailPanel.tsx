@@ -34,6 +34,8 @@ export interface DetailPanelProps {
   onClose: () => void
   readOnlyNotes?: boolean
   canEditAllComments?: boolean
+  taskOwnerUserId: string
+  taskScope: 'own' | 'managed'
 }
 
 export default function DetailPanel({
@@ -49,6 +51,8 @@ export default function DetailPanel({
   onClose,
   readOnlyNotes = false,
   canEditAllComments = true,
+  taskOwnerUserId,
+  taskScope,
 }: DetailPanelProps) {
   const { userId } = useAuth()
   const queryClient = useQueryClient()
@@ -281,7 +285,7 @@ export default function DetailPanel({
     if (!error && data) {
       setComments((prev) => [...prev, { ...data, author_name: 'You' }])
       setNewComment('')
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['tasks', taskScope, taskOwnerUserId], exact: true })
     }
     setAddingComment(false)
   }, [newComment, taskId, userId, queryClient])
@@ -313,7 +317,7 @@ export default function DetailPanel({
     const { error } = await supabase.from('task_comments').delete().eq('id', pendingDeleteCommentId)
     if (!error) {
       setComments((prev) => prev.filter((c) => c.id !== pendingDeleteCommentId))
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['tasks', taskScope, taskOwnerUserId], exact: true })
     }
     setDeletingComment(false)
     setPendingDeleteCommentId(null)

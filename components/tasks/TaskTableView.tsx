@@ -433,6 +433,8 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
           onClose={handleClosePanel}
           readOnlyNotes={readOnly}
           canEditAllComments={!readOnly}
+          taskOwnerUserId={readOnly ? (adminUserId ?? userId ?? '') : (userId ?? '')}
+          taskScope={readOnly ? 'managed' : 'own'}
         />
       )}
     </div>
