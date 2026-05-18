@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, Gauge, ArrowLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Gauge, ArrowLeft, Copy } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import type { ClientAccountRow, AccountHealthMetadata, EngagementType } from '@/lib/supabase/types'
@@ -55,6 +55,10 @@ export default function AccountHealthView({
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
+
+  const [showCopyConfirm, setShowCopyConfirm] = useState(false)
+  const [isCopying, setIsCopying] = useState(false)
+  const [copyVersion, setCopyVersion] = useState(0)
 
   useEffect(() => {
     if (!readOnly || !viewAsUserId) return
@@ -146,6 +150,45 @@ export default function AccountHealthView({
       updated_at: new Date().toISOString(),
       updated_by: actorId,
     }, { onConflict: 'client_account_id' })
+  }
+
+  const copyPreviousMonth = async () => {
+    if (!selectedAccountId || !effectiveUserId) return
+    setIsCopying(true)
+
+    const prev = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
+    const prevMonthStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-01`
+    const currMonthStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-01`
+
+    const { data } = await supabase
+      .from('account_health_responses')
+      .select('question_id, response, cs_lead_comment, client_partner_comment')
+      .eq('client_account_id', selectedAccountId)
+      .eq('month', prevMonthStr)
+
+    if (data && data.length > 0) {
+      const now = new Date().toISOString()
+      await supabase
+        .from('account_health_responses')
+        .upsert(
+          data.map(r => ({
+            client_account_id: selectedAccountId,
+            admin_user_id: effectiveUserId,
+            month: currMonthStr,
+            question_id: r.question_id,
+            response: r.response,
+            cs_lead_comment: r.cs_lead_comment,
+            client_partner_comment: r.client_partner_comment,
+            updated_at: now,
+            updated_by: actorId,
+          })),
+          { onConflict: 'client_account_id,month,question_id' }
+        )
+    }
+
+    setCopyVersion(v => v + 1)
+    setIsCopying(false)
+    setShowCopyConfirm(false)
   }
 
   const prevMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
@@ -297,6 +340,25 @@ export default function AccountHealthView({
                     )}
                   </div>
                 </div>
+
+                {!readOnly && (
+                  <>
+                    {/* Separator 3: between month navigation and copy button */}
+                    <div className="w-px h-4 bg-border mx-0.5 flex-shrink-0 mb-2" />
+
+                    {/* Copy previous month */}
+                    <div className="flex flex-col gap-0.5">
+                      <label className="text-[11px] text-text-muted invisible select-none">Action</label>
+                      <button
+                        onClick={() => setShowCopyConfirm(true)}
+                        className="h-8 flex items-center gap-1.5 px-3 py-1 rounded-[6px] border border-border text-[13px] text-text-secondary bg-white hover:border-border-hover hover:text-navy transition-colors"
+                      >
+                        <Copy size={13} />
+                        Copy previous month
+                      </button>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -324,12 +386,41 @@ export default function AccountHealthView({
       ) : (
         <div className="px-6 pb-6 bg-white">
           <RiskAssessmentTable
+            key={`${selectedAccount.id}-${currentMonth.getTime()}-${copyVersion}`}
             clientAccountId={selectedAccount.id}
             adminUserId={effectiveUserId!}
             actorUserId={actorId!}
             month={currentMonth}
             readOnly={readOnly}
           />
+        </div>
+      )}
+      {!readOnly && showCopyConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-[10px] border border-border shadow-lg p-5 w-[340px] flex flex-col gap-4">
+            <p className="text-[14px] font-medium text-navy">Copy previous month?</p>
+            <p className="text-[13px] text-text-secondary">
+              This will overwrite all responses, CS Lead comments, and Client Partner comments for{' '}
+              <strong>{formatMonthLabel(currentMonth)}</strong> with data from{' '}
+              <strong>{formatMonthLabel(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}</strong>.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowCopyConfirm(false)}
+                disabled={isCopying}
+                className="h-8 px-3 rounded-[6px] border border-border text-[13px] text-text-secondary bg-white hover:border-border-hover hover:text-navy transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={copyPreviousMonth}
+                disabled={isCopying}
+                className="h-8 px-3 rounded-[6px] border border-teal bg-teal text-navy text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {isCopying ? 'Copying…' : 'Copy'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
