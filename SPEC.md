@@ -1,6 +1,6 @@
 # Task Tracker — Product Design & Engineering Specification
 
-**Access Infinity · Version 1.3 · May 2026**
+**Access Infinity · Version 1.4 · May 2026**
 
 > This document is the authoritative reference for the Task Tracker web application. It is written to be self-contained so that any agentic AI coding tool or developer can pick up the project at any point and continue development without additional context.
 
@@ -100,6 +100,8 @@ Supabase Auth handles all authentication. Row Level Security (RLS) policies enfo
 | **State management** | React Context + TanStack Query v5 (React Query) — client-side data fetching, caching, and optimistic updates |
 | **Drag and drop** | dnd-kit |
 | **Language** | TypeScript throughout |
+| **Auth middleware** | `proxy.ts` (Next.js 16 convention — equivalent to `middleware.ts`). Protected routes fail closed in production: missing Supabase env vars or `getUser()` failures redirect to `/login`. Auth/static paths remain publicly reachable. |
+| **Security headers** | Baseline headers set in `next.config.ts` for all routes: `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`. `unsafe-eval` is excluded from the production CSP. |
 
 ---
 
@@ -130,7 +132,7 @@ Admin-configurable project list. Each Admin has their own set of projects.
 |---|---|
 | `id` | `uuid` — primary key |
 | `admin_user_id` | `uuid` — references `users(id)` |
-| `name` | `text` |
+| `name` | `text` — max 200 characters. A partial unique index (`deleted_at is null`) enforces uniqueness on `(admin_user_id, lower(name), coalesce(product, ''))` so duplicate active names are rejected at the database level. |
 | `product` | `text` — optional product association (`'AH'` \| `'NURO'` \| `'EH'` \| `'N/A'`), nullable. Used to pre-filter the project dropdown when a product is selected in a task form. |
 | `sort_order` | `integer` — drag-and-drop ordering within the user's project list |
 | `is_visible` | `boolean` — default `true`. Hidden projects are excluded from the filter bar and project dropdowns; tasks that already reference them remain unaffected. |
@@ -164,7 +166,7 @@ Core data model. One row per task.
 | `admin_user_id` | `uuid` — references `users(id)` |
 | `product` | `text` — `'AH'` \| `'NURO'` \| `'EH'` \| `'N/A'` |
 | `project_id` | `uuid` — references `projects(id)`, nullable |
-| `description` | `text` |
+| `description` | `text` — max 2,000 characters |
 | `week_start_date` | `date` — always a Monday, e.g. `2026-01-05` |
 | `status` | `text` — `'open'` \| `'complete'` |
 | `is_flagged` | `boolean` — default `false` |
@@ -182,7 +184,7 @@ Free-text notes written by the Admin for a task. One row per task (upsert patter
 |---|---|
 | `id` | `uuid` — primary key |
 | `task_id` | `uuid` — references `tasks(id)` |
-| `content` | `text` |
+| `content` | `text` — max 20,000 characters |
 | `created_by` | `uuid` — references `users(id)` |
 | `created_at` | `timestamptz` |
 | `updated_at` | `timestamptz` |
@@ -196,7 +198,8 @@ Comments on tasks, typically written by the Manager. Full audit trail captured.
 |---|---|
 | `id` | `uuid` — primary key |
 | `task_id` | `uuid` — references `tasks(id)` |
-| `content` | `text` |
+| `admin_user_id` | `uuid` — references `users(id)` on delete cascade. Denormalised from the parent task; auto-populated on insert by trigger `set_task_comment_admin_user_id`. Used to scope Realtime subscriptions so comment events only reach the relevant user's active clients. |
+| `content` | `text` — max 5,000 characters |
 | `created_by` | `uuid` — references `users(id)` |
 | `created_at` | `timestamptz` |
 | `updated_at` | `timestamptz` |
@@ -264,6 +267,8 @@ Week columns have no fixed start or end date. Navigation is open in both directi
 ### 5.6 Filter Bar
 
 A lightweight filter bar sits between the toolbar and the table. It filters which rows are visible — it does not paginate or hide week columns.
+
+A **"Filter:"** label (11px, muted) is shown at the left of the filter chip row, matching the style of the adjacent "Sort:" label.
 
 - **Filter by product:** chip buttons for AH, EH, NURO, N/A. Multiple can be active simultaneously. Clicking an active chip deactivates it.
 - **Filter by project:** chip buttons for each visible project in the admin's project list that has at least one task in the loaded window. Multiple can be active.
@@ -457,6 +462,7 @@ Page controls:
 
 Clicking a card navigates to that user's task list. The view is identical to the owner's main task view with the following differences:
 
+- The toolbar heading reads **"[First Name]'s Task List"** (not the generic app name)
 - No "Add task" button
 - Task action icons (flag, move, delete) are hidden
 - Checkbox is visible but non-interactive (display only)
@@ -623,6 +629,49 @@ Phases are ordered by dependency. Each phase is independently shippable to Verce
 - [x] Forgot-password and reset-password pages
 - [x] `handle_new_user` Supabase trigger creates `users` row on signup
 
+### Phase 9 — Security Hardening ✓
+
+- [x] `batch_update_sort_order` RPC hardened: uses `auth.uid()`, restricts updates to caller-owned tasks, validates array lengths, sets safe search path, drops trusted `updated_by_user` parameter
+- [x] `middleware.ts` renamed to `proxy.ts` (Next.js 16 convention); protected routes fail closed in production on missing env vars or `getUser()` failure
+- [x] Baseline security headers added in `next.config.ts`: CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`
+
+### Phase 10 — Query Hydration & Performance ✓
+
+- [x] Tasks page prefetch aligned to `['tasks', 'own', userId]` key with week-range filter and `task_comments(count)` — eliminates duplicate client fetch on hydration
+- [x] Manager task page prefetch includes `task_comments(count)` and maps `comment_count` — comment badges render from server payload
+- [x] Replaced broad `select('*')` with explicit column lists across hot paths (`useTasks`, tasks page, manager page, `ManagerLandingView`, `AccountHealthView`, `RiskAssessmentTable`, `DetailPanel`, settings export)
+- [x] React Query Devtools excluded from production bundle via `next/dynamic` + `NODE_ENV` check
+- [x] `QueryProvider` moved from root layout to `app/(app)/layout.tsx` — public auth pages no longer hydrate React Query
+- [x] `SettingsView.tsx` split into section-specific files: `AccountSection`, `ProjectsSection`, `TeamManagementSection`, `AccountHealthSection`, `ClientAccountsSection`, `ExportSection`, plus shared `SectionCard`, `ConfirmDialog`, `settings-utils.ts`, `settings-types.ts`
+- [x] `visibleWeekStrings` and `visibleTasks` wrapped in `useMemo` in editable and read-only task table components
+
+### Phase 11 — Database Indexes & Constraints ✓
+
+- [x] Composite indexes added: `tasks(admin_user_id, week_start_date, sort_order)`, `projects(admin_user_id, deleted_at, sort_order)`, `client_accounts(admin_user_id, deleted_at, sort_order)`, `manager_relationships` (two composite indexes by manager/status and admin/status), `task_comments(task_id, created_at)`, account health metadata and response indexes
+- [x] Partial unique indexes for active project names and active client account names (case-insensitive, `deleted_at is null`)
+- [x] Partial unique index for active manager invitations (`status in ('pending', 'accepted')`)
+- [x] Text length constraints: `projects.name` (200), `client_accounts.name` (200), `tasks.description` (2,000), `task_notes.content` (20,000), `task_comments.content` (5,000), `account_health_responses` CS Lead and Client Partner comments (5,000 each)
+
+### Phase 12 — Realtime & Cache Efficiency ✓
+
+- [x] `admin_user_id` column added to `task_comments` (backfilled from parent task, non-null, trigger `set_task_comment_admin_user_id` auto-populates on insert); Realtime subscription filtered by `admin_user_id=eq.${adminUserId}` so comment events reach only relevant clients
+- [x] `DetailPanel` invalidates exact query key `['tasks', scope, ownerUserId]` instead of broad `['tasks']`; `taskOwnerUserId` and `taskScope` props threaded from `TaskTableView`
+
+### Phase 13 — Account Health Polish ✓
+
+- [x] Removed dead code from `CommentCell`: `updatedByUserId`, `updatedAt`, `fetchedUserIdRef`, `formatDateTime`, `userName`, and the per-cell Supabase user lookup `useEffect` (none of these were rendered in the UI)
+- [x] Manager Account Health permissions: manager can edit only the Client Partner comment column via `upsert_client_partner_comment` security-definer RPC; CS Lead comments and risk responses are read-only for managers
+
+### Phase 14 — Server-Side Data & Architecture ✓
+
+- [x] App server layout (`app/(app)/layout.tsx`) fetches profile and sidebar counts (manager relationships, pending invites, `account_health_enabled`) server-side and passes initial props to `AuthProvider` and `Sidebar`, eliminating first-paint client round trips
+- [x] Manager landing page (`app/(app)/manager/page.tsx`) fetches relationships and user cards server-side; passes `initialPeople` to `ManagerLandingView`; redirects immediately if no accepted relationships
+- [x] Route-level `loading.tsx` skeletons added for tasks, manager, settings, and account-health routes
+- [x] `account-health/page.tsx` fetches `client_accounts` server-side and passes as `initialAccounts` to `AccountHealthView`
+- [x] `settings/page.tsx` fetches user profile server-side and passes `initialProfile` / `initialHasManagerRole` to `AccountSection` and `AccountHealthSection`
+- [x] CSV export moved to authenticated server route handlers (`/api/export/tasks`, `/api/export/account-health`); client no longer builds CSV in browser memory
+- [x] Manager invite validation and creation moved server-side to `POST /api/invitations`; client no longer probes `users` by email (removes email enumeration risk); UI shows generic "Invitation sent." response
+
 ---
 
 ## 11. Resolved Decisions & Notes for Developers
@@ -650,9 +699,24 @@ Phases are ordered by dependency. Each phase is independently shippable to Verce
 | **Flagged task visibility** | Flag is visible to both task owner and manager. |
 | **Comment editing** | Task list owner can edit or delete any comment (including manager comments). Intentional by design. Audit trail captured in `updated_by` and `updated_at`. |
 | **Product list** | Fixed: Access Hub (AH), NURO, Evidence Hub (EH), N/A. Not user-configurable in v1. |
-| **Project list** | Owner-configurable via Settings. Projects have a product association, a name, a visibility flag, and a drag-reorderable `sort_order`. Duplicate (name + product) pairs are rejected. Projects with active tasks cannot be deleted. |
-| **Auth enforcement** | Fully enforced via Next.js middleware. No `NEXT_PUBLIC_AUTH_ENFORCED` feature flag exists. All routes except `/login`, `/signup`, `/forgot-password`, and `/reset-password` require an authenticated session. |
+| **Project list** | Owner-configurable via Settings. Projects have a product association, a name, a visibility flag, and a drag-reorderable `sort_order`. Duplicate (name + product) pairs are rejected at both the UI and database level (partial unique index on active rows). Projects with active tasks cannot be deleted. |
+| **Auth enforcement** | Fully enforced via `proxy.ts` (Next.js 16 equivalent of `middleware.ts`). No feature flag. All routes except `/login`, `/signup`, `/forgot-password`, and `/reset-password` require an authenticated session. In production, missing Supabase env vars or a `getUser()` failure on a protected route redirects to `/login` (fail closed). |
 | **User role field** | `users.role` stores a free-text job title (e.g. "Product Manager"). Displayed on manager landing cards. Editable in Settings → Account details. |
+| **`batch_update_sort_order` RPC** | No longer accepts `updated_by_user` from the client. Uses `auth.uid()` as the actor. Restricts updates to tasks where `admin_user_id = auth.uid()`. Raises an exception if the caller is unauthenticated, if array lengths differ, or if any task id is not owned by the caller. |
+| **CSV export** | Generated server-side by authenticated route handlers at `/api/export/tasks` and `/api/export/account-health`. The client triggers a download by navigating to the route URL; it does not fetch or process raw data. |
+| **Manager invite validation** | Validation and insertion handled server-side by `POST /api/invitations`. Client performs local email format validation only — no probing of the `users` table by email. The UI shows a generic "Invitation sent." success response regardless of whether the email belongs to a registered user. Duplicate active invitations are still rejected. |
+| **`default_landing` preference** | Only modified when the user explicitly saves in Settings → Account details. Runtime redirects (e.g., navigating to `/manager` with no accepted relationships) do not mutate `users.default_landing`. |
+| **Manager redirect error handling** | `ManagerLandingView` only redirects to `/tasks` when the `manager_relationships` query returns a genuinely empty result set. A Supabase error (network blip, auth timing, schema mismatch) is logged but does not trigger a redirect or mutate `default_landing`. |
+| **Filter bar label** | A "Filter:" label (11px, muted) is displayed at the left of the filter chip row, matching the style of the adjacent "Sort:" label. |
+| **Manager task view heading** | The toolbar in the manager task view displays "[First Name]'s Task List", not a generic title. |
+| **`task_comments.admin_user_id`** | Denormalised from the parent task. Auto-populated on insert by trigger `set_task_comment_admin_user_id`. Realtime subscriptions filter by `admin_user_id=eq.${userId}` so comment events only reach relevant active clients. |
+| **React Query Devtools** | Excluded from the production bundle. Loaded via `next/dynamic` gated on `process.env.NODE_ENV === 'development'`. |
+| **`QueryProvider` scope** | Lives in `app/(app)/layout.tsx`, not the root layout. Public auth pages do not hydrate React Query. |
+| **Settings component structure** | `SettingsView.tsx` delegates to section-specific files: `AccountSection`, `ProjectsSection`, `TeamManagementSection`, `AccountHealthSection`, `ClientAccountsSection`, `ExportSection`. Shared utilities in `SectionCard`, `ConfirmDialog`, `settings-utils.ts`, `settings-types.ts`. |
+| **Server bootstrap data** | `app/(app)/layout.tsx` fetches user profile and sidebar counts server-side and passes initial props to `AuthProvider` and `Sidebar`. `Sidebar` skips its first client fetch when server-provided initial data is available, but still re-fetches after invitation or account-health changes via the sidebar counter. |
+| **Manager landing server prefetch** | `app/(app)/manager/page.tsx` fetches relationships and user cards server-side and passes `initialPeople` to `ManagerLandingView`. If no accepted relationships are found server-side, the page redirects to `/tasks` immediately without a client-side effect. |
+| **Account Health manager permissions** | Manager can edit only the **Client Partner comment** column. CS Lead comments and risk response dropdowns are read-only for managers. Metadata fields (renewal date, last engagement, engagement type) are read-only for managers. Enforced by `upsert_client_partner_comment` security-definer RPC — a direct `UPDATE` RLS policy is not used because Postgres RLS cannot restrict which columns are updated. |
+| **`CommentCell` attribution** | `updatedByUserId`, `updatedAt`, and the per-cell Supabase user lookup `useEffect` were removed from `CommentCell` as dead code — the fetched name was never rendered. The component now only manages text edit/save/cancel state. |
 
 ---
 
@@ -670,9 +734,19 @@ The tasks query does not fetch all of a user's tasks on load. Instead, it fetche
 
 This approach keeps initial page load fast for users with years of task history (e.g. a user with 1,000+ tasks will load ~300 rows on first visit rather than all 1,000+), while making older and future weeks accessible on demand.
 
-### 12.2 Server-Side Prefetch (Manager View)
+### 12.2 Server-Side Prefetch & Bootstrap
 
-The manager task view page uses Next.js server components to prefetch the task data before sending HTML to the browser. The server applies the same initial window filter as the client, so the prefetched data is consumed directly by React Query on hydration without an additional network request.
+Several pages prefetch data server-side so React Query can hydrate without a client round trip:
+
+- **Task list** (`/tasks`): prefetches tasks with the same initial week window and `task_comments(count)` used by the client query (`['tasks', 'own', userId]`). Comment badges render correctly on first load.
+- **Manager task view** (`/manager/[adminUserId]`): prefetches tasks with `task_comments(count)` so comment badges render from the server payload.
+- **Manager landing** (`/manager`): fetches relationships and user cards server-side. Redirects to `/tasks` immediately if no accepted relationships exist, without requiring a client effect.
+- **Account Health** (`/account-health`): fetches `client_accounts` server-side and passes as `initialAccounts` to `AccountHealthView`.
+- **Settings** (`/settings`): fetches user profile server-side and passes `initialProfile` / `initialHasManagerRole` to `AccountSection` and `AccountHealthSection`.
+
+**App layout bootstrap:** `app/(app)/layout.tsx` fetches user profile and sidebar counts (manager relationships, pending invites, `account_health_enabled`) server-side and passes initial props to `AuthProvider` and `Sidebar`. This eliminates the first-paint client round trips that previously caused a brief loading state on every page.
+
+**Route-level loading states:** `loading.tsx` files are present for the tasks, manager, settings, and account-health routes. These render lightweight skeleton states during server render and navigation without layout shift.
 
 ### 12.3 Batch Sort Order Updates
 
@@ -680,15 +754,17 @@ Drag-and-drop reordering within a week column persists sort order to the databas
 
 ---
 
-*Task Tracker Specification · Access Infinity · v1.3 · May 2026*
+*Task Tracker Specification · Access Infinity · v1.4 · May 2026*
 
-*Update this document as decisions are made or requirements change. Version the file (v1.4, v1.5, etc.) with a brief change note when significant updates are made.*
+*Update this document as decisions are made or requirements change. Version the file (v1.5, v1.6, etc.) with a brief change note when significant updates are made.*
 
 **v1.1 changes (May 2026):** Added N/A product option; open week navigation (no fixed start date); move-task backward action; corrected column widths; updated tech stack to TanStack Query v5; added `sort_order`, `product`, `is_visible` to projects schema; fixed search ordering; added Realtime live updates (§8.3); added Section 12 (Data Loading & Performance).
 
 **v1.2 changes (May 2026):** Reconciled spec with actual codebase — all phases now marked complete. Updated §2.4 (auth is fully enforced, no feature flag). Updated §4.3 (added `is_favorite`/`is_archived` to `manager_relationships`). Fixed duplicate §5.3 numbering (renumbered §5.4–§5.8). Updated §5.6 Filter Bar (added N/A chip and Status dropdown). Updated §5.7 Sort Modes (multi-select product+project combined mode). Updated §6.2 Task Row Actions (single ChevronsLeftRight move icon, Pencil edit icon, PanelRight/MessageSquare panel triggers). Updated §6.6 Detail Panel triggers. Updated §6.7 autocomplete details. Updated §7.1 Account (added role field). Replaced §7.3 Manager Invitation with full "Team management" bidirectional flow. Added §7.4 Export data. Rewrote §8.1 Manager Landing (removed non-existent Add Person button); removed §8.2 Add/Edit Person Modal. Added N/A badge to §9.2. Updated §9.5 icon table. Added new Resolved Decisions entries.
 
 **v1.3 changes (May 2026):** Consolidated `account_health.md` (feature spec, previously Draft v1.4) and `account_health_implementation.md` (implementation guide, previously v1.0) into this document as Sections 13 and 14. Cross-references updated to new numbering. Source files are superseded by this document.
+
+**v1.4 changes (May 2026):** Consolidated `improvements.md` into this document. Added Phases 9–14 to Section 10 (all complete). Updated Section 3 (tech stack) with `proxy.ts` middleware rename and security headers. Updated Section 4.6 (`task_comments`) with `admin_user_id` column and text length constraint; updated Section 4.4 (`tasks`) and 4.5 (`task_notes`) with length constraints; updated Section 4.2 (`projects`) with uniqueness note. Updated Section 5.6 (Filter bar "Filter:" label). Updated Section 8.2 (manager task view heading). Added new Resolved Decisions entries (security hardening, CSV export routes, invite privacy, `default_landing` protection, manager redirect error handling, Account Health comment permissions, realtime scoping, devtools, QueryProvider scope, settings split, server bootstrap, loading skeletons, CommentCell attribution removal). Updated Section 12 (server-side prefetch scope expanded, route-level loading). Updated Section 13.10.4 (manager AH permissions table and RPC rationale). Updated Section 13.11 (added `upsert_client_partner_comment` RPC). Updated Section 14 Phase D (CommentCell props simplified, attribution removed; Client Partner cell save handler split for owner/manager paths). `improvements.md` is superseded by this document.
 
 ---
 
@@ -1330,10 +1406,16 @@ The manager landing page must know whether each managed user has `account_health
 
 #### 13.10.4 Manager permissions for Account Health
 
-- The manager can **view** all responses, comments, and metadata
-- The manager can **add and edit** comments in both the CS Lead and Client Partner comment columns
-- The manager **cannot** change response dropdown values
-- The manager **cannot** edit account-level metadata (renewal date, last engagement, engagement type)
+| Field | Manager access |
+|---|---|
+| Risk response dropdowns | Read-only (disabled `<select>`) |
+| CS Lead comment column | Read-only |
+| **Client Partner comment column** | **Editable** — manager can add and edit comments |
+| Metadata (renewal date, last engagement, engagement type) | Read-only |
+
+The owner (viewing `/account-health`) retains full edit access to all fields.
+
+**Enforcement:** A direct RLS `UPDATE` policy would be too permissive (Postgres RLS cannot restrict which columns are updated). Manager writes to the Client Partner comment column are enforced by the `upsert_client_partner_comment` security-definer RPC (see Section 13.11), which touches only the three Client Partner fields plus shared audit columns. The manager save path calls this RPC and applies an optimistic state update immediately to avoid visible flicker before the Realtime event arrives.
 
 #### 13.10.5 The "manager without Account Health" scenario
 
@@ -1418,12 +1500,61 @@ create policy "ah_responses: manager read"
     )
   );
 
--- Managers can update comment fields only (not response values).
--- Enforced in application code rather than RLS in v1.
--- For INSERT/UPDATE by managers, enforce via app logic.
+-- Managers write to the Client Partner comment column via a security-definer RPC.
+-- See upsert_client_partner_comment below.
 ```
 
-> Note: If stricter column-level enforcement is desired later, PostgreSQL column-level privileges or application-layer checks can be added. For v1, application logic is sufficient.
+**`upsert_client_partner_comment` RPC**
+
+Managers use this security-definer RPC to save Client Partner comments. It is the only write path available to managers on `account_health_responses`. It upserts only `client_partner_comment`, `client_partner_updated_at`, `client_partner_updated_by`, `updated_at`, and `updated_by` — never touches risk responses or CS Lead fields.
+
+```sql
+create or replace function public.upsert_client_partner_comment(
+  p_client_account_id uuid,
+  p_admin_user_id     uuid,
+  p_month             text,   -- 'YYYY-MM-DD', cast to date inside function
+  p_question_id       text,
+  p_comment           text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  caller uuid := auth.uid();
+begin
+  if caller is null then raise exception 'Not authenticated'; end if;
+  if caller <> p_admin_user_id then
+    if not exists (
+      select 1 from public.manager_relationships mr
+      where mr.manager_user_id = caller
+        and mr.admin_user_id   = p_admin_user_id
+        and mr.status          = 'accepted'
+    ) then raise exception 'Not authorised to edit this comment'; end if;
+  end if;
+  insert into public.account_health_responses (
+    client_account_id, admin_user_id, month, question_id,
+    client_partner_comment, client_partner_updated_at, client_partner_updated_by,
+    updated_at, updated_by
+  )
+  values (
+    p_client_account_id, p_admin_user_id, p_month::date, p_question_id,
+    p_comment, now(), caller, now(), caller
+  )
+  on conflict (client_account_id, month, question_id)
+  do update set
+    client_partner_comment    = excluded.client_partner_comment,
+    client_partner_updated_at = excluded.client_partner_updated_at,
+    client_partner_updated_by = excluded.client_partner_updated_by,
+    updated_at                = excluded.updated_at,
+    updated_by                = excluded.updated_by;
+end;
+$$;
+
+revoke all    on function public.upsert_client_partner_comment(uuid, uuid, text, text, text) from public;
+grant execute on function public.upsert_client_partner_comment(uuid, uuid, text, text, text) to authenticated;
+```
 
 ---
 
@@ -2400,12 +2531,12 @@ None. The comment columns already exist in `account_health_responses` from Phase
 ```ts
 interface CommentCellProps {
   initialValue: string | null
-  updatedAt: string | null
-  updatedByUserId: string | null
   onSave: (value: string) => Promise<void>
   readOnly?: boolean
 }
 ```
+
+> Note: `updatedByUserId`, `updatedAt`, and the per-cell user lookup were removed as dead code (the attribution line was never rendered in the UI). `CommentCell` manages only text edit/save/cancel state.
 
 **States:**
 
@@ -2421,15 +2552,7 @@ if (el) {
 ```
 `rows={2}` minimum. Below: `Save` (navy primary, `text-[12px]`) and `Cancel` (secondary, `text-[12px]`).
 
-3. **Saved, view mode** — text as `<p className="text-[13px] text-navy whitespace-pre-wrap">`. Below: attribution line `text-[11px] text-text-muted`. On hover (not `readOnly`): pencil icon (`Pencil`, size 12) at top-right.
-
-**Resolving user name for attribution:**
-```ts
-supabase.from('users').select('first_name, last_name').eq('id', updatedByUserId).single()
-```
-Cache in local `useState`. Format: `[first_name] [last_name]`.
-
-Date format: `new Date(updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })` + ` at ` + `toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })`.
+3. **Saved, view mode** — text as `<p className="text-[13px] text-navy whitespace-pre-wrap">`. On hover (not `readOnly`): pencil icon (`Pencil`, size 12) at top-right. Clicking re-enters editing mode.
 
 **Save:** Call `onSave(trimmedValue)`. While saving, disable buttons and show `Saving…`. On success, transition to saved view mode. On error, stay in editing mode.
 
@@ -2442,11 +2565,9 @@ Date format: `new Date(updatedAt).toLocaleDateString('en-GB', { day: 'numeric', 
 Replace Phase C placeholder cells with two `<CommentCell>` instances per question row:
 
 ```tsx
-// CS Lead Comments column
+// CS Lead Comments column — read-only for managers (readOnly={readOnly})
 <CommentCell
   initialValue={rowData?.cs_lead_comment ?? null}
-  updatedAt={rowData?.cs_lead_updated_at ?? null}
-  updatedByUserId={rowData?.cs_lead_updated_by ?? null}
   onSave={async (value) => {
     await supabase.from('account_health_responses').upsert({
       client_account_id: clientAccountId,
@@ -2464,39 +2585,52 @@ Replace Phase C placeholder cells with two `<CommentCell>` instances per questio
 />
 
 // Client Partner Comments column
+// Owner (readOnly=false): direct upsert.
+// Manager (readOnly=true, actorUserId ≠ adminUserId): RPC.
+// readOnly condition for this cell: false for both owner and manager;
+//   only true if readOnly=true AND actorUserId === adminUserId (i.e., impossible in practice).
 <CommentCell
   initialValue={rowData?.client_partner_comment ?? null}
-  updatedAt={rowData?.client_partner_updated_at ?? null}
-  updatedByUserId={rowData?.client_partner_updated_by ?? null}
   onSave={async (value) => {
-    await supabase.from('account_health_responses').upsert({
-      client_account_id: clientAccountId,
-      admin_user_id: adminUserId,
-      month: monthStr,
-      question_id: question.id,
-      client_partner_comment: value,
-      client_partner_updated_at: new Date().toISOString(),
-      client_partner_updated_by: adminUserId,
-      updated_at: new Date().toISOString(),
-      updated_by: adminUserId,
-    }, { onConflict: 'client_account_id,month,question_id' })
+    if (readOnly) {
+      // Manager path — security-definer RPC prevents touching other fields
+      await supabase.rpc('upsert_client_partner_comment', {
+        p_client_account_id: clientAccountId,
+        p_admin_user_id: adminUserId,
+        p_month: monthStr,
+        p_question_id: question.id,
+        p_comment: value,
+      })
+      // Apply optimistic update immediately to avoid flicker before realtime event
+    } else {
+      // Owner path — direct upsert
+      await supabase.from('account_health_responses').upsert({
+        client_account_id: clientAccountId,
+        admin_user_id: adminUserId,
+        month: monthStr,
+        question_id: question.id,
+        client_partner_comment: value,
+        client_partner_updated_at: new Date().toISOString(),
+        client_partner_updated_by: adminUserId,
+        updated_at: new Date().toISOString(),
+        updated_by: adminUserId,
+      }, { onConflict: 'client_account_id,month,question_id' })
+    }
   }}
-  readOnly={readOnly}
+  readOnly={readOnly && actorUserId === adminUserId}
 />
 ```
 
-> **Important on `updated_by` in Phase E:** In the manager view, `adminUserId` is the account owner — not the logged-in manager. Pass the logged-in user's ID separately as `currentUserId` in Phase E, and use `currentUserId` for the `_updated_by` fields while keeping `adminUserId` for `admin_user_id`.
-
-After a successful upsert in `onSave`, refresh the local responses map by re-fetching or updating optimistically.
+After a successful save in `onSave`, update `responsesMap` optimistically so `CommentCell` receives the new `initialValue` before it re-renders in display mode. The Realtime event will arrive shortly after and set identical values.
 
 #### Phase D — Verify
 
 - [ ] Empty comment cell: placeholder text visible; clicking enters edit mode
 - [ ] Typing: textarea height expands automatically beyond 2 lines
-- [ ] Save: saves to Supabase with correct `_updated_at` and `_updated_by`
+- [ ] Save: saves to Supabase; correct `_updated_at` and `_updated_by` in the database
 - [ ] Cancel: discards changes and returns to previous state
 - [ ] Saved cell: text shows; pencil icon on hover; clicking pencil enters edit mode
-- [ ] Attribution line shows correct name and formatted date
+- [ ] No attribution line (removed as dead code — CommentCell does not display author info)
 - [ ] Navigating to a different month and back: comments still there for original month
 - [ ] CS Lead and Client Partner columns are independent — saving one does not affect the other
 
@@ -2683,7 +2817,8 @@ When `viewAsUserId` is provided:
 - [ ] Manager account health page: shows the managed user's client accounts, not the manager's
 - [ ] Response dropdowns in manager view: visible but disabled
 - [ ] Metadata fields in manager view: visible but read-only
-- [ ] Comment cells in manager view: manager can add/edit comments; attribution shows manager's name
+- [ ] CS Lead comment column in manager view: visible but read-only
+- [ ] Client Partner comment column in manager view: manager can add/edit via `upsert_client_partner_comment` RPC; cell updates immediately with no flicker (optimistic update)
 - [ ] Direct URL to `/manager/[adminUserId]/account-health` for user with Account Health disabled: redirects to `/manager/[adminUserId]`
 
 ---
