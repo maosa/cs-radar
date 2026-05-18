@@ -55,7 +55,7 @@ export default function ExportSection({
         disabled={exporting}
         className="px-4 py-2 text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {exporting ? 'Exporting…' : 'Export to CSV'}
+        {exporting ? 'Exporting…' : 'Export Task List to CSV'}
       </button>
       {accountHealthEnabled && (
         <>
