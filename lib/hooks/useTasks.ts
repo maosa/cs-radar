@@ -4,6 +4,20 @@ import { supabase } from '@/lib/supabase/client'
 import type { TaskWithProject, ProjectRow } from '@/lib/supabase/types'
 import { dateStringToWeekIndex, weekIndexToDateString, formatWeekHeader } from '@/lib/weeks'
 
+// Converts a raw Supabase tasks row (with joined `projects` and `task_comments`)
+// into the TaskWithProject shape used throughout the app. Used both in the hook
+// queryFn and in server-side prefetch queries so the shapes always match.
+export function mapTaskRow(row: any): TaskWithProject {
+  const proj = row.projects as { name: string } | null
+  const tc = row.task_comments as { count: number }[] | null
+  const { projects: _p, task_comments: _tc, ...rest } = row
+  return {
+    ...rest,
+    project_name: proj?.name ?? null,
+    comment_count: Array.isArray(tc) ? (tc[0]?.count ?? 0) : 0,
+  } as TaskWithProject
+}
+
 export function useProjectsQuery(adminUserId: string | null) {
   return useQuery({
     queryKey: ['projects', adminUserId],
@@ -95,16 +109,7 @@ export function useTasksQuery(
       }
       const { data, error } = await query
       if (error) throw error
-      return data.map((row: any) => {
-        const proj = row.projects as { name: string } | null
-        const tc = row.task_comments as { count: number }[] | null
-        const { projects: _p, task_comments: _tc, ...rest } = row
-        return {
-          ...rest,
-          project_name: proj?.name ?? null,
-          comment_count: Array.isArray(tc) ? (tc[0]?.count ?? 0) : 0,
-        } as TaskWithProject
-      })
+      return data.map(mapTaskRow)
     },
     enabled: !!adminUserId,
   })

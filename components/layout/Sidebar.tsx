@@ -27,7 +27,7 @@ interface SidebarInitialData {
   pendingInviteCount: number
 }
 
-function deriveNameAndInitials(profile: SidebarInitialData['profile']): { fullName: string; initials: string } {
+function deriveNameAndInitials(profile: { first_name: string | null; last_name: string | null; email: string } | null): { fullName: string; initials: string } {
   if (!profile) return { fullName: '', initials: '?' }
   const first = profile.first_name ?? ''
   const last = profile.last_name ?? ''
@@ -120,12 +120,9 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
       .single()
       .then(({ data }) => {
         if (!data) return
-        const first = data.first_name ?? ''
-        const last = data.last_name ?? ''
-        const name = [first, last].filter(Boolean).join(' ')
-        setFullName(name || data.email)
-        const i = [(first[0] ?? ''), (last[0] ?? '')].filter(Boolean).join('').toUpperCase()
-        setInitials(i || (data.email?.[0]?.toUpperCase() ?? '?'))
+        const { fullName, initials } = deriveNameAndInitials(data)
+        setFullName(fullName)
+        setInitials(initials)
       })
   }, [userId])
 

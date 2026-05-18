@@ -8,7 +8,6 @@ import DeleteConfirmModal from './task-table/DeleteConfirmModal'
 import EditableTaskTable from './task-table/EditableTaskTable'
 import ReadOnlyTaskTable from './task-table/ReadOnlyTaskTable'
 import { supabase } from '@/lib/supabase/client'
-import type { TaskWithProject } from '@/lib/supabase/types'
 import { getCurrentWeekIndex, formatWeekHeader, dateStringToWeekIndex, weekIndexToDateString } from '@/lib/weeks'
 import { useAuth } from '@/lib/auth-context'
 import { ToastContainer, type Toast } from '@/components/ui/ToastContainer'
@@ -17,9 +16,7 @@ import SharedToolbar from './shared/SharedToolbar'
 import SharedFilterBar, { type SortMode, type UniqueProject } from './shared/SharedFilterBar'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { useTasks, useTasksQuery, useProjectsQuery } from '@/lib/hooks/useTasks'
-import type { ViewMode } from './task-table/types'
-
-type AnyTask = TaskWithProject
+import type { ViewMode, AnyTask } from './task-table/types'
 
 interface TaskTableViewProps {
   readOnly?: boolean

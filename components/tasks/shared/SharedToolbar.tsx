@@ -3,9 +3,9 @@ import Link from 'next/link'
 import { Plus, Search, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
 import ProductBadge from '@/components/tasks/ProductBadge'
 
-export type ViewMode = 'focused' | 'expanded'
+type ViewMode = 'focused' | 'expanded'
 
-export interface SearchResult {
+interface SearchResult {
   task: any
   weekLabel: string
 }

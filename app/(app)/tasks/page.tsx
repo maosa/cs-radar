@@ -2,6 +2,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query
 import { createClient } from '@/lib/supabase/server'
 import TasksView from '@/components/tasks/TasksView'
 import { getCurrentWeekIndex, weekIndexToDateString } from '@/lib/weeks'
+import { mapTaskRow } from '@/lib/hooks/useTasks'
 
 export default async function TasksPage() {
   const queryClient = new QueryClient()
@@ -40,16 +41,7 @@ export default async function TasksPage() {
             .order('week_start_date')
             .order('sort_order')
           if (error) throw error
-          return data.map((row: any) => {
-            const proj = row.projects as { name: string } | null
-            const tc = row.task_comments as { count: number }[] | null
-            const { projects: _p, task_comments: _tc, ...rest } = row
-            return {
-              ...rest,
-              project_name: proj?.name ?? null,
-              comment_count: Array.isArray(tc) ? (tc[0]?.count ?? 0) : 0,
-            }
-          })
+          return data.map(mapTaskRow)
         },
       }),
     ])

@@ -138,10 +138,9 @@ export default function CommentsSection({
         <p className="text-[13px] text-text-muted">Loading…</p>
       ) : (
         <>
-          {comments.length === 0 && (
+          {comments.length === 0 ? (
             <p className="text-[13px] text-text-muted mb-4">No comments yet.</p>
-          )}
-          {comments.length > 0 && (
+          ) : (
             <div className="flex flex-col gap-2.5 mb-4">
               {comments.map((comment) => (
                 <CommentItem

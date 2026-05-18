@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ManagerTaskView from '@/components/manager/ManagerTaskView'
 import { getCurrentWeekIndex, weekIndexToDateString } from '@/lib/weeks'
+import { mapTaskRow } from '@/lib/hooks/useTasks'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -58,16 +59,7 @@ export default async function ManagerTaskPage({
         .order('week_start_date')
         .order('sort_order')
       if (error) throw error
-      return data.map((row: any) => {
-        const proj = row.projects as { name: string } | null
-        const tc = row.task_comments as { count: number }[] | null
-        const { projects: _p, task_comments: _tc, ...rest } = row
-        return {
-          ...rest,
-          project_name: proj?.name ?? null,
-          comment_count: Array.isArray(tc) ? (tc[0]?.count ?? 0) : 0,
-        }
-      })
+      return data.map(mapTaskRow)
     },
   })
 
