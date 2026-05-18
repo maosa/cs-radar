@@ -2,7 +2,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query
 import { createClient } from '@/lib/supabase/server'
 import TasksView from '@/components/tasks/TasksView'
 import { getCurrentWeekIndex, weekIndexToDateString } from '@/lib/weeks'
-import { mapTaskRow } from '@/lib/hooks/useTasks'
+import { mapTaskRow } from '@/lib/supabase/utils'
 
 export default async function TasksPage() {
   const queryClient = new QueryClient()

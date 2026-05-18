@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ManagerTaskView from '@/components/manager/ManagerTaskView'
 import { getCurrentWeekIndex, weekIndexToDateString } from '@/lib/weeks'
-import { mapTaskRow } from '@/lib/hooks/useTasks'
+import { mapTaskRow } from '@/lib/supabase/utils'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
