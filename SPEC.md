@@ -22,6 +22,8 @@
 12. [Data Loading & Performance](#12-data-loading--performance)
 13. [Account Health — Feature Specification](#13-account-health--feature-specification)
 14. [Account Health — Implementation Guide](#14-account-health--implementation-guide)
+15. [Project Tracker — Feature Specification](#15-project-tracker--feature-specification)
+16. [Project Tracker — Implementation Guide](#16-project-tracker--implementation-guide)
 
 ---
 
@@ -133,7 +135,7 @@ Admin-configurable project list. Each Admin has their own set of projects.
 | `id` | `uuid` — primary key |
 | `admin_user_id` | `uuid` — references `users(id)` |
 | `name` | `text` — max 200 characters. A partial unique index (`deleted_at is null`) enforces uniqueness on `(admin_user_id, lower(name), coalesce(product, ''))` so duplicate active names are rejected at the database level. |
-| `product` | `text` — optional product association (`'AH'` \| `'NURO'` \| `'EH'` \| `'N/A'`), nullable. Used to pre-filter the project dropdown when a product is selected in a task form. |
+| `product` | `text` — required product association (`'AH'` \| `'NURO'` \| `'EH'` \| `'N/A'`), NOT NULL, default `'N/A'`. Existing null values were backfilled to `'N/A'` during the Project Tracker migration (see Section 16.2.3). Used to pre-filter the project dropdown when a product is selected in a task form, and to construct the `PRODUCT - Project Name` display string in the Project Tracker. |
 | `sort_order` | `integer` — drag-and-drop ordering within the user's project list |
 | `is_visible` | `boolean` — default `true`. Hidden projects are excluded from the filter bar and project dropdowns; tasks that already reference them remain unaffected. |
 | `created_at` | `timestamptz` |
@@ -223,9 +225,11 @@ A collapsible left sidebar provides navigation between the user's two contexts. 
 
 | Icon | Label | Behaviour |
 |---|---|---|
-| Task list icon | My tasks | Navigates to the user's own task list (owner context). Always visible. |
-| People icon | Manager view | Navigates to the Manager landing page. **Only visible if the user has at least one accepted `manager_relationships` record.** Hidden entirely otherwise. |
-| Settings icon | Settings | Navigates to the Settings page. Always visible, pinned to bottom of rail. |
+| `ListTodo` | My tasks | Navigates to the user's own task list (owner context). Always visible. |
+| `ChartGantt` | Project Tracker | Navigates to the user's own Project Tracker page. Always visible. |
+| `Gauge` | Account health | Navigates to the Account Health page. **Only visible if `users.account_health_enabled = true` for the current user.** Hidden entirely otherwise. |
+| `Users` | Manager view | Navigates to the Manager landing page. **Only visible if the user has at least one accepted `manager_relationships` record.** Hidden entirely otherwise. |
+| `Settings` | Settings | Navigates to the Settings page. Always visible, pinned to bottom of rail. |
 
 The sidebar state (collapsed / expanded) is persisted to `localStorage` so it remembers the user's preference across sessions.
 
@@ -397,8 +401,8 @@ Admin users manage their project list here. Changes are reflected immediately in
 - List of current projects — each row shows a product badge and project name, with drag handle (for reordering), visibility toggle (`Eye`/`EyeOff`), Edit (pencil), and Delete (trash) icons on hover.
 - **Drag to reorder** — projects can be dragged to change their `sort_order`, which controls display order in all dropdowns.
 - **Visibility toggle** — hidden projects (`is_visible = false`) are excluded from the filter bar and the project dropdowns in task forms. Tasks that already reference hidden projects are unaffected. The `EyeOff` icon is always visible for hidden projects; the `Eye` icon only appears on hover for visible ones.
-- **Product association** — each project has an optional product field. When adding or editing a project, a product select dropdown and a name text input are shown. Duplicate (name + product) pairs are rejected with an inline error.
-- Add new project — product dropdown + name input + Add button.
+- **Product association** — each project requires a product field (NOT NULL, default `'N/A'`). When adding or editing a project, a product select dropdown and a name text input are shown. The product dropdown is required — the Add/Save button is disabled until a product is explicitly selected. An inline validation message "Please select a product" is shown if the user attempts to save without one. Duplicate (name + product) pairs are rejected with an inline error.
+- Add new project — product dropdown (required) + name input + Add button.
 - Edit project — inline edit on the existing row (product dropdown + name input), Save (`Check`) / Cancel (`X`).
 - Delete project — if the project has no tasks: confirmation dialog. If tasks reference the project: a blocking dialog explains that the project cannot be deleted until all tasks are reassigned. Soft-deletes via `deleted_at`.
 
@@ -425,13 +429,26 @@ The "Team management" section handles the full bidirectional manager relationshi
 
 ### 7.4 Export Data
 
-Users can export all their tasks, notes, and comments as a CSV file.
+Users can export their data as CSV files. Two export options are available, each as its own section card.
 
-- A single **Export to CSV** button fetches all tasks for the current user (no week-window filter — all historical data), joined with notes and comments.
-- The downloaded file is named `tasks_YYYY-MM-DD.csv`.
-- Columns: Week, Product, Project, Task Description, Notes, Comments, Status, Flagged.
-- Comments are concatenated into a single cell in the format `[Author on Date] Text.` with multiple comments space-separated.
-- The file includes a UTF-8 BOM for Excel compatibility.
+**Export Task List**
+- Button label: **Export Task List to CSV**
+- Fetches all tasks for the current user (no week-window filter — all historical data), joined with notes and comments.
+- File name: `tasks_YYYY-MM-DD.csv`
+- Columns: Week, Product, Project, Task Description, Notes, Comments, Status, Flagged
+- Comments concatenated: `[Author on Date] Text.` with multiple comments space-separated
+- UTF-8 BOM for Excel compatibility
+
+**Export Project Tracker**
+- Button label: **Export Project Tracker to CSV**
+- Section card description: *"Download all your project tracking notes and updates as a CSV file."*
+- Fetches all project tracker entries for the current user (no week-window filter), joined with comments.
+- File name: `project_tracker_YYYY-MM-DD.csv`
+- Columns: Week, Product, Project, Description, Flagged, Comments
+- Same comment concatenation format as the task list export
+- UTF-8 BOM for Excel compatibility
+
+Both exports are generated server-side by authenticated route handlers (`/api/export/tasks`, `/api/export/project-tracker`). The client triggers a download by navigating to the route URL.
 
 ---
 
@@ -458,18 +475,42 @@ Page controls:
 
 > Cards are populated automatically from accepted `manager_relationships` records. There is no manual "Add person" button — the relationship is always initiated by the Admin from their Settings page.
 
-### 8.2 Manager Task View
+### 8.2 Manager View — Default Landing & Tab Structure
 
-Clicking a card navigates to that user's task list. The view is identical to the owner's main task view with the following differences:
+Clicking a card navigates to `/manager/[adminUserId]`, which redirects to `/manager/[adminUserId]/project-tracker`. This is the default landing for managers viewing another user. A tab bar is always displayed at the top of the manager view with the following tabs:
 
-- The toolbar heading reads **"[First Name]'s Task List"** (not the generic app name)
+| Tab | Visibility | Route |
+|---|---|---|
+| **Project Tracker** | Always | `/manager/[adminUserId]/project-tracker` |
+| **Account Health** | Only if managed user has `account_health_enabled = true` | `/manager/[adminUserId]/account-health` |
+| **Task List** | Always | `/manager/[adminUserId]/tasks` |
+
+The Project Tracker is the default landing because it provides the highest-level weekly summary most relevant for manager syncs.
+
+### 8.3 Manager Project Tracker View
+
+The manager view of the Project Tracker is read-only except for the comments section.
+
+- The toolbar heading reads **"[First Name]'s Project Tracker"** with a **"Read only"** badge
+- A Back button returns to the Manager landing page
+- Week navigation (prev/next arrows, Today button, Focused/Expanded view toggle) is identical to the owner view
+- Search bar with "Search…" placeholder
+- Filter bar: Product and Project filters (same multi-select dropdowns). Sort by product and sort by project (combinable). No drag & drop sort, no status filter.
+- Table: Product badge, Project name, week-of description columns. No checkboxes. Flag state rendered (read-only). Comment badge visible when `comment_count > 0`.
+- Clicking the comment badge or panel icon opens the right sidebar (Project Details). In manager view: project dropdown and description are read-only. Comments section is fully editable — managers can add, edit, and delete their own comments.
+
+### 8.4 Manager Task List View
+
+Accessible at `/manager/[adminUserId]/tasks`. The view is identical to the owner's main task view with the following differences:
+
+- The toolbar heading reads **"[First Name]'s Task List"** with a **"Read only"** badge
 - No "Add task" button
 - Task action icons (flag, move, delete) are hidden
 - Checkbox is visible but non-interactive (display only)
 - Flag and completion states are rendered exactly as the task owner sees them
 - Notes icon and Comment icon are visible. Notes are read-only. Comments can be added, edited, or deleted by the manager.
-- The left sidebar remains visible and functional — the manager can switch back to their own task list at any time without using the Back button
-- A Back button in the top bar also returns to the Manager landing page
+- The left sidebar remains visible and functional
+- A Back button in the top bar returns to the Manager landing page
 - **Live updates via Supabase Realtime** — the manager view subscribes to Postgres change events on the `tasks` table filtered to the task owner's records. Any task created, updated, or deleted by the owner is reflected in the manager's view within approximately one second, without a manual page reload. This requires Realtime to be enabled for the `tasks` table in the Supabase dashboard.
 
 ---
@@ -763,6 +804,8 @@ Drag-and-drop reordering within a week column persists sort order to the databas
 **v1.2 changes (May 2026):** Reconciled spec with actual codebase — all phases now marked complete. Updated §2.4 (auth is fully enforced, no feature flag). Updated §4.3 (added `is_favorite`/`is_archived` to `manager_relationships`). Fixed duplicate §5.3 numbering (renumbered §5.4–§5.8). Updated §5.6 Filter Bar (added N/A chip and Status dropdown). Updated §5.7 Sort Modes (multi-select product+project combined mode). Updated §6.2 Task Row Actions (single ChevronsLeftRight move icon, Pencil edit icon, PanelRight/MessageSquare panel triggers). Updated §6.6 Detail Panel triggers. Updated §6.7 autocomplete details. Updated §7.1 Account (added role field). Replaced §7.3 Manager Invitation with full "Team management" bidirectional flow. Added §7.4 Export data. Rewrote §8.1 Manager Landing (removed non-existent Add Person button); removed §8.2 Add/Edit Person Modal. Added N/A badge to §9.2. Updated §9.5 icon table. Added new Resolved Decisions entries.
 
 **v1.3 changes (May 2026):** Consolidated `account_health.md` (feature spec, previously Draft v1.4) and `account_health_implementation.md` (implementation guide, previously v1.0) into this document as Sections 13 and 14. Cross-references updated to new numbering. Source files are superseded by this document.
+
+**v1.5 changes (May 2026):** Added Project Tracker feature — Sections 15 (feature spec) and 16 (implementation guide). Updated §4.2 (`projects.product` now NOT NULL, default `'N/A'`). Updated §5.1 sidebar nav (added `ChartGantt` Project Tracker item; listed all nav items with their Lucide icons). Updated §7.2 (product now required in project form). Updated §7.4 (Export Data now covers two exports: Task List and Project Tracker). Rewrote §8.2–§8.4 (manager view default landing is now Project Tracker; three-tab structure; task list moved to `/manager/[adminUserId]/tasks`). Added §15–§16 to Table of Contents.
 
 **v1.4 changes (May 2026):** Consolidated `improvements.md` into this document. Added Phases 9–14 to Section 10 (all complete). Updated Section 3 (tech stack) with `proxy.ts` middleware rename and security headers. Updated Section 4.6 (`task_comments`) with `admin_user_id` column and text length constraint; updated Section 4.4 (`tasks`) and 4.5 (`task_notes`) with length constraints; updated Section 4.2 (`projects`) with uniqueness note. Updated Section 5.6 (Filter bar "Filter:" label). Updated Section 8.2 (manager task view heading). Added new Resolved Decisions entries (security hardening, CSV export routes, invite privacy, `default_landing` protection, manager redirect error handling, Account Health comment permissions, realtime scoping, devtools, QueryProvider scope, settings split, server bootstrap, loading skeletons, CommentCell attribution removal). Updated Section 12 (server-side prefetch scope expanded, route-level loading). Updated Section 13.10.4 (manager AH permissions table and RPC rationale). Updated Section 13.11 (added `upsert_client_partner_comment` RPC). Updated Section 14 Phase D (CommentCell props simplified, attribution removed; Client Partner cell save handler split for owner/manager paths). `improvements.md` is superseded by this document.
 
@@ -2956,3 +2999,641 @@ ALTER TABLE public.account_health_responses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "ah_responses: owner full"   ON public.account_health_responses FOR ALL USING (auth.uid() = admin_user_id);
 CREATE POLICY "ah_responses: manager read" ON public.account_health_responses FOR SELECT USING (EXISTS (SELECT 1 FROM public.manager_relationships mr WHERE mr.admin_user_id = account_health_responses.admin_user_id AND mr.manager_user_id = auth.uid() AND mr.status = 'accepted'));
 ```
+
+---
+
+## 15. Project Tracker — Feature Specification
+
+### 15.1 Overview
+
+The Project Tracker is a first-class page in the Task Tracker platform. It provides a week-oriented view of project activity, designed for two purposes:
+
+1. **Individual tracking** — users capture what is happening with each project on a weekly basis in a structured, concise format.
+2. **Manager syncs** — managers view a weekly summary of project progress to facilitate discussions and identify blockers.
+
+The Project Tracker is visible by default to all authenticated users — no opt-in required, unlike Account Health.
+
+Key differences from the Task List:
+
+- One row per product-project combination per week (not one row per individual task)
+- No completion state — entries are not ticked off
+- The description field is longer; it may contain paragraphs or bullet points
+- No "move to another week" action — entries are week-specific
+- No autocomplete on the description field
+- No Notes section in the detail panel — the weekly description is the primary content
+
+---
+
+### 15.2 Sidebar Navigation
+
+The "Project Tracker" nav item is added using the `ChartGantt` icon from Lucide React. It is positioned directly below "My tasks" and above "Account health" (when visible). It is always shown to all authenticated users — no conditional.
+
+Full sidebar item order after this change:
+
+| Position | Icon | Label | Visibility |
+|---|---|---|---|
+| 1 | `ListTodo` | My tasks | Always |
+| 2 | `ChartGantt` | Project Tracker | Always |
+| 3 | `Gauge` | Account health | Only if `account_health_enabled = true` |
+| 4 | `Users` | Manager view | Only if accepted manager relationships exist |
+| 5 | `Settings` | Settings | Always (pinned to bottom) |
+
+---
+
+### 15.3 Settings: Product Required on Projects
+
+As part of the Project Tracker feature, `projects.product` changes from optional (nullable) to required (NOT NULL, default `'N/A'`). Existing rows with a null product are backfilled to `'N/A'` during migration.
+
+This change is reflected in the Settings → Projects Configuration UI:
+
+- The product dropdown is required when adding or editing a project.
+- The Add / Save button is disabled until a product is explicitly selected.
+- An inline validation message "Please select a product" is shown if the user attempts to save without selecting a product.
+- The product dropdown has no blank/empty option — it defaults to an unselected state on the Add form; the user must actively choose.
+
+The partial unique index on `projects` is updated accordingly (see Section 16.2.3).
+
+---
+
+### 15.4 Layout & Table Structure
+
+The Project Tracker page layout is identical in structure to the Task List:
+
+- Left sidebar (shared)
+- Toolbar row — "Add project" button, week navigation controls, view toggle, search input
+- Filter/sort bar
+- Table with sticky columns and dynamic week columns
+
+**Table columns:**
+
+| Column | Spec |
+|---|---|
+| **Product** | Sticky. Product badge (identical colors and styles to the task list). Width ~84px. |
+| **Project** | Sticky. Project name only — no product prefix in the table cell. Width ~240px. |
+| **Week of [date]** | Dynamic week column. Header format identical to task list (`Week of [Month] [Day], [Year]`). Description text wraps over multiple lines — no truncation. Rows have variable height, expanding to fit the full description content. |
+
+Each row represents a single product-project entry for the visible week(s). Unlike the task list, rows have no fixed height — they expand to accommodate the full description.
+
+---
+
+### 15.5 Week Navigation & View Modes
+
+Identical to the Task List in all respects:
+
+- Left / right arrows to navigate weeks
+- Today button (teal-accented when already on current week)
+- Focused view (one week column) and Expanded view (three columns: previous, current, next)
+- Same week-window pagination: initial window today −26 weeks to today +4 weeks; auto-expands by 13 weeks at either boundary as the user navigates
+- The current week column header is highlighted with a teal underline and a `current` badge in Expanded view
+
+---
+
+### 15.6 Filter Bar
+
+| Filter | Behaviour |
+|---|---|
+| **Product** | Multi-select dropdown. Same options (AH, EH, NURO, N/A) and behavior as the task list. |
+| **Project** | Multi-select dropdown. Shows projects that have at least one entry in the loaded week window. Same behavior as the task list. |
+| ~~Status~~ | Not present. Entries have no completion state. |
+
+The "Filter:" label, clear-all button, and chip visual styles are identical to the task list.
+
+---
+
+### 15.7 Sort Modes
+
+The task list allows drag & drop to be combined with product/project sorting (drag reorders within product/project groups). In the Project Tracker there is exactly one row per product-project combination per week, so there are no sub-groups to reorder within. As a result, drag & drop is **mutually exclusive** with product/project sorting.
+
+| Mode | Behaviour |
+|---|---|
+| **By product** | Rows ordered: AH → EH → NURO → N/A. Can be combined with By project. |
+| **By project** | Rows ordered alphabetically by project name. Can be combined with By product. |
+| **By product + project** | Rows ordered by product first, then alphabetically by project within each product group. |
+| **Drag & drop** | Sets a custom global row order. Mutually exclusive with By product and By project: activating drag deactivates both; activating By product or By project deactivates drag. |
+
+Drag & drop is hidden in the manager read-only view, identical to the task list.
+
+---
+
+### 15.8 Search
+
+The search input in the toolbar searches within the `description` content of entries in the currently visible week(s). Placeholder text: `Search…` (not "Search tasks…"). All other behaviors (debounce 300ms, minimum 2 characters, dropdown results) mirror the task list, adapted for project tracker entries.
+
+---
+
+### 15.9 Adding an Entry
+
+The primary toolbar button reads **"Add project"**. Clicking it opens the Add Project modal.
+
+**Modal header:** "Add project"
+**Modal subheading:** Shows the target week (e.g., "Week of May 19, 2026")
+**Modal dimensions:** Larger than the Add Task modal — wider and taller, with a larger description textarea to accommodate the longer placeholder text.
+
+**Fields:**
+
+| Field | Behaviour |
+|---|---|
+| **Project** | Single-select dropdown. Options are all non-hidden projects, displayed as `PRODUCT - Project Name` (e.g., `AH - Pfizer - Vaccines`, `NURO - General`). Sorted by the user's project `sort_order`. Selecting a project implicitly determines the product stored on the entry. Required. |
+| **Description** | Free-text area. Placeholder: *"What's happening with this project this week? Include progress, blockers, and anything you need help with."* Max 5,000 characters. Required. |
+
+**Duplicate validation:** If the selected project already has an entry for the target week, an inline validation message is shown: *"An entry for [PRODUCT - Project Name] already exists this week. You can edit it using the pencil icon in the table."* The Save button is disabled.
+
+**Buttons:** Cancel (dismisses modal without saving) | **Save project** (creates the entry)
+
+Entries are always created in the current (center) week when opened via the toolbar button, mirroring the task list behavior.
+
+---
+
+### 15.10 Row Actions
+
+| Action | Icon | Trigger | Behaviour |
+|---|---|---|---|
+| **Edit** | `Pencil` | Hover | Inline edit of the description. Press Enter or blur to save; Escape to cancel. |
+| **Flag** | `Flag` | Hover | Toggles flagged state. Flagged row: light red background (`#FFCDD3`), dark red text — same visual as task list. |
+| **Open panel** | `PanelRight` | Hover | Opens the Project Details right sidebar. |
+| **Comment badge** | `MessageSquare` | Always visible when `comment_count > 0` | Opens the sidebar scrolled to the Comments section. |
+| **Delete** | `Trash2` | Hover | Confirmation dialog: *"Are you sure you want to delete this entry? This action cannot be undone."* Deletes entry and all associated comments. |
+
+No checkbox (no completion state). No move icon (entries are not moved between weeks).
+
+**Row visual states:**
+
+| State | Visual |
+|---|---|
+| **Default** | White background, standard text. |
+| **Flagged** | Light red background (`#FFCDD3`), dark red text. |
+
+---
+
+### 15.11 Project Details Sidebar (Right Panel)
+
+The right sidebar is 360px wide, slides in from the right, and follows the same structural shell as the Task List detail panel with the following differences.
+
+**No Notes section.** The description field is the primary content.
+
+**Contents (top to bottom):**
+
+1. **Project dropdown** — single-select. Same `PRODUCT - Project Name` options as the Add Project modal. Changing this field updates the project (and implicitly the product) for the entry.
+2. **Description textarea** — displays and allows editing of the week-of content. The textarea is dynamic in height, expanding to show all content without an internal scrollbar. Minimum height is larger than the task list equivalent to reflect the expected longer content.
+3. **Comments section** — identical in structure and behavior to the task list comments section. Shows author name, timestamp, and text per comment. Edit and delete icons appear on hover for comments the current user can modify.
+
+**Unsaved changes footer:** when any field has been modified without saving, a "Unsaved changes" message appears at the bottom-left of the sidebar, with "Discard" and "Save" buttons at the bottom-right. Identical to the task list detail panel footer behavior.
+
+**Closing:** clicking the close icon, clicking outside the panel, or pressing Escape.
+
+---
+
+### 15.12 Export
+
+A new export option is added to Settings → Export Data, positioned below the existing task list export.
+
+| Setting | Value |
+|---|---|
+| Section card description | *"Download all your project tracking notes and updates as a CSV file."* |
+| Button label | **Export Project Tracker to CSV** |
+| File name | `project_tracker_YYYY-MM-DD.csv` |
+| Format | Long format — one row per entry per week |
+| Encoding | UTF-8 BOM (Excel compatibility) |
+| Columns | Week, Product, Project, Description, Flagged, Comments |
+
+Comments are concatenated into a single cell in the format `[Author on Date] Text.` with multiple comments space-separated — same format as the task list export.
+
+The export is generated server-side by an authenticated route handler at `/api/export/project-tracker` (same pattern as `/api/export/tasks`).
+
+---
+
+### 15.13 Manager View
+
+See Sections 8.2–8.3 for the full manager view specification. Key summary:
+
+- Clicking a user card navigates to `/manager/[adminUserId]`, which redirects to `/manager/[adminUserId]/project-tracker` — the new default landing.
+- A three-tab bar is always visible: Project Tracker (always) | Account Health (conditional) | Task List (always).
+- The Project Tracker manager view is read-only except for the comments section.
+- Toolbar heading: *"[First Name]'s Project Tracker"* with a "Read only" badge.
+- Filter bar: Product and Project filters; sort by product and sort by project (combinable). No drag & drop sort, no status filter.
+- Right sidebar in manager view: project dropdown and description are read-only; comments section is fully editable.
+
+---
+
+## 16. Project Tracker — Implementation Guide
+
+### 16.1 Overview
+
+This section is the authoritative implementation guide for the Project Tracker feature. Read it alongside Section 15 (feature spec). The implementation is divided into 24 discrete tasks; the standalone development file `project_tracker_dev.md` lists these tasks in the exact order they should be implemented, with full detail for each.
+
+Scope of changes:
+
+- 2 new database tables, 1 table migration
+- 2 new TypeScript types
+- 1 settings enforcement change
+- 2 shared component prop additions
+- 1 sidebar change
+- 2 new React Query hooks
+- 6 new owner-view components
+- 2 new owner-view routes
+- 4 manager-view component/route changes (1 update, 1 new component, 2 new routes + 1 route move)
+- 1 new export API route + 1 settings UI update
+- 1 Realtime subscription
+
+---
+
+### 16.2 Database
+
+#### 16.2.1 `project_tracker_entries`
+
+One row per product-project entry per week per user.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.project_tracker_entries (
+  id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  admin_user_id    uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  project_id       uuid NOT NULL REFERENCES public.projects(id) ON DELETE RESTRICT,
+  product          text NOT NULL CHECK (product IN ('AH', 'NURO', 'EH', 'N/A')),
+  description      text NOT NULL CHECK (char_length(description) <= 5000),
+  week_start_date  date NOT NULL,
+  is_flagged       boolean NOT NULL DEFAULT false,
+  sort_order       integer NOT NULL DEFAULT 0,
+  created_by       uuid REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz,
+  updated_by       uuid REFERENCES public.users(id) ON DELETE SET NULL
+);
+
+-- Enforce one entry per project per week per user
+CREATE UNIQUE INDEX IF NOT EXISTS pte_unique_project_week
+  ON public.project_tracker_entries(admin_user_id, project_id, week_start_date);
+
+-- Query index (mirrors tasks index pattern)
+CREATE INDEX IF NOT EXISTS pte_admin_week_sort_idx
+  ON public.project_tracker_entries(admin_user_id, week_start_date, sort_order);
+
+ALTER TABLE public.project_tracker_entries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "pte: owner full"
+  ON public.project_tracker_entries FOR ALL
+  USING (auth.uid() = admin_user_id);
+
+CREATE POLICY "pte: manager read"
+  ON public.project_tracker_entries FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM public.manager_relationships mr
+    WHERE mr.admin_user_id = project_tracker_entries.admin_user_id
+      AND mr.manager_user_id = auth.uid()
+      AND mr.status = 'accepted'
+  ));
+```
+
+**Note on `ON DELETE RESTRICT` for `project_id`:** consistent with how tasks work — deleting a project is blocked if tracker entries reference it. The owner must delete or reassign the entries first.
+
+#### 16.2.2 `project_tracker_comments`
+
+```sql
+CREATE TABLE IF NOT EXISTS public.project_tracker_comments (
+  id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  entry_id         uuid NOT NULL REFERENCES public.project_tracker_entries(id) ON DELETE CASCADE,
+  admin_user_id    uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  content          text NOT NULL CHECK (char_length(content) <= 5000),
+  created_by       uuid REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz,
+  updated_by       uuid REFERENCES public.users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS ptc_entry_created_idx
+  ON public.project_tracker_comments(entry_id, created_at);
+
+CREATE INDEX IF NOT EXISTS ptc_admin_user_id_idx
+  ON public.project_tracker_comments(admin_user_id);
+
+ALTER TABLE public.project_tracker_comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "ptc: owner full"
+  ON public.project_tracker_comments FOR ALL
+  USING (auth.uid() = admin_user_id);
+
+CREATE POLICY "ptc: manager read-own-write"
+  ON public.project_tracker_comments FOR ALL
+  USING (
+    -- Owner sees all; manager sees all and can write their own
+    auth.uid() = admin_user_id
+    OR (
+      created_by = auth.uid()
+      AND EXISTS (
+        SELECT 1 FROM public.manager_relationships mr
+        WHERE mr.admin_user_id = project_tracker_comments.admin_user_id
+          AND mr.manager_user_id = auth.uid()
+          AND mr.status = 'accepted'
+      )
+    )
+  );
+```
+
+**Trigger — `set_ptc_admin_user_id`:** mirrors `set_task_comment_admin_user_id`. On INSERT, resolves `admin_user_id` from the parent `project_tracker_entries` row so Realtime subscriptions can filter by `admin_user_id`.
+
+```sql
+CREATE OR REPLACE FUNCTION public.set_ptc_admin_user_id()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  SELECT admin_user_id INTO NEW.admin_user_id
+  FROM public.project_tracker_entries
+  WHERE id = NEW.entry_id;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER set_ptc_admin_user_id_trigger
+BEFORE INSERT ON public.project_tracker_comments
+FOR EACH ROW EXECUTE FUNCTION public.set_ptc_admin_user_id();
+```
+
+#### 16.2.3 `projects` table migration
+
+```sql
+-- Step 1: backfill existing nulls
+UPDATE public.projects SET product = 'N/A' WHERE product IS NULL;
+
+-- Step 2: add NOT NULL constraint and default
+ALTER TABLE public.projects
+  ALTER COLUMN product SET NOT NULL,
+  ALTER COLUMN product SET DEFAULT 'N/A';
+
+-- Step 3: drop old partial unique index (used coalesce for nullable product)
+DROP INDEX IF EXISTS projects_unique_active_name;
+
+-- Step 4: recreate without coalesce
+CREATE UNIQUE INDEX projects_unique_active_name
+  ON public.projects(admin_user_id, lower(name), product)
+  WHERE deleted_at IS NULL;
+```
+
+---
+
+### 16.3 TypeScript Types
+
+Add to the project's types file (e.g., `lib/types.ts` or equivalent):
+
+```typescript
+export type ProjectTrackerEntry = {
+  id: string
+  admin_user_id: string
+  project_id: string
+  product: 'AH' | 'NURO' | 'EH' | 'N/A'
+  description: string
+  week_start_date: string   // ISO date string, always a Monday
+  is_flagged: boolean
+  sort_order: number
+  created_by: string | null
+  created_at: string
+  updated_at: string | null
+  updated_by: string | null
+  // Joined fields
+  project_name?: string     // from projects.name
+  comment_count?: number    // from project_tracker_comments(count)
+}
+
+export type ProjectTrackerComment = {
+  id: string
+  entry_id: string
+  admin_user_id: string
+  content: string
+  created_by: string | null
+  created_at: string
+  updated_at: string | null
+  updated_by: string | null
+  // Joined field
+  author_name?: string      // from users first_name + last_name
+}
+```
+
+---
+
+### 16.4 Shared Component Updates
+
+#### 16.4.1 `SharedToolbar` — new optional props
+
+Add the following optional props with backward-compatible defaults so existing task list usage is unaffected:
+
+| Prop | Type | Default | Purpose |
+|---|---|---|---|
+| `addButtonLabel` | `string` | `'Add task'` | Text on the primary action button |
+| `searchPlaceholder` | `string` | `'Search tasks…'` | Placeholder for the search input |
+| `managerViewTitle` | `string \| undefined` | `undefined` (falls back to `{adminName}'s Task List`) | Override for the heading shown in manager view |
+
+#### 16.4.2 `SharedFilterBar` — new optional props
+
+Add two optional boolean props:
+
+| Prop | Type | Default | Purpose |
+|---|---|---|---|
+| `hideStatus` | `boolean` | `false` | When `true`, the Status dropdown is not rendered |
+| `dragExclusive` | `boolean` | `false` | When `true`, drag & drop is mutually exclusive with product/project sorting (see §15.7) |
+
+When `dragExclusive = true`:
+- Clicking "Drag & drop" calls `onSortMode('drag')` unconditionally, clearing any active product/project sort.
+- Clicking "By product" or "By project" while `parseSortMode(sortMode).drag === true` first removes drag, then toggles the product/project dimension: `buildSortMode(false, targetProduct, targetProject)`.
+
+When `dragExclusive = false` (default, task list behavior), no change to existing logic.
+
+---
+
+### 16.5 Sidebar
+
+In `components/layout/Sidebar.tsx`, add the Project Tracker item to `mainNavItems` unconditionally:
+
+```typescript
+import { ListTodo, ChartGantt, Users, Settings, Gauge, ... } from 'lucide-react'
+
+const mainNavItems: NavItem[] = [
+  { href: '/tasks',           label: 'My tasks',        icon: <ListTodo   size={20} /> },
+  { href: '/project-tracker', label: 'Project Tracker',  icon: <ChartGantt size={20} /> },
+  ...(accountHealthEnabled
+    ? [{ href: '/account-health', label: 'Account health', icon: <Gauge size={20} /> }]
+    : []),
+  ...(hasManagerRelationships
+    ? [{ href: '/manager', label: 'Manager view', icon: <Users size={20} /> }]
+    : []),
+]
+```
+
+The `isActive` check already uses `pathname === href || pathname.startsWith(href + '/')`, which handles `/project-tracker` correctly without changes.
+
+---
+
+### 16.6 Settings: Projects — Enforce Product
+
+In `components/settings/ProjectsSection.tsx`:
+
+1. Initialize the product field in the Add form to an empty/unselected state (not a default value).
+2. Disable the Add button until both product and name are non-empty.
+3. Show inline validation "Please select a product" if the user blurs the product dropdown without selecting.
+4. Apply the same required validation to the inline Edit form.
+
+No changes needed to the display logic — projects already show a product badge. No changes needed to the delete flow.
+
+---
+
+### 16.7 Hooks
+
+#### `useProjectTrackerEntries`
+
+Mirror the structure of the tasks hook. Key points:
+
+- Cache key: `['project-tracker-entries', scope, userId]` — scope is `'own'` or `'manager'`
+- Supabase query: `from('project_tracker_entries').select('*, projects(name), project_tracker_comments(count)').eq('admin_user_id', userId).gte('week_start_date', windowStart).lte('week_start_date', windowEnd)`
+- Map `comment_count` from the nested count aggregate (same pattern as tasks)
+- Week-window pagination: same initial window and auto-expansion logic as tasks
+- Mutations: `createEntry`, `updateEntry` (description, project_id, product, is_flagged), `deleteEntry`, `batchUpdateSortOrder`
+- Optimistic updates for flag toggle and inline description edit
+
+#### `useProjectTrackerComments`
+
+Mirror the task comments query pattern:
+
+- Cache key: `['project-tracker-comments', entryId]`
+- Fetches comments with author name joined: `from('project_tracker_comments').select('*, author:created_by(first_name, last_name)').eq('entry_id', entryId).order('created_at', { ascending: true })`
+- Mutations: `createComment`, `updateComment`, `deleteComment`
+
+---
+
+### 16.8 Owner View Components
+
+All new components go under `components/project-tracker/`.
+
+#### `AddProjectModal.tsx`
+- Larger modal than `AddTaskModal` — wider (`max-w-lg` or similar) and taller, with a larger description textarea
+- Single project `<select>` populated with non-hidden projects rendered as `PRODUCT - Project Name`, sorted by `sort_order`
+- Description `<textarea>` with the agreed placeholder and `max-length="5000"`; height should be at minimum 4–5 lines
+- On project select: store `project_id` and derive `product` from the project data
+- Duplicate check: compare selected `project_id` against entries already loaded for the target week; show inline error and disable Save if duplicate found
+- Cancel button closes modal; "Save project" button calls `createEntry` and closes on success
+
+#### `ProjectTrackerRow.tsx` (sortable, owner)
+- Uses `useSortable` from dnd-kit (same as `SortableTaskRow`)
+- Renders: product badge | project name | description (full wrap, no truncation, variable height)
+- Hover actions: `Pencil` (inline edit mode), `Flag`, `PanelRight`, `MessageSquare` badge (always visible when `comment_count > 0`), `Trash2`
+- Flagged state: `bg-[#FFCDD3]` row background, dark red text
+- Inline edit: replaces description text with a `<textarea>` on pencil click; blur/Enter saves, Escape cancels
+
+#### `ProjectTrackerTable.tsx` (editable, owner)
+- `DndContext` + `SortableContext` wrapping `ProjectTrackerRow` components (same dnd-kit pattern as `EditableTaskTable`)
+- DnD enabled only when `parseSortMode(sortMode).drag === true`
+- On drag end: calls `batchUpdateSortOrder`
+- Applies product/project sort client-side when the appropriate sort flags are active
+- Applies product/project filters client-side
+
+#### `ProjectDetails.tsx` (right sidebar, owner)
+- 360px slide-in panel — same shell as `DetailPanel`
+- **Top:** single project `<select>` with `PRODUCT - Project Name` options (same options as `AddProjectModal`)
+- **Middle:** `<textarea>` for description — auto-resizing (use `rows` + CSS `field-sizing: content` or a resize observer); minimum height ~120px
+- **Bottom:** `CommentsSection` — can be imported/adapted from `components/tasks/detail-panel/CommentsSection.tsx`
+- Footer: `DetailPanelFooter` variant with "Unsaved changes" / "Discard" / "Save" — reuse `DetailPanelFooter` or create `ProjectDetailsPanelFooter` with identical behavior
+- Closes on X icon, outside click, or Escape
+
+#### `ProjectTrackerView.tsx` (main owner view)
+- Mirrors `TaskTableView` in overall structure
+- Uses `useProjectTrackerEntries` with `scope = 'own'`
+- Passes to `SharedToolbar`: `addButtonLabel="Add project"`, `searchPlaceholder="Search…"`, `onAddTask={() => setModalOpen(true)}`
+- Passes to `SharedFilterBar`: `hideStatus={true}`, `dragExclusive={true}`, `hideDragSort={false}`
+- Manages: modal open state, week window, filter state, sort mode, selected entry (for sidebar), search query
+
+---
+
+### 16.9 Owner Routes
+
+**`app/(app)/project-tracker/page.tsx`**
+
+Server component. Mirrors `app/(app)/tasks/page.tsx`:
+- Authenticates user server-side
+- Prefetches `project_tracker_entries` with `project_tracker_comments(count)` for the initial week window under key `['project-tracker-entries', 'own', userId]`
+- Returns `<HydrationBoundary>` wrapping `<ProjectTrackerView />`
+
+**`app/(app)/project-tracker/loading.tsx`**
+
+Lightweight skeleton matching the task list loading skeleton layout (toolbar bar, filter bar, table placeholder rows).
+
+---
+
+### 16.10 Manager View
+
+#### `components/manager/ManagerViewTabs.tsx` — update
+
+- Remove the `if (!accountHealthEnabled) return null` guard — the tab bar now always renders
+- Tab order: Project Tracker | Account Health (conditional) | Task List
+- Update `TabLink` hrefs:
+  - Project Tracker: `/manager/${adminUserId}/project-tracker`
+  - Account Health: `/manager/${adminUserId}/account-health` (conditional on `accountHealthEnabled`)
+  - Task List: `/manager/${adminUserId}/tasks`
+- Update active detection: check `pathname.includes('/project-tracker')`, `pathname.includes('/account-health')`, `pathname.includes('/tasks')`; if none match, treat `/manager/${adminUserId}` (the redirect source) as Project Tracker active
+
+#### `components/project-tracker/ReadOnlyProjectTrackerRow.tsx`
+
+- Renders product badge, project name, description (same wrapping, variable height as owner row)
+- Flag state rendered visually (no toggle)
+- `MessageSquare` badge visible when `comment_count > 0`; opens sidebar
+- No pencil, no delete, no drag handle
+
+#### `components/project-tracker/ReadOnlyProjectTrackerTable.tsx`
+
+- No DnD context
+- Applies product/project sort and filters client-side
+- Renders `ReadOnlyProjectTrackerRow` components
+
+#### `components/manager/ManagerProjectTrackerView.tsx`
+
+- Uses `useProjectTrackerEntries` with `scope = 'manager'` and the managed user's `adminUserId`
+- Passes to `SharedToolbar`: `adminName={adminName}`, `managerViewTitle={\`${adminFirstName}'s Project Tracker\`}`
+- Passes to `SharedFilterBar`: `hideStatus={true}`, `hideDragSort={true}`, `dragExclusive={false}` (drag already absent)
+- Right sidebar (`ProjectDetails`) in manager mode: project dropdown and description rendered as read-only display fields (not interactive inputs); comments section fully editable by the manager
+
+#### Route changes
+
+| File | Action |
+|---|---|
+| `app/(app)/manager/[adminUserId]/page.tsx` | Replace content with `permanentRedirect('/manager/' + adminUserId + '/project-tracker')` |
+| `app/(app)/manager/[adminUserId]/tasks/page.tsx` | **New** — move existing task list page content here (copy from the current `page.tsx` before replacing it) |
+| `app/(app)/manager/[adminUserId]/tasks/loading.tsx` | **New** — same skeleton as the existing manager task loading page |
+| `app/(app)/manager/[adminUserId]/project-tracker/page.tsx` | **New** — server component, prefetches entries with comment counts, renders `ManagerProjectTrackerView` |
+| `app/(app)/manager/[adminUserId]/project-tracker/loading.tsx` | **New** — lightweight skeleton |
+
+**Important:** copy the full content of `app/(app)/manager/[adminUserId]/page.tsx` to `app/(app)/manager/[adminUserId]/tasks/page.tsx` **before** replacing the original with the redirect — do not lose the existing prefetch logic.
+
+---
+
+### 16.11 Export
+
+**`app/api/export/project-tracker/route.ts`** — new file
+
+Mirror `app/api/export/tasks/route.ts`:
+- Authenticated server route handler (`GET`)
+- Fetches all `project_tracker_entries` for the current user (no week-window filter), joined with `projects.name` and `project_tracker_comments` (with author name)
+- Generates UTF-8 BOM CSV
+- Columns in order: Week, Product, Project, Description, Flagged, Comments
+- Week formatted as `Week of MMM D, YYYY` (consistent with task export)
+- Flagged: `true` / `false`
+- Comments concatenated: `[Author on Date] Text.` space-separated; empty string if none
+- Response headers: `Content-Type: text/csv`, `Content-Disposition: attachment; filename="project_tracker_YYYY-MM-DD.csv"`
+
+**`components/settings/ExportSection.tsx`** — update
+
+Add a second export card (or a second button block within the same section card, matching the visual pattern used for the task list export) below the existing task list export:
+
+- Description: *"Download all your project tracking notes and updates as a CSV file."*
+- Button: **Export Project Tracker to CSV**
+- On click: `window.location.href = '/api/export/project-tracker'`
+
+---
+
+### 16.12 Realtime
+
+In `ProjectDetails.tsx` (and mirrored in the manager variant), add a Supabase Realtime subscription for `project_tracker_comments`. Mirror the `task_comments` Realtime pattern from `DetailPanel.tsx`:
+
+- Subscribe on mount when an entry is selected; unsubscribe on unmount or entry change
+- Filter: `admin_user_id=eq.${adminUserId}` (the entry owner's ID, not the commenter's — this is why the trigger in §16.2.2 denormalises `admin_user_id` onto comment rows)
+- On `INSERT`, `UPDATE`, `DELETE` postgres changes: invalidate `['project-tracker-comments', entryId]` query key
+- Enable Realtime for the `project_tracker_comments` table in the Supabase dashboard (same step required as for `task_comments`)
+
+---
+
+*Task Tracker Specification · Access Infinity · v1.5 · May 2026*
