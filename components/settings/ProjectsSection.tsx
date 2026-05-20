@@ -32,10 +32,12 @@ interface SortableProjectRowProps {
   editingId: string | null
   editName: string
   editProduct: Product | null
+  editProductError: string
   editInputRef: React.RefObject<HTMLInputElement | null>
   onEditStart: (project: ProjectRow) => void
   onEditNameChange: (name: string) => void
   onEditProductChange: (product: Product | null) => void
+  onEditProductBlur: () => void
   onEditSave: (id: string) => void
   onEditCancel: () => void
   onToggleVisibility: (project: ProjectRow) => void
@@ -47,10 +49,12 @@ const SortableProjectRow = memo(function SortableProjectRow({
   editingId,
   editName,
   editProduct,
+  editProductError,
   editInputRef,
   onEditStart,
   onEditNameChange,
   onEditProductChange,
+  onEditProductBlur,
   onEditSave,
   onEditCancel,
   onToggleVisibility,
@@ -76,8 +80,9 @@ const SortableProjectRow = memo(function SortableProjectRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 py-2.5 group border-b border-bg last:border-b-0"
+      className="flex flex-col border-b border-bg last:border-b-0"
     >
+      <div className="flex items-center gap-2 py-2.5 group">
       {/* Drag handle — hidden in edit mode */}
       <span
         {...(isEditing ? {} : { ...attributes, ...listeners })}
@@ -95,9 +100,10 @@ const SortableProjectRow = memo(function SortableProjectRow({
           <select
             value={editProduct ?? ''}
             onChange={(e) => onEditProductChange((e.target.value as Product) || null)}
-            className="pl-2 pr-7 py-1.5 rounded-[6px] border border-border text-[12px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
+            onBlur={onEditProductBlur}
+            className={`pl-2 pr-7 py-1.5 rounded-[6px] border text-[12px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0 ${editProductError ? 'border-red-dark' : 'border-border'}`}
           >
-            <option value="">Unassigned</option>
+            <option value="">Select product…</option>
             {PRODUCTS.map((p) => (
               <option key={p.value} value={p.value}>{p.label}</option>
             ))}
@@ -162,6 +168,10 @@ const SortableProjectRow = memo(function SortableProjectRow({
           </button>
         </>
       )}
+      </div>
+      {isEditing && editProductError && (
+        <p className="text-[12px] text-red-dark pb-1.5 pl-6">{editProductError}</p>
+      )}
     </div>
   )
 })
@@ -177,6 +187,7 @@ export default function ProjectsSection({ onToast }: { onToast: (msg: string, ty
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editProduct, setEditProduct] = useState<Product | null>(null)
+  const [editProductError, setEditProductError] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<ProjectRow | null>(null)
   const [deleteTaskCount, setDeleteTaskCount] = useState(0)
   const editInputRef = useRef<HTMLInputElement>(null)
@@ -254,6 +265,7 @@ export default function ProjectsSection({ onToast }: { onToast: (msg: string, ty
   const handleEditSave = async (id: string) => {
     const name = editName.trim()
     if (!name) { setEditingId(null); return }
+    if (!editProduct) { setEditProductError('Please select a product.'); return }
     // Block duplicate (name + product) pairs, excluding self
     if (projects.some((p) => p.id !== id && p.name.toLowerCase() === name.toLowerCase() && p.product === editProduct)) {
       onToast('A project with this name already exists for the selected product.', 'error')
@@ -417,11 +429,13 @@ export default function ProjectsSection({ onToast }: { onToast: (msg: string, ty
                     editName={editName}
                     editProduct={editProduct}
                     editInputRef={editInputRef}
-                    onEditStart={(p) => { setEditingId(p.id); setEditName(p.name); setEditProduct(p.product) }}
+                    onEditStart={(p) => { setEditingId(p.id); setEditName(p.name); setEditProduct(p.product); setEditProductError('') }}
                     onEditNameChange={setEditName}
-                    onEditProductChange={setEditProduct}
+                    onEditProductChange={(p) => { setEditProduct(p); if (p) setEditProductError('') }}
+                    onEditProductBlur={() => { if (!editProduct) setEditProductError('Please select a product.') }}
+                    editProductError={editProductError}
                     onEditSave={handleEditSave}
-                    onEditCancel={() => setEditingId(null)}
+                    onEditCancel={() => { setEditingId(null); setEditProductError('') }}
                     onToggleVisibility={handleToggleVisibility}
                     onDelete={initiateDelete}
                   />
@@ -436,7 +450,8 @@ export default function ProjectsSection({ onToast }: { onToast: (msg: string, ty
             <select
               value={newProduct}
               onChange={(e) => { setNewProduct(e.target.value as Product | ''); setAddError('') }}
-              className="pl-2 pr-7 py-2 rounded-[6px] border border-border text-[13px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0"
+              onBlur={() => { if (!newProduct) setAddError('Please select a product.') }}
+              className={`pl-2 pr-7 py-2 rounded-[6px] border text-[13px] text-navy outline-none focus:border-navy bg-white w-[190px] flex-shrink-0 ${addError ? 'border-red-dark' : 'border-border'}`}
             >
               <option value="">Select product…</option>
               {PRODUCTS.map((p) => (
@@ -453,7 +468,7 @@ export default function ProjectsSection({ onToast }: { onToast: (msg: string, ty
             />
             <button
               onClick={handleAdd}
-              disabled={adding || !newName.trim()}
+              disabled={adding || !newName.trim() || !newProduct}
               className="px-4 py-2 rounded-[6px] text-[13px] font-medium bg-navy text-white border border-transparent hover:bg-[#2e2870] disabled:opacity-50"
             >
               {adding ? 'Adding…' : 'Add'}
