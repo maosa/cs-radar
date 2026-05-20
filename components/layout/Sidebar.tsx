@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ListTodo, Users, Settings, ChevronRight, ChevronLeft, AlertCircle, Gauge, LogOut } from 'lucide-react'
+import { ListTodo, ChartGantt, Users, Settings, ChevronRight, ChevronLeft, AlertCircle, Gauge, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useSidebarCounter } from '@/lib/sidebar-context'
@@ -152,6 +152,7 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
 
   const mainNavItems: NavItem[] = [
     { href: '/tasks', label: 'My tasks', icon: <ListTodo size={20} /> },
+    { href: '/project-tracker', label: 'Project Tracker', icon: <ChartGantt size={20} /> },
     ...(accountHealthEnabled
       ? [{ href: '/account-health', label: 'Account health', icon: <Gauge size={20} /> }]
       : []),
