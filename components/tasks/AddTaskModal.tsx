@@ -177,7 +177,7 @@ export default function AddTaskModal({ weekIndex, projects, onClose, onCreated }
             >
               <option value="">{product ? 'Select project…' : 'Select a product first'}</option>
               {projects
-                .filter((p) => p.product === product || p.product === null)
+                .filter((p) => p.is_visible !== false && (p.product === product || p.product === null))
                 .map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
