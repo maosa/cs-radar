@@ -96,6 +96,37 @@ export type TaskStatus = 'open' | 'complete'
 export type RelationshipStatus = 'pending' | 'accepted' | 'archived'
 export type DefaultLanding = 'task_list' | 'manager_view'
 
+export type ProjectTrackerEntry = {
+  id: string
+  admin_user_id: string
+  project_id: string
+  product: 'AH' | 'NURO' | 'EH' | 'N/A'
+  description: string
+  week_start_date: string   // ISO date string, always a Monday
+  is_flagged: boolean
+  sort_order: number
+  created_by: string | null
+  created_at: string
+  updated_at: string | null
+  updated_by: string | null
+  // Joined fields
+  project_name?: string     // from projects.name
+  comment_count?: number    // from project_tracker_comments(count)
+}
+
+export type ProjectTrackerComment = {
+  id: string
+  entry_id: string
+  admin_user_id: string
+  content: string
+  created_by: string | null
+  created_at: string
+  updated_at: string | null
+  updated_by: string | null
+  // Joined field
+  author_name?: string      // from users first_name + last_name
+}
+
 export interface Database {
   public: {
     Tables: {
