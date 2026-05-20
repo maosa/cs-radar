@@ -3,19 +3,23 @@
 import { memo } from 'react'
 import { Flag, MessageSquare } from 'lucide-react'
 import ProductBadge from '@/components/tasks/ProductBadge'
+import { dateStringToWeekIndex } from '@/lib/weeks'
 import type { ProjectTrackerEntry } from '@/lib/supabase/types'
 
 interface Props {
   entry: ProjectTrackerEntry
+  visibleWeekIndices: number[]
   onOpenPanel: (id: string) => void
   onOpenComments: (id: string) => void
 }
 
 const ReadOnlyProjectTrackerRow = memo(function ReadOnlyProjectTrackerRow({
   entry,
+  visibleWeekIndices,
   onOpenPanel,
   onOpenComments,
 }: Props) {
+  const entryWeekIndex = dateStringToWeekIndex(entry.week_start_date)
   const cellBg = entry.is_flagged ? '#FFCDD3' : '#FFFFFF'
   const textColorClass = entry.is_flagged ? 'text-red-dark' : 'text-navy'
 
@@ -44,35 +48,43 @@ const ReadOnlyProjectTrackerRow = memo(function ReadOnlyProjectTrackerRow({
         {entry.project_name ?? '—'}
       </td>
 
-      {/* Description — expands to fill */}
-      <td
-        className="border-b border-r border-border px-3 py-2.5 align-top"
-        style={{ backgroundColor: cellBg }}
-      >
-        <div className="flex items-start gap-2 min-w-0">
+      {/* One cell per visible week — content only in the entry's own week */}
+      {visibleWeekIndices.map((wi) => {
+        const isEntryWeek = wi === entryWeekIndex
+        return (
+          <td
+            key={wi}
+            className="border-b border-r border-border px-3 py-2.5 align-top"
+            style={{ backgroundColor: isEntryWeek ? cellBg : '#FFFFFF' }}
+          >
+            {isEntryWeek && (
+              <div className="flex items-start gap-2 min-w-0">
 
-          <span className={`flex-1 min-w-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed ${textColorClass}`}>
-            {entry.description}
-          </span>
+                <span className={`flex-1 min-w-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed ${textColorClass}`}>
+                  {entry.description}
+                </span>
 
-          {/* Flag — visual only, shown when flagged */}
-          {entry.is_flagged && (
-            <Flag size={14} className="flex-shrink-0 text-red-flag fill-red-flag" />
-          )}
+                {/* Flag — visual only, shown when flagged */}
+                {entry.is_flagged && (
+                  <Flag size={14} className="flex-shrink-0 text-red-flag fill-red-flag" />
+                )}
 
-          {/* Comment icon — visible on hover; always visible + filled when comments exist */}
-          <div className={`flex items-center gap-1 flex-shrink-0 transition-opacity ${(entry.comment_count ?? 0) > 0 ? '' : 'opacity-0 group-hover:opacity-100'}`}>
-            <button
-              onClick={() => onOpenComments(entry.id)}
-              className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
-              title="View comments"
-            >
-              <MessageSquare size={14} className={(entry.comment_count ?? 0) > 0 ? 'fill-current' : ''} />
-            </button>
-          </div>
+                {/* Comment icon — visible on hover; always visible + filled when comments exist */}
+                <div className={`flex items-center gap-1 flex-shrink-0 transition-opacity ${(entry.comment_count ?? 0) > 0 ? '' : 'opacity-0 group-hover:opacity-100'}`}>
+                  <button
+                    onClick={() => onOpenComments(entry.id)}
+                    className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
+                    title="View comments"
+                  >
+                    <MessageSquare size={14} className={(entry.comment_count ?? 0) > 0 ? 'fill-current' : ''} />
+                  </button>
+                </div>
 
-        </div>
-      </td>
+              </div>
+            )}
+          </td>
+        )
+      })}
     </tr>
   )
 })

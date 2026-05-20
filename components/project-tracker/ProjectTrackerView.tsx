@@ -304,31 +304,25 @@ export default function ProjectTrackerView() {
           Loading…
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {visibleWeekIndices.map((wi) => {
-            const weekDateStr = weekIndexToDateString(wi)
-            const weekEntries = entries.filter((e) => e.week_start_date === weekDateStr)
-            return (
-              <ProjectTrackerTable
-                key={wi}
-                entries={weekEntries}
-                sortMode={weekSortModes[wi] ?? 'product_project'}
-                filterProducts={filterProducts}
-                filterProjects={filterProjects}
-                onFlag={(id) => {
-                  const e = entries.find((x) => x.id === id)
-                  if (e) updateEntry(id, { is_flagged: !e.is_flagged })
-                }}
-                onDelete={setDeleteEntryId}
-                onOpenPanel={handleOpenPanel}
-                onOpenComments={handleOpenComments}
-                onDescriptionSave={(id, description) => updateEntry(id, { description })}
-                onSortOrderChange={batchUpdateSortOrder}
-                weekLabel={formatWeekHeader(wi)}
-                isCurrent={wi === todayWeekIndex}
-              />
-            )
-          })}
+        <div className="flex-1 overflow-hidden">
+          <ProjectTrackerTable
+            entries={entries}
+            visibleWeekIndices={visibleWeekIndices}
+            currentWeekIndex={todayWeekIndex}
+            weekSortModes={weekSortModes}
+            defaultSortMode="product_project"
+            filterProducts={filterProducts}
+            filterProjects={filterProjects}
+            onFlag={(id) => {
+              const e = entries.find((x) => x.id === id)
+              if (e) updateEntry(id, { is_flagged: !e.is_flagged })
+            }}
+            onDelete={setDeleteEntryId}
+            onOpenPanel={handleOpenPanel}
+            onOpenComments={handleOpenComments}
+            onDescriptionSave={(id, description) => updateEntry(id, { description })}
+            onSortOrderChange={batchUpdateSortOrder}
+          />
         </div>
       )}
 

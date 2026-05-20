@@ -5,10 +5,12 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Flag, Trash2, GripVertical, PanelRight, Pencil, MessageSquare } from 'lucide-react'
 import ProductBadge from '@/components/tasks/ProductBadge'
+import { dateStringToWeekIndex } from '@/lib/weeks'
 import type { ProjectTrackerEntry } from '@/lib/supabase/types'
 
 interface Props {
   entry: ProjectTrackerEntry
+  visibleWeekIndices: number[]
   onFlag: (id: string) => void
   onDelete: (id: string) => void
   onOpenPanel: (id: string) => void
@@ -19,6 +21,7 @@ interface Props {
 
 const ProjectTrackerRow = memo(function ProjectTrackerRow({
   entry,
+  visibleWeekIndices,
   onFlag,
   onDelete,
   onOpenPanel,
@@ -26,6 +29,7 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
   onDescriptionSave,
   isDragActive,
 }: Props) {
+  const entryWeekIndex = dateStringToWeekIndex(entry.week_start_date)
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -113,80 +117,88 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
         {entry.project_name ?? '—'}
       </td>
 
-      {/* Description — expands to fill */}
-      <td
-        className="border-b border-r border-border px-3 py-2.5 align-top"
-        style={{ backgroundColor: cellBg }}
-      >
-        <div className="flex items-start gap-2 min-w-0">
+      {/* One cell per visible week — content only in the entry's own week */}
+      {visibleWeekIndices.map((wi) => {
+        const isEntryWeek = wi === entryWeekIndex
+        return (
+          <td
+            key={wi}
+            className="border-b border-r border-border px-3 py-2.5 align-top"
+            style={{ backgroundColor: isEntryWeek ? cellBg : '#FFFFFF' }}
+          >
+            {isEntryWeek && (
+              <div className="flex items-start gap-2 min-w-0">
 
-          {isEditing ? (
-            <textarea
-              ref={textareaRef}
-              value={editValue}
-              onChange={(e) => { setEditValue(e.target.value); resizeTextarea() }}
-              onBlur={saveEdit}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit() }
-                if (e.key === 'Escape') { e.preventDefault(); cancelEdit() }
-              }}
-              maxLength={5000}
-              className={`flex-1 min-w-0 text-[13px] ${textColorClass} bg-transparent border-b border-navy-mid outline-none resize-none leading-relaxed overflow-hidden`}
-              style={{ minHeight: '3rem' }}
-            />
-          ) : (
-            <span className={`flex-1 min-w-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed ${textColorClass}`}>
-              {entry.description}
-            </span>
-          )}
+                {isEditing ? (
+                  <textarea
+                    ref={textareaRef}
+                    value={editValue}
+                    onChange={(e) => { setEditValue(e.target.value); resizeTextarea() }}
+                    onBlur={saveEdit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit() }
+                      if (e.key === 'Escape') { e.preventDefault(); cancelEdit() }
+                    }}
+                    maxLength={5000}
+                    className={`flex-1 min-w-0 text-[13px] ${textColorClass} bg-transparent border-b border-navy-mid outline-none resize-none leading-relaxed overflow-hidden`}
+                    style={{ minHeight: '3rem' }}
+                  />
+                ) : (
+                  <span className={`flex-1 min-w-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed ${textColorClass}`}>
+                    {entry.description}
+                  </span>
+                )}
 
-          {/* Hover actions */}
-          {!isEditing && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity">
-              <button
-                onClick={startEdit}
-                className="p-1 rounded text-text-muted hover:text-navy hover:bg-bg transition-colors"
-                title="Edit description"
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                onClick={() => onFlag(entry.id)}
-                className="p-1 rounded text-text-muted hover:text-red-flag hover:bg-red-hover transition-colors"
-                title={entry.is_flagged ? 'Unflag' : 'Flag'}
-              >
-                <Flag size={14} className={entry.is_flagged ? 'text-red-flag fill-red-flag' : ''} />
-              </button>
-              <button
-                onClick={() => onOpenPanel(entry.id)}
-                className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
-                title="Open project details"
-              >
-                <PanelRight size={14} />
-              </button>
-              <button
-                onClick={() => onDelete(entry.id)}
-                className="p-1 rounded text-text-muted hover:text-red-flag hover:bg-red-hover transition-colors"
-                title="Delete entry"
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          )}
+                {/* Hover actions */}
+                {!isEditing && (
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity">
+                    <button
+                      onClick={startEdit}
+                      className="p-1 rounded text-text-muted hover:text-navy hover:bg-bg transition-colors"
+                      title="Edit description"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => onFlag(entry.id)}
+                      className="p-1 rounded text-text-muted hover:text-red-flag hover:bg-red-hover transition-colors"
+                      title={entry.is_flagged ? 'Unflag' : 'Flag'}
+                    >
+                      <Flag size={14} className={entry.is_flagged ? 'text-red-flag fill-red-flag' : ''} />
+                    </button>
+                    <button
+                      onClick={() => onOpenPanel(entry.id)}
+                      className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
+                      title="Open project details"
+                    >
+                      <PanelRight size={14} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(entry.id)}
+                      className="p-1 rounded text-text-muted hover:text-red-flag hover:bg-red-hover transition-colors"
+                      title="Delete entry"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
 
-          {/* Comment badge — always visible when comments exist */}
-          {entry.comment_count! > 0 && !isEditing && (
-            <button
-              onClick={() => onOpenComments(entry.id)}
-              className="flex-shrink-0 p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
-              title={`${entry.comment_count} comment${entry.comment_count === 1 ? '' : 's'}`}
-            >
-              <MessageSquare size={14} className="fill-current" />
-            </button>
-          )}
+                {/* Comment badge — always visible when comments exist */}
+                {entry.comment_count! > 0 && !isEditing && (
+                  <button
+                    onClick={() => onOpenComments(entry.id)}
+                    className="flex-shrink-0 p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
+                    title={`${entry.comment_count} comment${entry.comment_count === 1 ? '' : 's'}`}
+                  >
+                    <MessageSquare size={14} className="fill-current" />
+                  </button>
+                )}
 
-        </div>
-      </td>
+              </div>
+            )}
+          </td>
+        )
+      })}
     </tr>
   )
 })

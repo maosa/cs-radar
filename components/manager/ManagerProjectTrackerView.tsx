@@ -10,7 +10,7 @@ import { useProjectTrackerEntries } from '@/lib/hooks/useProjectTrackerEntries'
 import { useProjectsQuery } from '@/lib/hooks/useTasks'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase/client'
-import { weekIndexToDateString, formatWeekHeader } from '@/lib/weeks'
+import { weekIndexToDateString } from '@/lib/weeks'
 
 interface Props {
   adminUserId: string
@@ -188,24 +188,18 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
           Loading…
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {visibleWeekIndices.map((wi) => {
-            const weekDateStr = weekIndexToDateString(wi)
-            const weekEntries = entries.filter((e) => e.week_start_date === weekDateStr)
-            return (
-              <ReadOnlyProjectTrackerTable
-                key={wi}
-                entries={weekEntries}
-                sortMode={sortMode}
-                filterProducts={filterProducts}
-                filterProjects={filterProjects}
-                onOpenPanel={handleOpenPanel}
-                onOpenComments={handleOpenComments}
-                weekLabel={formatWeekHeader(wi)}
-                isCurrent={wi === todayWeekIndex}
-              />
-            )
-          })}
+        <div className="flex-1 overflow-hidden">
+          <ReadOnlyProjectTrackerTable
+            entries={entries}
+            visibleWeekIndices={visibleWeekIndices}
+            currentWeekIndex={todayWeekIndex}
+            weekSortModes={{}}
+            defaultSortMode={sortMode}
+            filterProducts={filterProducts}
+            filterProjects={filterProjects}
+            onOpenPanel={handleOpenPanel}
+            onOpenComments={handleOpenComments}
+          />
         </div>
       )}
 
