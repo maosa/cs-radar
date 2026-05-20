@@ -5,7 +5,7 @@ import { X } from 'lucide-react'
 import CommentsSection from '@/components/tasks/detail-panel/CommentsSection'
 import DetailPanelFooter from '@/components/tasks/detail-panel/DetailPanelFooter'
 import { useProjectTrackerComments } from '@/lib/hooks/useProjectTrackerComments'
-import type { ProjectTrackerEntry, ProjectRow } from '@/lib/supabase/types'
+import type { ProjectTrackerEntry, ProjectRow, Product } from '@/lib/supabase/types'
 import type { CommentRow } from '@/components/tasks/detail-panel/types'
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   projects: ProjectRow[]
   isOpen: boolean
   onClose: () => void
-  onUpdate: (id: string, patch: { project_id: string; product: string; description: string }) => void
+  onUpdate: (id: string, patch: { project_id: string; product: Product; description: string }) => void
   currentUserId: string | null
   scope: 'own' | 'manager'
   initialSection?: 'details' | 'comments'
