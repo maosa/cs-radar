@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
 import SharedFilterBar, { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
 import ProjectTrackerTable from './ProjectTrackerTable'
@@ -12,6 +12,7 @@ import { useProjectTrackerEntries } from '@/lib/hooks/useProjectTrackerEntries'
 import { useProjectsQuery } from '@/lib/hooks/useTasks'
 import { useAuth } from '@/lib/auth-context'
 import { useDebounce } from '@/lib/hooks/useDebounce'
+import { supabase } from '@/lib/supabase/client'
 import { formatWeekHeader, weekIndexToDateString } from '@/lib/weeks'
 import type { ProjectTrackerEntry, Product } from '@/lib/supabase/types'
 
@@ -66,6 +67,38 @@ export default function ProjectTrackerView() {
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
   const [sortMode, setSortMode] = useState<SortMode>('product_project')
+
+  // ── Sort mode persistence (load from DB, sync to manager view via Realtime) ─
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false)
+  const loadedPrefsRef = useRef<Record<string, unknown>>({})
+
+  // Load saved sort mode on mount
+  useEffect(() => {
+    if (!userId) return
+    supabase
+      .from('users')
+      .select('preferences')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => {
+        const prefs = (data?.preferences ?? {}) as Record<string, unknown>
+        loadedPrefsRef.current = prefs
+        if (prefs.pt_sort_mode) setSortMode(prefs.pt_sort_mode as SortMode)
+        setPreferencesLoaded(true)
+      })
+  }, [userId])
+
+  // Persist sort mode changes (debounced 1 s, merges with existing prefs)
+  const debouncedSortMode = useDebounce(sortMode, 1000)
+  useEffect(() => {
+    if (!userId || !preferencesLoaded) return
+    const merged = { ...loadedPrefsRef.current, pt_sort_mode: debouncedSortMode }
+    supabase
+      .from('users')
+      .update({ preferences: merged })
+      .eq('id', userId)
+      .then(() => { loadedPrefsRef.current = merged })
+  }, [debouncedSortMode, userId, preferencesLoaded])
 
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
     const usedProjectIds = new Set(
