@@ -10,21 +10,30 @@ interface ManagerViewTabsProps {
 
 export default function ManagerViewTabs({ adminUserId, accountHealthEnabled }: ManagerViewTabsProps) {
   const pathname = usePathname()
-  const isAccountHealth = pathname.includes('/account-health')
 
-  if (!accountHealthEnabled) return null
+  const isProjectTracker =
+    pathname.includes('/project-tracker') || pathname === `/manager/${adminUserId}`
+  const isAccountHealth = pathname.includes('/account-health')
+  const isTaskList = pathname.includes('/tasks')
 
   return (
     <div className="flex gap-0 border-b border-border bg-white px-6">
       <TabLink
-        href={`/manager/${adminUserId}`}
-        label="Task List"
-        active={!isAccountHealth}
+        href={`/manager/${adminUserId}/project-tracker`}
+        label="Project Tracker"
+        active={isProjectTracker}
       />
+      {accountHealthEnabled && (
+        <TabLink
+          href={`/manager/${adminUserId}/account-health`}
+          label="Account Health"
+          active={isAccountHealth}
+        />
+      )}
       <TabLink
-        href={`/manager/${adminUserId}/account-health`}
-        label="Account Health"
-        active={isAccountHealth}
+        href={`/manager/${adminUserId}/tasks`}
+        label="Task List"
+        active={isTaskList}
       />
     </div>
   )
