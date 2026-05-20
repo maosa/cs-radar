@@ -50,7 +50,7 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
   // ── Filters & sort ────────────────────────────────────────────────────────
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
-  const [sortMode, setSortMode] = useState<SortMode>('product_project')
+  const [sortMode, setSortMode] = useState<SortMode>('none')
 
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
     const usedProjectIds = new Set(
