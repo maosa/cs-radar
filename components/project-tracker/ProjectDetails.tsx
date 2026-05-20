@@ -273,7 +273,7 @@ export default function ProjectDetails({
             addingComment={isCreating}
             editingCommentId={editingCommentId}
             editContent={editContent}
-            canEditAllComments={false}
+            canEditAllComments={isOwner}
             userId={currentUserId}
             containerRef={commentsRef}
             onNewCommentChange={setNewComment}
