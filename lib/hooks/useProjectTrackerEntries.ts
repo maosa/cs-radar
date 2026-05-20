@@ -3,17 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase/client'
 import type { ProjectTrackerEntry } from '@/lib/supabase/types'
 import { getCurrentWeekIndex, weekIndexToDateString } from '@/lib/weeks'
-
-function mapPTERow(row: any): ProjectTrackerEntry {
-  const proj = row.projects as { name: string } | null
-  const ptc = row.project_tracker_comments as { count: number }[] | null
-  const { projects: _p, project_tracker_comments: _ptc, ...rest } = row
-  return {
-    ...rest,
-    project_name: proj?.name ?? undefined,
-    comment_count: Array.isArray(ptc) ? (ptc[0]?.count ?? 0) : 0,
-  } as ProjectTrackerEntry
-}
+import { mapPTERow } from '@/lib/supabase/utils'
 
 const WINDOW_BACK = 26
 const WINDOW_FORWARD = 4
