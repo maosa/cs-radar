@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import CommentsSection from '@/components/tasks/detail-panel/CommentsSection'
 import DetailPanelFooter from '@/components/tasks/detail-panel/DetailPanelFooter'
 import { useProjectTrackerComments } from '@/lib/hooks/useProjectTrackerComments'
+import { supabase } from '@/lib/supabase/client'
 import type { ProjectTrackerEntry, ProjectRow, Product } from '@/lib/supabase/types'
 import type { CommentRow } from '@/components/tasks/detail-panel/types'
 
@@ -30,6 +32,23 @@ export default function ProjectDetails({
   initialSection = 'details',
 }: Props) {
   const isOwner = scope === 'own'
+  const queryClient = useQueryClient()
+
+  // ── Realtime subscription for comments ───────────────────────────────────
+  useEffect(() => {
+    const entryId = entry?.id
+    const adminUserId = entry?.admin_user_id
+    if (!isOpen || !entryId || !adminUserId) return
+    const channel = supabase
+      .channel(`ptc:${entryId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'project_tracker_comments', filter: `admin_user_id=eq.${adminUserId}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['project-tracker-comments', entryId] }) },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [isOpen, entry?.id, entry?.admin_user_id, queryClient])
 
   // ── Slide-in animation ────────────────────────────────────────────────────
   const [visible, setVisible] = useState(false)
