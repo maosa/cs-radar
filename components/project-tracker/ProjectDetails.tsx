@@ -13,6 +13,7 @@ import type { CommentRow } from '@/components/tasks/detail-panel/types'
 interface Props {
   entry: ProjectTrackerEntry | null
   projects: ProjectRow[]
+  existingWeekEntries?: ProjectTrackerEntry[]
   isOpen: boolean
   onClose: () => void
   onUpdate: (id: string, patch: { project_id: string; product: Product; description: string }) => void
@@ -24,6 +25,7 @@ interface Props {
 export default function ProjectDetails({
   entry,
   projects,
+  existingWeekEntries = [],
   isOpen,
   onClose,
   onUpdate,
@@ -160,8 +162,17 @@ export default function ProjectDetails({
   }, [entry?.project_id, entry?.description])
 
   // ── Derived display values ────────────────────────────────────────────────
+  // Project IDs already used by other entries this week — exclude from dropdown
+  // to prevent unique-constraint violations on (admin_user_id, project_id, week_start_date).
+  // The entry's own current project is always kept selectable.
+  const usedProjectIds = new Set(
+    existingWeekEntries
+      .filter((e) => e.id !== entry?.id)
+      .map((e) => e.project_id),
+  )
+
   const visibleProjects = [...projects]
-    .filter((p) => p.is_visible !== false)
+    .filter((p) => p.is_visible !== false && !usedProjectIds.has(p.id))
     .sort((a, b) => a.sort_order - b.sort_order)
 
   const displayProjectLabel = selectedProject

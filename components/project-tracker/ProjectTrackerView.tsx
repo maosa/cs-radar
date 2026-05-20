@@ -170,6 +170,15 @@ export default function ProjectTrackerView() {
     [entries, selectedEntryId],
   )
 
+  // Entries for the same week as the selected entry — used to prevent
+  // the user changing to a project that already has an entry that week.
+  const selectedEntryWeekEntries = useMemo(
+    () => selectedEntry
+      ? entries.filter((e) => e.week_start_date === selectedEntry.week_start_date)
+      : [],
+    [entries, selectedEntry],
+  )
+
   const handleOpenPanel = useCallback((id: string) => {
     setSelectedEntryId(id)
     setSidebarSection('details')
@@ -297,6 +306,7 @@ export default function ProjectTrackerView() {
       <ProjectDetails
         entry={selectedEntry}
         projects={projects}
+        existingWeekEntries={selectedEntryWeekEntries}
         isOpen={sidebarOpen}
         onClose={handleClosePanel}
         onUpdate={handleUpdate}
