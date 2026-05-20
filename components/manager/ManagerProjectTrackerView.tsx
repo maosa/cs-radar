@@ -83,11 +83,13 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
   const [filterProjects, setFilterProjects] = useState<string[]>([])
   const [sortMode, setSortMode] = useState<SortMode>('none')
 
-  // Mirror owner's sort mode whenever their preference arrives or changes
+  // Mirror owner's sort mode for the currently-viewed week whenever their
+  // preference arrives/changes or the manager navigates to a different week
   useEffect(() => {
     if (!ownerPrefs) return
-    setSortMode((ownerPrefs.pt_sort_mode as SortMode | undefined) ?? 'product_project')
-  }, [ownerPrefs])
+    const ownerWeekModes = (ownerPrefs.pt_week_sort_modes as Record<number, SortMode> | undefined) ?? {}
+    setSortMode(ownerWeekModes[centerWeekIndex] ?? 'product_project')
+  }, [ownerPrefs, centerWeekIndex])
 
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
     const usedProjectIds = new Set(

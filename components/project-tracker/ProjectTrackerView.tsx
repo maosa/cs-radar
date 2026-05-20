@@ -66,13 +66,13 @@ export default function ProjectTrackerView() {
   // ── Filters & sort ────────────────────────────────────────────────────────
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
-  const [sortMode, setSortMode] = useState<SortMode>('product_project')
+  const [weekSortModes, setWeekSortModes] = useState<Record<number, SortMode>>({})
 
   // ── Sort mode persistence (load from DB, sync to manager view via Realtime) ─
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   const loadedPrefsRef = useRef<Record<string, unknown>>({})
 
-  // Load saved sort mode on mount
+  // Load saved sort modes on mount
   useEffect(() => {
     if (!userId) return
     supabase
@@ -83,22 +83,36 @@ export default function ProjectTrackerView() {
       .then(({ data }) => {
         const prefs = (data?.preferences ?? {}) as Record<string, unknown>
         loadedPrefsRef.current = prefs
-        if (prefs.pt_sort_mode) setSortMode(prefs.pt_sort_mode as SortMode)
+        if (prefs.pt_week_sort_modes) {
+          setWeekSortModes(prefs.pt_week_sort_modes as Record<number, SortMode>)
+        }
         setPreferencesLoaded(true)
       })
   }, [userId])
 
   // Persist sort mode changes (debounced 1 s, merges with existing prefs)
-  const debouncedSortMode = useDebounce(sortMode, 1000)
+  const debouncedWeekSortModes = useDebounce(weekSortModes, 1000)
   useEffect(() => {
     if (!userId || !preferencesLoaded) return
-    const merged = { ...loadedPrefsRef.current, pt_sort_mode: debouncedSortMode }
+    const merged = { ...loadedPrefsRef.current, pt_week_sort_modes: debouncedWeekSortModes }
     supabase
       .from('users')
       .update({ preferences: merged })
       .eq('id', userId)
       .then(() => { loadedPrefsRef.current = merged })
-  }, [debouncedSortMode, userId, preferencesLoaded])
+  }, [debouncedWeekSortModes, userId, preferencesLoaded])
+
+  // Derived sort mode for the filter bar (reflects center week)
+  const currentSortMode: SortMode = weekSortModes[centerWeekIndex] ?? 'product_project'
+
+  // Applies the chosen sort to all currently-visible weeks simultaneously
+  const handleSortMode = useCallback((mode: SortMode) => {
+    setWeekSortModes((prev) => {
+      const next = { ...prev }
+      visibleWeekIndices.forEach((wi) => { next[wi] = mode })
+      return next
+    })
+  }, [visibleWeekIndices])
 
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
     const usedProjectIds = new Set(
@@ -275,11 +289,11 @@ export default function ProjectTrackerView() {
         filterProducts={filterProducts}
         filterProjects={filterProjects}
         filterStatuses={[]}
-        sortMode={sortMode}
+        sortMode={currentSortMode}
         onToggleProduct={handleToggleProduct}
         onToggleProject={handleToggleProject}
         onToggleStatus={() => {}}
-        onSortMode={setSortMode}
+        onSortMode={handleSortMode}
         onClearFilters={handleClearFilters}
         hideStatus
         dragExclusive
@@ -298,7 +312,7 @@ export default function ProjectTrackerView() {
               <ProjectTrackerTable
                 key={wi}
                 entries={weekEntries}
-                sortMode={sortMode}
+                sortMode={weekSortModes[wi] ?? 'product_project'}
                 filterProducts={filterProducts}
                 filterProjects={filterProjects}
                 onFlag={(id) => {
