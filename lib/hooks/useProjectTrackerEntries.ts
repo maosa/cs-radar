@@ -10,7 +10,7 @@ const WINDOW_FORWARD = 4
 const EXPAND_THRESHOLD = 4
 const EXPAND_BY = 13
 
-type EntryPatch = Partial<Pick<ProjectTrackerEntry, 'description' | 'project_id' | 'product' | 'is_flagged'>>
+type EntryPatch = Partial<Pick<ProjectTrackerEntry, 'description' | 'project_id' | 'product' | 'is_flagged' | 'project_name'>>
 
 interface Options {
   scope: 'own' | 'manager'
@@ -115,9 +115,11 @@ export function useProjectTrackerEntries({ scope, userId, addToast }: Options) {
 
   const updateEntryMutation = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: EntryPatch }) => {
+      // project_name is a derived field (from the projects join), not a DB column — strip it
+      const { project_name: _, ...dbPatch } = patch
       const { error } = await supabase
         .from('project_tracker_entries')
-        .update({ ...patch, updated_at: new Date().toISOString(), updated_by: userId })
+        .update({ ...dbPatch, updated_at: new Date().toISOString(), updated_by: userId })
         .eq('id', id)
       if (error) throw error
     },

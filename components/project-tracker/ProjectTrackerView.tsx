@@ -189,9 +189,10 @@ export default function ProjectTrackerView() {
     product: Product
     description: string
   }) => {
-    updateEntry(id, patch)
+    const project_name = projects.find((p) => p.id === patch.project_id)?.name
+    updateEntry(id, { ...patch, project_name })
     setSidebarOpen(false)
-  }, [updateEntry])
+  }, [updateEntry, projects])
 
   // ── Target week Date for the modal ────────────────────────────────────────
   const targetWeekDate = useMemo(
