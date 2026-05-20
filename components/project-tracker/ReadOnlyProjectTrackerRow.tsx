@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { PanelRight, MessageSquare } from 'lucide-react'
+import { Flag, MessageSquare } from 'lucide-react'
 import ProductBadge from '@/components/tasks/ProductBadge'
 import type { ProjectTrackerEntry } from '@/lib/supabase/types'
 
@@ -55,27 +55,21 @@ const ReadOnlyProjectTrackerRow = memo(function ReadOnlyProjectTrackerRow({
             {entry.description}
           </span>
 
-          {/* Hover actions — panel open only */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity">
-            <button
-              onClick={() => onOpenPanel(entry.id)}
-              className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
-              title="Open project details"
-            >
-              <PanelRight size={14} />
-            </button>
-          </div>
+          {/* Flag — visual only, shown when flagged */}
+          {entry.is_flagged && (
+            <Flag size={14} className="flex-shrink-0 text-red-flag fill-red-flag" />
+          )}
 
-          {/* Comment badge — always visible when comments exist */}
-          {(entry.comment_count ?? 0) > 0 && (
+          {/* Comment icon — visible on hover; always visible + filled when comments exist */}
+          <div className={`flex items-center gap-1 flex-shrink-0 transition-opacity ${(entry.comment_count ?? 0) > 0 ? '' : 'opacity-0 group-hover:opacity-100'}`}>
             <button
               onClick={() => onOpenComments(entry.id)}
-              className="flex-shrink-0 p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
-              title={`${entry.comment_count} comment${entry.comment_count === 1 ? '' : 's'}`}
+              className="p-1 rounded text-text-muted hover:text-navy-mid hover:bg-bg transition-colors"
+              title="View comments"
             >
-              <MessageSquare size={14} className="fill-current" />
+              <MessageSquare size={14} className={(entry.comment_count ?? 0) > 0 ? 'fill-current' : ''} />
             </button>
-          )}
+          </div>
 
         </div>
       </td>

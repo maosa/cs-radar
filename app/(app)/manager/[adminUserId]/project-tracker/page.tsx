@@ -37,11 +37,13 @@ export default async function ManagerProjectTrackerPage({
 
   const { data: adminUserData } = await supabase
     .from('users')
-    .select('first_name, account_health_enabled')
+    .select('first_name, last_name, account_health_enabled')
     .eq('id', adminUserId)
     .single()
 
   const adminFirstName = (adminUserData?.first_name as string | null) ?? ''
+  const adminLastName = (adminUserData?.last_name as string | null) ?? ''
+  const adminFullName = [adminFirstName, adminLastName].filter(Boolean).join(' ')
   const accountHealthEnabled = adminUserData?.account_health_enabled ?? false
 
   const todayIndex = getCurrentWeekIndex()
@@ -86,6 +88,7 @@ export default async function ManagerProjectTrackerPage({
         <ManagerProjectTrackerView
           adminUserId={adminUserId}
           adminFirstName={adminFirstName}
+          adminFullName={adminFullName}
           accountHealthEnabled={accountHealthEnabled}
         />
       </HydrationBoundary>

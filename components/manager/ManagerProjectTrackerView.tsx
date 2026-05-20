@@ -13,10 +13,11 @@ import { weekIndexToDateString, formatWeekHeader } from '@/lib/weeks'
 interface Props {
   adminUserId: string
   adminFirstName: string
+  adminFullName?: string
   accountHealthEnabled: boolean
 }
 
-export default function ManagerProjectTrackerView({ adminUserId, adminFirstName }: Props) {
+export default function ManagerProjectTrackerView({ adminUserId, adminFirstName, adminFullName }: Props) {
   const { userId: currentUserId } = useAuth()
 
   // ── Data ──────────────────────────────────────────────────────────────────
@@ -118,7 +119,7 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName 
         onNext={() => setCenterWeekIndex((w) => w + 1)}
         onToday={() => setCenterWeekIndex(todayWeekIndex)}
         adminName={adminFirstName}
-        managerViewTitle={`${adminFirstName}'s Project Tracker`}
+        managerViewTitle={`${adminFullName ?? adminFirstName}'s Project Tracker`}
         searchPlaceholder="Search…"
         searchQuery=""
         onSearchChange={() => {}}

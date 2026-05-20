@@ -63,6 +63,38 @@ export function useProjectTrackerEntries({ scope, userId, addToast }: Options) {
     }
   }, [weekRange.from, weekRange.to])
 
+  // ── Realtime: project_tracker_entries ───────────────────────────────────────
+  // Keeps both the owner's and manager's views in sync whenever entries change
+  // (flags toggled, descriptions updated, rows added/deleted).
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel(`project_tracker_entries:${scope}:${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'project_tracker_entries', filter: `admin_user_id=eq.${userId}` },
+        () => { queryClient.invalidateQueries({ queryKey: entriesKey }) },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [scope, userId, queryClient])
+
+  // ── Realtime: project_tracker_comments ──────────────────────────────────────
+  // Keeps comment_count in sync across owner and manager views when comments
+  // are added or deleted by either party.
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel(`project_tracker_comments:${scope}:${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'project_tracker_comments', filter: `admin_user_id=eq.${userId}` },
+        () => { queryClient.invalidateQueries({ queryKey: entriesKey }) },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [scope, userId, queryClient])
+
   const { data: entries = [], isLoading } = useQuery({
     queryKey: entriesKey,
     queryFn: async () => {
