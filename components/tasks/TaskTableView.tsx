@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import AddTaskModal from './AddTaskModal'
 import DetailPanel from './DetailPanel'
@@ -71,6 +71,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   // Owner: per-week sort modes persisted to DB (users.preferences); Manager: single global sort mode
   const [weekSortModes, setWeekSortModes] = useState<Record<number, SortMode>>({})
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
+  const loadedPrefsRef = useRef<Record<string, unknown>>({})
   const [managerSortMode, setManagerSortMode] = useState<SortMode>('drag')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<{ task: AnyTask; weekLabel: string }[]>([])
@@ -107,8 +108,9 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
       .eq('id', userId)
       .single()
       .then(({ data }) => {
-        const prefs = data?.preferences as Record<string, unknown> | null
-        if (prefs?.task_week_sort_modes) {
+        const prefs = (data?.preferences ?? {}) as Record<string, unknown>
+        loadedPrefsRef.current = prefs
+        if (prefs.task_week_sort_modes) {
           setWeekSortModes(prefs.task_week_sort_modes as Record<number, SortMode>)
         }
         setPreferencesLoaded(true)
@@ -119,10 +121,12 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   const debouncedWeekSortModes = useDebounce(weekSortModes, 1000)
   useEffect(() => {
     if (readOnly || !userId || !preferencesLoaded) return
+    const merged = { ...loadedPrefsRef.current, task_week_sort_modes: debouncedWeekSortModes }
     supabase
       .from('users')
-      .update({ preferences: { task_week_sort_modes: debouncedWeekSortModes } })
+      .update({ preferences: merged })
       .eq('id', userId)
+      .then(() => { loadedPrefsRef.current = merged })
   }, [debouncedWeekSortModes, userId, readOnly, preferencesLoaded])
 
   // Mutations — always called (hooks must not be conditional); only invoked in owner mode
