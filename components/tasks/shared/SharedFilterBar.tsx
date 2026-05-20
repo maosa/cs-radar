@@ -50,6 +50,8 @@ interface FilterBarProps {
   onSortMode: (mode: SortMode) => void
   onClearFilters?: () => void
   hideDragSort?: boolean
+  hideStatus?: boolean
+  dragExclusive?: boolean
 }
 
 const PRODUCT_OPTIONS = ['AH', 'EH', 'NURO', 'N/A'] as const
@@ -249,6 +251,8 @@ export default function SharedFilterBar({
   onSortMode,
   onClearFilters,
   hideDragSort,
+  hideStatus = false,
+  dragExclusive = false,
 }: FilterBarProps) {
   const hasActiveFilters =
     filterProducts.length > 0 || filterProjects.length > 0 || filterStatuses.length > 0
@@ -258,9 +262,27 @@ export default function SharedFilterBar({
   const isProjectSort = flags.project
   const isDragSort    = flags.drag
 
-  const handleSortProduct = () => onSortMode(buildSortMode(flags.drag, !flags.product, flags.project))
-  const handleSortProject = () => onSortMode(buildSortMode(flags.drag, flags.product, !flags.project))
-  const handleSortDrag    = () => onSortMode(buildSortMode(!flags.drag, flags.product, flags.project))
+  const handleSortProduct = () => {
+    if (dragExclusive && flags.drag) {
+      onSortMode(buildSortMode(false, !flags.product, flags.project))
+    } else {
+      onSortMode(buildSortMode(flags.drag, !flags.product, flags.project))
+    }
+  }
+  const handleSortProject = () => {
+    if (dragExclusive && flags.drag) {
+      onSortMode(buildSortMode(false, flags.product, !flags.project))
+    } else {
+      onSortMode(buildSortMode(flags.drag, flags.product, !flags.project))
+    }
+  }
+  const handleSortDrag = () => {
+    if (dragExclusive) {
+      onSortMode('drag')
+    } else {
+      onSortMode(buildSortMode(!flags.drag, flags.product, flags.project))
+    }
+  }
 
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 bg-white border-b border-border flex-shrink-0">
@@ -283,10 +305,10 @@ export default function SharedFilterBar({
       />
 
       {/* Divider before status dropdown */}
-      <div className="w-px h-4 bg-border mx-0.5 flex-shrink-0" />
+      {!hideStatus && <div className="w-px h-4 bg-border mx-0.5 flex-shrink-0" />}
 
       {/* Status dropdown */}
-      <StatusDropdown filterStatuses={filterStatuses} onToggleStatus={onToggleStatus} />
+      {!hideStatus && <StatusDropdown filterStatuses={filterStatuses} onToggleStatus={onToggleStatus} />}
 
       {/* Clear filters */}
       {hasActiveFilters && onClearFilters && (
