@@ -7,6 +7,7 @@ import ReadOnlyProjectTrackerTable from '@/components/project-tracker/ReadOnlyPr
 import ProjectDetails from '@/components/project-tracker/ProjectDetails'
 import { useProjectTrackerEntries } from '@/lib/hooks/useProjectTrackerEntries'
 import { useProjectsQuery } from '@/lib/hooks/useTasks'
+import { useAuth } from '@/lib/auth-context'
 import { weekIndexToDateString, formatWeekHeader } from '@/lib/weeks'
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export default function ManagerProjectTrackerView({ adminUserId, adminFirstName }: Props) {
+  const { userId: currentUserId } = useAuth()
+
   // ── Data ──────────────────────────────────────────────────────────────────
   const {
     entries,
@@ -171,7 +174,7 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName 
         isOpen={sidebarOpen}
         onClose={handleClosePanel}
         onUpdate={() => {}}
-        currentUserId={adminUserId}
+        currentUserId={currentUserId}
         scope="manager"
         initialSection={sidebarSection}
       />
