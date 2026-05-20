@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import CommentsSection from '@/components/tasks/detail-panel/CommentsSection'
 import DetailPanelFooter from '@/components/tasks/detail-panel/DetailPanelFooter'
+import DeleteConfirmModal from '@/components/tasks/task-table/DeleteConfirmModal'
 import { useProjectTrackerComments } from '@/lib/hooks/useProjectTrackerComments'
 import { supabase } from '@/lib/supabase/client'
 import type { ProjectTrackerEntry, ProjectRow, Product } from '@/lib/supabase/types'
@@ -129,6 +130,8 @@ export default function ProjectDetails({
   const [newComment, setNewComment] = useState('')
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<string | null>(null)
+  const [deletingComment, setDeletingComment] = useState(false)
 
   const handleAddComment = useCallback(() => {
     if (!newComment.trim()) return
@@ -141,6 +144,18 @@ export default function ProjectDetails({
     updateComment(commentId, editContent.trim())
     setEditingCommentId(null)
   }, [editContent, updateComment])
+
+  const handleDeleteComment = useCallback((commentId: string) => {
+    setPendingDeleteCommentId(commentId)
+  }, [])
+
+  const confirmDeleteComment = useCallback(async () => {
+    if (!pendingDeleteCommentId) return
+    setDeletingComment(true)
+    deleteComment(pendingDeleteCommentId)
+    setDeletingComment(false)
+    setPendingDeleteCommentId(null)
+  }, [pendingDeleteCommentId, deleteComment])
 
   // ── Save / Discard ────────────────────────────────────────────────────────
   const selectedProject = projects.find((p) => p.id === projectId) ?? null
@@ -183,6 +198,15 @@ export default function ProjectDetails({
 
   return (
     <>
+      {pendingDeleteCommentId && (
+        <DeleteConfirmModal
+          title="Delete comment?"
+          message="Are you sure you want to delete this comment? This action cannot be undone."
+          deleting={deletingComment}
+          onConfirm={confirmDeleteComment}
+          onCancel={() => setPendingDeleteCommentId(null)}
+        />
+      )}
       {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
 
@@ -282,7 +306,7 @@ export default function ProjectDetails({
             onEditChange={setEditContent}
             onEditSave={handleEditSave}
             onEditCancel={() => setEditingCommentId(null)}
-            onDeleteComment={(id) => deleteComment(id)}
+            onDeleteComment={handleDeleteComment}
           />
 
         </div>
