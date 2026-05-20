@@ -325,6 +325,7 @@ export default function ProjectTrackerView() {
                 onDescriptionSave={(id, description) => updateEntry(id, { description })}
                 onSortOrderChange={batchUpdateSortOrder}
                 weekLabel={formatWeekHeader(wi)}
+                isCurrent={wi === todayWeekIndex}
               />
             )
           })}

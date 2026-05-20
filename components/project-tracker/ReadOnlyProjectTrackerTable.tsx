@@ -15,6 +15,7 @@ interface Props {
   onOpenPanel: (id: string) => void
   onOpenComments: (id: string) => void
   weekLabel: string
+  isCurrent?: boolean
 }
 
 export default function ReadOnlyProjectTrackerTable({
@@ -25,6 +26,7 @@ export default function ReadOnlyProjectTrackerTable({
   onOpenPanel,
   onOpenComments,
   weekLabel,
+  isCurrent = false,
 }: Props) {
   const { product: isSortProduct, project: isSortProject } = useMemo(
     () => parseSortMode(sortMode),
@@ -76,7 +78,12 @@ export default function ReadOnlyProjectTrackerTable({
               Project
             </th>
             <th className="sticky top-0 z-20 bg-bg border-t border-b border-r border-border px-3 py-2 text-left text-[13px] font-medium text-navy">
-              {weekLabel}
+              <div className="inline-flex items-center gap-2">
+                <span className={`self-stretch flex items-center border-b-2 ${isCurrent ? 'border-teal' : 'border-transparent'}`}>{weekLabel}</span>
+                <span className={`inline-flex items-center justify-center px-1.5 py-[3px] rounded text-[10px] font-medium bg-teal text-navy ${isCurrent ? '' : 'invisible'}`}>
+                  current
+                </span>
+              </div>
             </th>
           </tr>
         </thead>

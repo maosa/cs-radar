@@ -202,6 +202,7 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
                 onOpenPanel={handleOpenPanel}
                 onOpenComments={handleOpenComments}
                 weekLabel={formatWeekHeader(wi)}
+                isCurrent={wi === todayWeekIndex}
               />
             )
           })}
