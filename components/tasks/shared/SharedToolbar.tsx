@@ -27,6 +27,9 @@ interface SharedToolbarProps {
   onSearchClose: () => void
   adminName?: string
   projectNameFn?: (task: any) => string
+  addButtonLabel?: string
+  searchPlaceholder?: string
+  managerViewTitle?: string
 }
 
 export default function SharedToolbar({
@@ -46,6 +49,9 @@ export default function SharedToolbar({
   onSearchClose,
   adminName,
   projectNameFn = (t) => t.project_name ?? '—',
+  addButtonLabel = 'Add task',
+  searchPlaceholder = 'Search tasks…',
+  managerViewTitle,
 }: SharedToolbarProps) {
   const isAtCurrentWeek = centerWeekIndex === currentWeekIndex
   const searchRef = useRef<HTMLDivElement>(null)
@@ -73,7 +79,7 @@ export default function SharedToolbar({
             Back
           </Link>
           <span className="text-[13px] font-medium text-navy truncate max-w-[200px]">
-            {adminName}&rsquo;s Task List
+            {managerViewTitle ?? `${adminName}’s Task List`}
           </span>
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-bg text-text-muted border border-border">
             Read only
@@ -85,7 +91,7 @@ export default function SharedToolbar({
           className="flex items-center gap-1.5 px-3 py-1 bg-navy text-white text-[13px] font-medium rounded-[6px] border border-transparent hover:bg-navy-hover transition-colors"
         >
           <Plus size={14} />
-          Add task
+          {addButtonLabel}
         </button>
       ) : null}
 
@@ -149,7 +155,7 @@ export default function SharedToolbar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Escape') { onSearchClose(); (e.target as HTMLInputElement).blur() } }}
-          placeholder="Search tasks…"
+          placeholder={searchPlaceholder}
           className="pl-7 pr-3 h-7 text-[13px] border border-border rounded-[6px] w-48 placeholder:text-text-muted focus:outline-none focus:border-navy-mid bg-white"
         />
         {showSearchDropdown && searchResults.length > 0 && (
