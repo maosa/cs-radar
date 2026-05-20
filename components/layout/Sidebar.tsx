@@ -151,10 +151,10 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
   }
 
   const mainNavItems: NavItem[] = [
-    { href: '/tasks', label: 'My tasks', icon: <ListTodo size={20} /> },
+    { href: '/tasks', label: 'My Tasks', icon: <ListTodo size={20} /> },
     { href: '/project-tracker', label: 'Project Tracker', icon: <ChartGantt size={20} /> },
     ...(accountHealthEnabled
-      ? [{ href: '/account-health', label: 'Account health', icon: <Gauge size={20} /> }]
+      ? [{ href: '/account-health', label: 'Account Health', icon: <Gauge size={20} /> }]
       : []),
     ...(hasManagerRelationships
       ? [{ href: '/manager', label: 'Manager view', icon: <Users size={20} /> }]
@@ -186,11 +186,11 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
       {/* Logo / app name */}
       <div className="flex items-center gap-3 px-3 pb-4">
         <div className="w-7 h-7 rounded bg-teal flex-shrink-0 flex items-center justify-center text-navy font-semibold text-xs select-none">
-          TT
+          CS
         </div>
         {isExpanded && (
           <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-            Task Tracker
+            CS Radar
           </span>
         )}
       </div>
