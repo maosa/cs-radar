@@ -70,7 +70,7 @@ export default function ExportSection({
       <button
         onClick={handleExport}
         disabled={exporting}
-        className="w-60 px-4 py-2 text-right text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-60 px-4 py-2 text-left text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {exporting ? 'Exporting…' : 'Export Task List to CSV'}
       </button>
@@ -81,7 +81,7 @@ export default function ExportSection({
       <button
         onClick={handleExportProjectTracker}
         disabled={exportingPT}
-        className="w-60 px-4 py-2 text-right text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-60 px-4 py-2 text-left text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {exportingPT ? 'Exporting…' : 'Export Project Tracker to CSV'}
       </button>
@@ -94,7 +94,7 @@ export default function ExportSection({
           <button
             onClick={handleExportAccountHealth}
             disabled={exportingAH}
-            className="w-60 px-4 py-2 text-right text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-60 px-4 py-2 text-left text-[13px] font-medium bg-navy text-white rounded-[6px] border border-transparent hover:bg-navy-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {exportingAH ? 'Exporting…' : 'Export Account Health to CSV'}
           </button>
