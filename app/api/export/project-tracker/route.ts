@@ -2,14 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { csvEscape } from '@/components/settings/settings-utils'
 
 function formatWeekLabel(weekStartDate: string): string {
-  const d = new Date(weekStartDate + 'T00:00:00Z')
-  const formatted = d.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  })
-  return `Week of ${formatted}`
+  // Return the Monday date as YYYYMMDD (e.g. 20260518)
+  return weekStartDate.replace(/-/g, '')
 }
 
 function formatCommentDate(ts: string): string {
