@@ -187,6 +187,9 @@ export function useProjectTrackerEntries({ scope, userId, addToast }: Options) {
       if (context?.previousEntries) queryClient.setQueryData(entriesKey, context.previousEntries)
       addToast?.('Failed to delete project.', 'error')
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: entriesKey })
+    },
   })
 
   // ── batchUpdateSortOrder ─────────────────────────────────────────────────────
