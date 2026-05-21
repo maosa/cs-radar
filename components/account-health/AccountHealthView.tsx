@@ -57,6 +57,8 @@ export default function AccountHealthView({
   })
 
   const [showCopyDropdown, setShowCopyDropdown] = useState(false)
+  const [showCopyConfirm, setShowCopyConfirm] = useState(false)
+  const [pendingCopyMode, setPendingCopyMode] = useState<'responses' | 'responses_and_comments' | null>(null)
   const [isCopying, setIsCopying] = useState(false)
   const [copyVersion, setCopyVersion] = useState(0)
   const copyDropdownRef = useRef<HTMLDivElement>(null)
@@ -190,7 +192,7 @@ export default function AccountHealthView({
             month: currMonthStr,
             question_id: r.question_id,
             response: r.response,
-            ...(mode === 'responses_and_comments' ? { cs_lead_comment: r.cs_lead_comment } : {}),
+            cs_lead_comment: mode === 'responses_and_comments' ? r.cs_lead_comment : null,
             updated_at: now,
             updated_by: actorId,
           })),
@@ -199,6 +201,8 @@ export default function AccountHealthView({
     }
 
     setCopyVersion(v => v + 1)
+    setShowCopyConfirm(false)
+    setPendingCopyMode(null)
     setIsCopying(false)
   }
 
@@ -373,13 +377,13 @@ export default function AccountHealthView({
                         {showCopyDropdown && (
                           <div className="absolute top-full mt-1 left-0 z-30 bg-white border border-border rounded-[6px] shadow-md min-w-[200px] py-1 overflow-hidden">
                             <button
-                              onClick={() => copyPrevious('responses')}
+                              onClick={() => { setShowCopyDropdown(false); setPendingCopyMode('responses'); setShowCopyConfirm(true) }}
                               className="w-full text-left px-3 py-1.5 text-[13px] text-text-secondary hover:bg-bg hover:text-navy transition-colors"
                             >
                               Responses only
                             </button>
                             <button
-                              onClick={() => copyPrevious('responses_and_comments')}
+                              onClick={() => { setShowCopyDropdown(false); setPendingCopyMode('responses_and_comments'); setShowCopyConfirm(true) }}
                               className="w-full text-left px-3 py-1.5 text-[13px] text-text-secondary hover:bg-bg hover:text-navy transition-colors"
                             >
                               Responses and comments
@@ -424,6 +428,48 @@ export default function AccountHealthView({
             month={currentMonth}
             readOnly={readOnly}
           />
+        </div>
+      )}
+
+      {!readOnly && showCopyConfirm && pendingCopyMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-[10px] border border-border shadow-lg p-5 w-[360px] flex flex-col gap-4">
+            <p className="text-[14px] font-medium text-navy">
+              {pendingCopyMode === 'responses' ? 'Copy responses only?' : 'Copy responses and comments?'}
+            </p>
+            <p className="text-[13px] text-text-secondary">
+              {pendingCopyMode === 'responses' ? (
+                <>
+                  This will overwrite all responses for{' '}
+                  <strong>{formatMonthLabel(currentMonth)}</strong> with data from{' '}
+                  <strong>{formatMonthLabel(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}</strong>{' '}
+                  and clear all CS Lead comments.
+                </>
+              ) : (
+                <>
+                  This will overwrite all responses and CS Lead comments for{' '}
+                  <strong>{formatMonthLabel(currentMonth)}</strong> with data from{' '}
+                  <strong>{formatMonthLabel(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}</strong>.
+                </>
+              )}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setShowCopyConfirm(false); setPendingCopyMode(null) }}
+                disabled={isCopying}
+                className="h-8 px-3 rounded-[6px] border border-border text-[13px] text-text-secondary bg-white hover:border-border-hover hover:text-navy transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => copyPrevious(pendingCopyMode)}
+                disabled={isCopying}
+                className="h-8 px-3 rounded-[6px] border border-teal bg-teal text-navy text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {isCopying ? 'Copying…' : 'Copy'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
