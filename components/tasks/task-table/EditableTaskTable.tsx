@@ -34,6 +34,7 @@ interface EditableTaskTableProps {
   onToggleComplete: (id: string) => void
   onToggleFlag: (id: string) => void
   onMove: (id: string, weeks: number) => void
+  onCopy: (id: string, weeks: number) => void
   onDelete: (id: string) => void
   onOpenPanel: (id: string, section: 'notes' | 'comments') => void
   onEditDescription: (id: string, description: string) => void
@@ -51,6 +52,7 @@ export default function EditableTaskTable({
   onToggleComplete,
   onToggleFlag,
   onMove,
+  onCopy,
   onDelete,
   onOpenPanel,
   onEditDescription,
@@ -136,6 +138,7 @@ export default function EditableTaskTable({
                   onToggleComplete={onToggleComplete}
                   onToggleFlag={onToggleFlag}
                   onMove={onMove}
+                  onCopy={onCopy}
                   onDelete={onDelete}
                   onOpenPanel={onOpenPanel}
                   onEditDescription={onEditDescription}

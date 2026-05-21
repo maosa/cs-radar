@@ -130,7 +130,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   }, [debouncedWeekSortModes, userId, readOnly, preferencesLoaded])
 
   // Mutations — always called (hooks must not be conditional); only invoked in owner mode
-  const { toggleComplete, toggleFlag, moveTask, editDescription, deleteTask, reorderTasks, taskCreated, updateTaskLocally } =
+  const { toggleComplete, toggleFlag, moveTask, copyTask, editDescription, deleteTask, reorderTasks, taskCreated, updateTaskLocally } =
     useTasks(userId, addToast)
 
   // Fetch admin name and re-verify manager relationship (manager mode only)
@@ -390,6 +390,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
               onToggleComplete={toggleComplete}
               onToggleFlag={toggleFlag}
               onMove={moveTask}
+              onCopy={copyTask}
               onDelete={setDeleteTaskId}
               onOpenPanel={handleOpenPanel}
               onEditDescription={editDescription}

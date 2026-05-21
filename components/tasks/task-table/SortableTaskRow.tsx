@@ -5,7 +5,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Flag, ChevronsLeftRight, Trash2, GripVertical, PanelRight, Pencil, MessageSquare } from 'lucide-react'
 import ProductBadge from '../ProductBadge'
-import MoveDropdown, { MOVE_FORWARD_OPTIONS, MOVE_BACK_OPTIONS } from './MoveDropdown'
+import MoveDropdown from './MoveDropdown'
 import { dateStringToWeekIndex } from '@/lib/weeks'
 import { taskBg, descClass, projectName } from '@/lib/taskUtils'
 import type { AnyTask } from './types'
@@ -16,6 +16,7 @@ interface EditableRowProps {
   onToggleComplete: (id: string) => void
   onToggleFlag: (id: string) => void
   onMove: (id: string, weeks: number) => void
+  onCopy: (id: string, weeks: number) => void
   onDelete: (id: string) => void
   onOpenPanel: (id: string, section: 'notes' | 'comments') => void
   onEditDescription: (id: string, description: string) => void
@@ -24,7 +25,7 @@ interface EditableRowProps {
 }
 
 const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
-  const { task, visibleWeekIndices, onToggleComplete, onToggleFlag, onMove, onDelete, onOpenPanel, onEditDescription, isDragMode, isHighlighted } = props
+  const { task, visibleWeekIndices, onToggleComplete, onToggleFlag, onMove, onCopy, onDelete, onOpenPanel, onEditDescription, isDragMode, isHighlighted } = props
   const [showMoveDropdown, setShowMoveDropdown] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
@@ -140,9 +141,9 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
                       </button>
                       {showMoveDropdown && (
                         <MoveDropdown
-                          groups={[MOVE_FORWARD_OPTIONS, MOVE_BACK_OPTIONS]}
                           align="right"
                           onMove={(weeks) => onMove(task.id, weeks)}
+                          onCopy={(weeks) => onCopy(task.id, weeks)}
                           onClose={() => setShowMoveDropdown(false)}
                         />
                       )}

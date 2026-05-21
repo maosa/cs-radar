@@ -181,6 +181,68 @@ export function useTasks(userId: string | null, addToast: (msg: string, type?: '
     },
   })
 
+  const copyTask = useMutation({
+    mutationFn: async ({ task, newDate, sortOrder }: { task: TaskWithProject; newDate: string; sortOrder: number }) => {
+      const now = new Date().toISOString()
+      const { data: newTask, error: taskError } = await supabase
+        .from('tasks')
+        .insert({
+          admin_user_id: task.admin_user_id,
+          product: task.product,
+          project_id: task.project_id,
+          description: task.description,
+          week_start_date: newDate,
+          status: 'open',
+          is_flagged: false,
+          sort_order: sortOrder,
+          created_by: userId!,
+          created_at: now,
+        })
+        .select('id')
+        .single()
+      if (taskError || !newTask) throw taskError
+      const { data: note } = await supabase
+        .from('task_notes')
+        .select('content')
+        .eq('task_id', task.id)
+        .maybeSingle()
+      if (note) {
+        const { error: noteError } = await supabase
+          .from('task_notes')
+          .insert({ task_id: newTask.id, content: note.content, created_by: userId! })
+        if (noteError) throw noteError
+      }
+    },
+    onMutate: async ({ task, newDate, sortOrder }) => {
+      await queryClient.cancelQueries({ queryKey: tasksKey })
+      const previousTasks = queryClient.getQueryData<TaskWithProject[]>(tasksKey)
+      const tempId = crypto.randomUUID()
+      const optimisticTask: TaskWithProject = {
+        ...task,
+        id: tempId,
+        week_start_date: newDate,
+        sort_order: sortOrder,
+        status: 'open',
+        is_flagged: false,
+        comment_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: null,
+        updated_by: null,
+      }
+      queryClient.setQueryData<TaskWithProject[]>(tasksKey, (old) => [...(old ?? []), optimisticTask])
+      const newIndex = dateStringToWeekIndex(newDate)
+      addToast(`Task copied to ${formatWeekHeader(newIndex)}.`)
+      return { previousTasks }
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousTasks) queryClient.setQueryData(tasksKey, context.previousTasks)
+      addToast('Failed to copy task.', 'error')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: tasksKey })
+    },
+  })
+
   const editDescription = useMutation({
     mutationFn: async ({ id, description }: { id: string; description: string }) => {
       const { error } = await supabase
@@ -273,6 +335,22 @@ export function useTasks(userId: string | null, addToast: (msg: string, type?: '
         const newIndex = Math.max(0, oldIndex + weeks)
         if (newIndex !== oldIndex) {
           moveTask.mutate({ id, newDate: weekIndexToDateString(newIndex) })
+        }
+      }
+    },
+    copyTask: (id: string, weeks: number) => {
+      const tasks = queryClient.getQueryData<TaskWithProject[]>(tasksKey)
+      const task = tasks?.find((t) => t.id === id)
+      if (task) {
+        const oldIndex = dateStringToWeekIndex(task.week_start_date)
+        const newIndex = Math.max(0, oldIndex + weeks)
+        if (newIndex !== oldIndex) {
+          const newDate = weekIndexToDateString(newIndex)
+          const targetTasks = tasks?.filter((t) => t.week_start_date === newDate) ?? []
+          const sortOrder = targetTasks.length > 0
+            ? Math.max(...targetTasks.map((t) => t.sort_order)) + 1
+            : 0
+          copyTask.mutate({ task, newDate, sortOrder })
         }
       }
     },
