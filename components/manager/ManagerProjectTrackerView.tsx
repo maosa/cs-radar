@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
 import SharedFilterBar, { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
 import ReadOnlyProjectTrackerTable from '@/components/project-tracker/ReadOnlyProjectTrackerTable'
@@ -8,6 +9,7 @@ import ProjectDetails from '@/components/project-tracker/ProjectDetails'
 import { useProjectTrackerEntries } from '@/lib/hooks/useProjectTrackerEntries'
 import { useProjectsQuery } from '@/lib/hooks/useTasks'
 import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase/client'
 import { weekIndexToDateString } from '@/lib/weeks'
 
 interface Props {
@@ -19,6 +21,37 @@ interface Props {
 
 export default function ManagerProjectTrackerView({ adminUserId, adminFirstName, adminFullName }: Props) {
   const { userId: currentUserId } = useAuth()
+  const queryClient = useQueryClient()
+
+  // ── Owner sort modes — read from DB, subscribe via Realtime ───────────────
+  // Used to mirror the owner's visual row order without lighting up any filter
+  // bar buttons. The manager's own sortMode (starts 'none') is applied instead
+  // when the manager explicitly clicks a sort button.
+  const { data: ownerPrefs } = useQuery({
+    queryKey: ['user-preferences', adminUserId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('users')
+        .select('preferences')
+        .eq('id', adminUserId)
+        .single()
+      return (data?.preferences ?? {}) as Record<string, unknown>
+    },
+    enabled: !!adminUserId,
+  })
+
+  useEffect(() => {
+    if (!adminUserId) return
+    const channel = supabase
+      .channel(`user-prefs:${adminUserId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${adminUserId}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['user-preferences', adminUserId] }) },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [adminUserId, queryClient])
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const {
@@ -51,6 +84,29 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
   const [sortMode, setSortMode] = useState<SortMode>('none')
+
+  // Reset manager's own sort whenever they navigate to a different week
+  useEffect(() => { setSortMode('none') }, [centerWeekIndex])
+
+  // Derive owner's per-week sort modes from their preferences
+  const ownerWeekSortModes = useMemo<Record<number, SortMode>>(
+    () => (ownerPrefs?.pt_week_sort_modes as Record<number, SortMode> | undefined) ?? {},
+    [ownerPrefs],
+  )
+
+  // If the manager has selected a sort, apply it to all visible weeks.
+  // Otherwise, silently mirror the owner's per-week sort modes so the manager
+  // sees the same row order — without any filter bar buttons appearing selected.
+  const effectiveWeekSortModes = useMemo<Record<number, SortMode>>(() => {
+    if (sortMode !== 'none') {
+      const result: Record<number, SortMode> = {}
+      visibleWeekIndices.forEach((wi) => { result[wi] = sortMode })
+      return result
+    }
+    return ownerWeekSortModes
+  }, [sortMode, visibleWeekIndices, ownerWeekSortModes])
+
+  const effectiveDefaultSortMode: SortMode = sortMode !== 'none' ? sortMode : 'product_project'
 
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
     const usedProjectIds = new Set(
@@ -154,8 +210,8 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
             entries={entries}
             visibleWeekIndices={visibleWeekIndices}
             currentWeekIndex={todayWeekIndex}
-            weekSortModes={{}}
-            defaultSortMode={sortMode}
+            weekSortModes={effectiveWeekSortModes}
+            defaultSortMode={effectiveDefaultSortMode}
             filterProducts={filterProducts}
             filterProjects={filterProjects}
             onOpenPanel={handleOpenPanel}
