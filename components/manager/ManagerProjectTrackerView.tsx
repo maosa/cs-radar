@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
 import SharedFilterBar, { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
 import ReadOnlyProjectTrackerTable from '@/components/project-tracker/ReadOnlyProjectTrackerTable'
@@ -9,7 +8,6 @@ import ProjectDetails from '@/components/project-tracker/ProjectDetails'
 import { useProjectTrackerEntries } from '@/lib/hooks/useProjectTrackerEntries'
 import { useProjectsQuery } from '@/lib/hooks/useTasks'
 import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase/client'
 import { weekIndexToDateString } from '@/lib/weeks'
 
 interface Props {
@@ -21,35 +19,6 @@ interface Props {
 
 export default function ManagerProjectTrackerView({ adminUserId, adminFirstName, adminFullName }: Props) {
   const { userId: currentUserId } = useAuth()
-  const queryClient = useQueryClient()
-
-  // ── Owner sort mode — read from DB, subscribe via Realtime ────────────────
-  const { data: ownerPrefs } = useQuery({
-    queryKey: ['user-preferences', adminUserId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('users')
-        .select('preferences')
-        .eq('id', adminUserId)
-        .single()
-      return (data?.preferences ?? {}) as Record<string, unknown>
-    },
-    enabled: !!adminUserId,
-  })
-
-  // Realtime: re-fetch owner prefs whenever they update their sort mode
-  useEffect(() => {
-    if (!adminUserId) return
-    const channel = supabase
-      .channel(`user-prefs:${adminUserId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${adminUserId}` },
-        () => { queryClient.invalidateQueries({ queryKey: ['user-preferences', adminUserId] }) },
-      )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [adminUserId, queryClient])
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const {
@@ -82,14 +51,6 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
   const [sortMode, setSortMode] = useState<SortMode>('none')
-
-  // Mirror owner's sort mode for the currently-viewed week whenever their
-  // preference arrives/changes or the manager navigates to a different week
-  useEffect(() => {
-    if (!ownerPrefs) return
-    const ownerWeekModes = (ownerPrefs.pt_week_sort_modes as Record<number, SortMode> | undefined) ?? {}
-    setSortMode(ownerWeekModes[centerWeekIndex] ?? 'product_project')
-  }, [ownerPrefs, centerWeekIndex])
 
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
     const usedProjectIds = new Set(
