@@ -28,17 +28,15 @@ const ReadOnlyProjectTrackerRow = memo(function ReadOnlyProjectTrackerRow({
 
       {/* Product — sticky left, ~84px */}
       <td
-        className="sticky left-0 z-10 border-l border-r border-border px-3 py-2.5 align-top"
+        className="sticky left-0 z-10 border-l border-r border-border px-3 py-2.5"
         style={{ backgroundColor: cellBg, boxShadow: 'inset 0 -1px 0 0 #DADADA' }}
       >
-        <div className="pt-0.5">
-          <ProductBadge product={entry.product} />
-        </div>
+        <ProductBadge product={entry.product} />
       </td>
 
       {/* Project name — sticky at 84px, ~240px */}
       <td
-        className={`sticky z-10 border-r border-border px-3 py-2.5 text-[13px] ${textColorClass} whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px] align-top`}
+        className={`sticky z-10 border-r border-border px-3 py-2.5 text-[13px] ${textColorClass} whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]`}
         style={{
           left: 84,
           backgroundColor: cellBg,
