@@ -81,7 +81,8 @@ export function useProjectTrackerEntries({ scope, userId, addToast }: Options) {
 
   // ── Realtime: project_tracker_comments ──────────────────────────────────────
   // Keeps comment_count in sync across owner and manager views when comments
-  // are added or deleted by either party.
+  // are added or deleted by either party. Also invalidates the per-entry
+  // comments cache so the sidebar never shows stale data after a remote post.
   useEffect(() => {
     if (!userId) return
     const channel = supabase
@@ -89,7 +90,15 @@ export function useProjectTrackerEntries({ scope, userId, addToast }: Options) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'project_tracker_comments', filter: `admin_user_id=eq.${userId}` },
-        () => { queryClient.invalidateQueries({ queryKey: entriesKey }) },
+        (payload) => {
+          queryClient.invalidateQueries({ queryKey: entriesKey })
+          const entryId =
+            (payload.new as Record<string, unknown> | undefined)?.entry_id ??
+            (payload.old as Record<string, unknown> | undefined)?.entry_id
+          if (entryId) {
+            queryClient.invalidateQueries({ queryKey: ['project-tracker-comments', entryId] })
+          }
+        },
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
