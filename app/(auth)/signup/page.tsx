@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import { APP_NAME } from '@/lib/app-config'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -70,7 +71,7 @@ export default function SignupPage() {
         <div className="space-y-4 text-center">
           <div className="mb-6">
             <h1 className="text-[18px] font-medium text-navy">Confirm Your Email Address</h1>
-            <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
+            <p className="text-[13px] text-text-secondary mt-1">{APP_NAME}</p>
           </div>
           <p className="text-[13px] text-text-secondary">A confirmation email has been sent to <span className="font-medium text-navy">{email}</span></p>
           <p className="text-[13px] text-text-secondary">Check your email to activate your account.</p>
@@ -82,7 +83,7 @@ export default function SignupPage() {
         <>
         <div className="mb-6">
           <h1 className="text-[18px] font-medium text-navy">Create Account</h1>
-          <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
+          <p className="text-[13px] text-text-secondary mt-1">{APP_NAME}</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">

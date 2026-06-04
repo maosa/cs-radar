@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import { APP_NAME } from '@/lib/app-config'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -64,7 +65,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm bg-white rounded-xl border border-border p-8 shadow-sm">
         <div className="mb-6">
           <h1 className="text-[18px] font-medium text-navy">Reset Password</h1>
-          <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
+          <p className="text-[13px] text-text-secondary mt-1">{APP_NAME}</p>
         </div>
         <p className="text-[13px] text-text-muted">Verifying reset link…</p>
       </div>
@@ -75,7 +76,7 @@ export default function ResetPasswordPage() {
     <div className="w-full max-w-sm bg-white rounded-xl border border-border p-8 shadow-sm">
       <div className="mb-6">
         <h1 className="text-[18px] font-medium text-navy">Set New Password</h1>
-        <p className="text-[13px] text-text-secondary mt-1">Task Tracker</p>
+        <p className="text-[13px] text-text-secondary mt-1">{APP_NAME}</p>
       </div>
 
       {done ? (

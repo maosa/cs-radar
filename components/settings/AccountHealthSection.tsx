@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useSidebarRefresh } from '@/lib/sidebar-context'
 import { SectionCard } from './SectionCard'
-import ClientAccountsSection from './ClientAccountsSection'
 
 export function AccountHealthSection({
   onToast,
@@ -96,22 +95,12 @@ export default function AccountHealthSettingsBlock({
   }
 
   return (
-    <>
-      <SectionCard title="Account Health">
-        <AccountHealthSection
-          onToast={onToast}
-          onEnabledChange={handleEnabledChange}
-          initialEnabled={initialEnabled}
-        />
-      </SectionCard>
-      {accountHealthEnabled && (
-        <SectionCard title="Client Accounts">
-          <p className="text-[12px] text-text-secondary mb-4">
-            Used in Account Health to select the client you are reviewing. Each account can be associated with a product.
-          </p>
-          <ClientAccountsSection onToast={onToast} />
-        </SectionCard>
-      )}
-    </>
+    <SectionCard title="Account Health">
+      <AccountHealthSection
+        onToast={onToast}
+        onEnabledChange={handleEnabledChange}
+        initialEnabled={initialEnabled}
+      />
+    </SectionCard>
   )
 }

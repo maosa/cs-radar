@@ -8,6 +8,7 @@ import ProjectsSection from './ProjectsSection'
 import TeamManagementSection from './TeamManagementSection'
 import AccountHealthSettingsBlock from './AccountHealthSection'
 import BuyerMatrixSettingsBlock from './BuyerMatrixSection'
+import ClientAccountsSection from './ClientAccountsSection'
 import ExportSection from './ExportSection'
 import type { DefaultLanding } from '@/lib/supabase/types'
 
@@ -59,8 +60,15 @@ export default function SettingsView({ initialProfile, initialHasManagerRole }: 
         onToast={addToast}
         onEnabledChange={setBuyerMatrixEnabled}
         initialEnabled={initialProfile?.buyer_matrix_enabled}
-        accountHealthEnabled={accountHealthEnabled}
       />
+      {(accountHealthEnabled || buyerMatrixEnabled) && (
+        <SectionCard title="Client Accounts">
+          <p className="text-[12px] text-text-secondary mb-4">
+            Used in Account Health and Buyer Matrix to manage the clients in your workspace. Each account can be associated with a product.
+          </p>
+          <ClientAccountsSection onToast={addToast} />
+        </SectionCard>
+      )}
       <SectionCard title="Export Data">
         <ExportSection onToast={addToast} accountHealthEnabled={accountHealthEnabled} />
       </SectionCard>

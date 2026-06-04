@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ListTodo, ChartGantt, Users, Settings, ChevronRight, ChevronLeft, AlertCircle, Gauge, UserKey, LogOut } from 'lucide-react'
+import { ListTodo, Route, Users, Settings, ChevronRight, ChevronLeft, AlertCircle, Gauge, UserKey, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useSidebarCounter } from '@/lib/sidebar-context'
@@ -153,19 +153,20 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
     window.location.href = '/login'
   }
 
-  const mainNavItems: NavItem[] = [
+  const coreNavItems: NavItem[] = [
     { href: '/tasks', label: 'My Tasks', icon: <ListTodo size={20} /> },
-    { href: '/project-tracker', label: 'Project Tracker', icon: <ChartGantt size={20} /> },
+    { href: '/project-tracker', label: 'Project Tracker', icon: <Route size={20} /> },
     ...(accountHealthEnabled
       ? [{ href: '/account-health', label: 'Account Health', icon: <Gauge size={20} /> }]
       : []),
     ...(buyerMatrixEnabled
       ? [{ href: '/buyer-matrix', label: 'Buyer Matrix', icon: <UserKey size={20} /> }]
       : []),
-    ...(hasManagerRelationships
-      ? [{ href: '/manager', label: 'Manager view', icon: <Users size={20} /> }]
-      : []),
   ]
+  const managerItem: NavItem = { href: '/manager', label: 'Manager View', icon: <Users size={20} /> }
+  const mainNavItems: NavItem[] = hasManagerRelationships
+    ? [managerItem, ...coreNavItems]
+    : coreNavItems
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 

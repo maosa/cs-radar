@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useSidebarRefresh } from '@/lib/sidebar-context'
 import { SectionCard } from './SectionCard'
-import ClientAccountsSection from './ClientAccountsSection'
 
 export function BuyerMatrixSection({
   onToast,
@@ -83,37 +82,22 @@ export default function BuyerMatrixSettingsBlock({
   onToast,
   onEnabledChange,
   initialEnabled,
-  accountHealthEnabled,
 }: {
   onToast: (msg: string, type?: 'success' | 'error') => void
   onEnabledChange: (enabled: boolean) => void
   initialEnabled?: boolean
-  accountHealthEnabled: boolean
 }) {
-  const [buyerMatrixEnabled, setBuyerMatrixEnabled] = useState(initialEnabled ?? false)
-
   const handleEnabledChange = (val: boolean) => {
-    setBuyerMatrixEnabled(val)
     onEnabledChange(val)
   }
 
   return (
-    <>
-      <SectionCard title="Buyer Matrix">
-        <BuyerMatrixSection
-          onToast={onToast}
-          onEnabledChange={handleEnabledChange}
-          initialEnabled={initialEnabled}
-        />
-      </SectionCard>
-      {buyerMatrixEnabled && !accountHealthEnabled && (
-        <SectionCard title="Client Accounts">
-          <p className="text-[12px] text-text-secondary mb-4">
-            Used in Buyer Matrix to list the clients in your table. Each account can be associated with a product.
-          </p>
-          <ClientAccountsSection onToast={onToast} />
-        </SectionCard>
-      )}
-    </>
+    <SectionCard title="Buyer Matrix">
+      <BuyerMatrixSection
+        onToast={onToast}
+        onEnabledChange={handleEnabledChange}
+        initialEnabled={initialEnabled}
+      />
+    </SectionCard>
   )
 }

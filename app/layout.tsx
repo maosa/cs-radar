@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Task Tracker — Access Infinity',
-  description: 'Weekly task management for Access Infinity teams',
+  title: 'CS Radar — Access Infinity',
+  description: 'CS Radar for Access Infinity teams',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
