@@ -115,8 +115,7 @@ export default function BuyerMatrixTable({
         <thead>
           <tr className="border-b border-border bg-[#F7F7F7]">
             <th
-              className="text-left px-4 py-2.5 text-[12px] font-medium text-text-secondary border-r border-border"
-              style={{ width: '200px', minWidth: '160px' }}
+              className="text-left px-4 py-2.5 text-[12px] font-medium text-text-secondary border-r border-border whitespace-nowrap"
             >
               Client Accounts
             </th>
@@ -171,12 +170,14 @@ export default function BuyerMatrixTable({
             return (
               <tr key={account.id} className="border-b border-border hover:bg-[#FAFAFA]">
                 <td
-                  className="px-4 py-0 border-r border-border align-top"
-                  style={{ width: '200px', minWidth: '160px' }}
+                  className="px-4 py-0 border-r border-border align-top whitespace-nowrap"
                 >
                   <div className="py-3 flex items-center gap-2">
-                    {account.product && <ProductBadge product={account.product} />}
-                    <span className="text-[13px] font-medium text-navy">{account.name}</span>
+                    {/* Fixed-width slot sized to NURO (widest badge) keeps all names left-aligned */}
+                    <div className="w-[46px] flex-shrink-0 flex items-center">
+                      {account.product && <ProductBadge product={account.product} />}
+                    </div>
+                    <span className="text-[13px] font-medium text-navy whitespace-nowrap">{account.name}</span>
                   </div>
                 </td>
                 {COLUMNS.map((col) => (
