@@ -4,12 +4,13 @@ import TaskTableView from '@/components/tasks/TaskTableView'
 interface ManagerTaskViewProps {
   adminUserId: string
   accountHealthEnabled: boolean
+  buyerMatrixEnabled?: boolean
 }
 
-export default function ManagerTaskView({ adminUserId, accountHealthEnabled }: ManagerTaskViewProps) {
+export default function ManagerTaskView({ adminUserId, accountHealthEnabled, buyerMatrixEnabled = false }: ManagerTaskViewProps) {
   return (
     <div className="flex flex-col h-full">
-      <ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} />
+      <ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} buyerMatrixEnabled={buyerMatrixEnabled} />
       <TaskTableView readOnly adminUserId={adminUserId} />
     </div>
   )

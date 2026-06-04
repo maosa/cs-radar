@@ -37,7 +37,7 @@ export default async function ManagerProjectTrackerPage({
 
   const { data: adminUserData } = await supabase
     .from('users')
-    .select('first_name, last_name, account_health_enabled')
+    .select('first_name, last_name, account_health_enabled, buyer_matrix_enabled')
     .eq('id', adminUserId)
     .single()
 
@@ -45,6 +45,7 @@ export default async function ManagerProjectTrackerPage({
   const adminLastName = (adminUserData?.last_name as string | null) ?? ''
   const adminFullName = [adminFirstName, adminLastName].filter(Boolean).join(' ')
   const accountHealthEnabled = adminUserData?.account_health_enabled ?? false
+  const buyerMatrixEnabled = (adminUserData as any)?.buyer_matrix_enabled ?? false
 
   const todayIndex = getCurrentWeekIndex()
   const fromDate = weekIndexToDateString(Math.max(0, todayIndex - 26))
@@ -83,7 +84,7 @@ export default async function ManagerProjectTrackerPage({
 
   return (
     <div className="flex flex-col h-full">
-      <ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} />
+      <ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} buyerMatrixEnabled={buyerMatrixEnabled} />
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ManagerProjectTrackerView
           adminUserId={adminUserId}

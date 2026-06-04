@@ -6,14 +6,16 @@ import { usePathname } from 'next/navigation'
 interface ManagerViewTabsProps {
   adminUserId: string
   accountHealthEnabled: boolean
+  buyerMatrixEnabled?: boolean
 }
 
-export default function ManagerViewTabs({ adminUserId, accountHealthEnabled }: ManagerViewTabsProps) {
+export default function ManagerViewTabs({ adminUserId, accountHealthEnabled, buyerMatrixEnabled = false }: ManagerViewTabsProps) {
   const pathname = usePathname()
 
   const isProjectTracker =
     pathname.includes('/project-tracker') || pathname === `/manager/${adminUserId}`
   const isAccountHealth = pathname.includes('/account-health')
+  const isBuyerMatrix = pathname.includes('/buyer-matrix')
   const isTaskList = pathname.includes('/tasks')
 
   return (
@@ -28,6 +30,13 @@ export default function ManagerViewTabs({ adminUserId, accountHealthEnabled }: M
           href={`/manager/${adminUserId}/account-health`}
           label="Account Health"
           active={isAccountHealth}
+        />
+      )}
+      {buyerMatrixEnabled && (
+        <TabLink
+          href={`/manager/${adminUserId}/buyer-matrix`}
+          label="Buyer Matrix"
+          active={isBuyerMatrix}
         />
       )}
       <TabLink

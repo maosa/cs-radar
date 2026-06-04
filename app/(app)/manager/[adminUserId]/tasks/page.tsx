@@ -36,10 +36,11 @@ export default async function ManagerTaskPage({
 
   const { data: adminUserData } = await supabase
     .from('users')
-    .select('account_health_enabled')
+    .select('account_health_enabled, buyer_matrix_enabled')
     .eq('id', adminUserId)
     .single()
   const accountHealthEnabled = adminUserData?.account_health_enabled ?? false
+  const buyerMatrixEnabled = (adminUserData as any)?.buyer_matrix_enabled ?? false
 
   // Match the same initial window used by TaskTableView so the prefetched data
   // is consumed directly by the client query without a redundant refetch.
@@ -65,7 +66,7 @@ export default async function ManagerTaskPage({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ManagerTaskView adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} />
+      <ManagerTaskView adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} buyerMatrixEnabled={buyerMatrixEnabled} />
     </HydrationBoundary>
   )
 }

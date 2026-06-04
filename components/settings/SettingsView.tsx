@@ -7,6 +7,7 @@ import AccountSection from './AccountSection'
 import ProjectsSection from './ProjectsSection'
 import TeamManagementSection from './TeamManagementSection'
 import AccountHealthSettingsBlock from './AccountHealthSection'
+import BuyerMatrixSettingsBlock from './BuyerMatrixSection'
 import ExportSection from './ExportSection'
 import type { DefaultLanding } from '@/lib/supabase/types'
 
@@ -18,6 +19,7 @@ interface InitialProfile {
   role: string | null
   default_landing: DefaultLanding
   account_health_enabled: boolean
+  buyer_matrix_enabled: boolean
 }
 
 interface SettingsViewProps {
@@ -28,6 +30,7 @@ interface SettingsViewProps {
 export default function SettingsView({ initialProfile, initialHasManagerRole }: SettingsViewProps) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [accountHealthEnabled, setAccountHealthEnabled] = useState(initialProfile?.account_health_enabled ?? false)
+  const [buyerMatrixEnabled, setBuyerMatrixEnabled] = useState(initialProfile?.buyer_matrix_enabled ?? false)
 
   const addToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const id = Math.random().toString(36).slice(2)
@@ -52,6 +55,12 @@ export default function SettingsView({ initialProfile, initialHasManagerRole }: 
         <TeamManagementSection onToast={addToast} />
       </SectionCard>
       <AccountHealthSettingsBlock onToast={addToast} onEnabledChange={setAccountHealthEnabled} initialEnabled={initialProfile?.account_health_enabled} />
+      <BuyerMatrixSettingsBlock
+        onToast={addToast}
+        onEnabledChange={setBuyerMatrixEnabled}
+        initialEnabled={initialProfile?.buyer_matrix_enabled}
+        accountHealthEnabled={accountHealthEnabled}
+      />
       <SectionCard title="Export Data">
         <ExportSection onToast={addToast} accountHealthEnabled={accountHealthEnabled} />
       </SectionCard>

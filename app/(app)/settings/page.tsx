@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   const [{ data: userData }, { data: relData }] = await Promise.all([
     supabase
       .from('users')
-      .select('id, first_name, last_name, email, role, default_landing, account_health_enabled')
+      .select('id, first_name, last_name, email, role, default_landing, account_health_enabled, buyer_matrix_enabled')
       .eq('id', user.id)
       .single(),
     supabase
@@ -32,6 +32,7 @@ export default async function SettingsPage() {
         role: userData.role as string | null,
         default_landing: (userData.default_landing ?? 'task_list') as DefaultLanding,
         account_health_enabled: !!(userData as any).account_health_enabled,
+        buyer_matrix_enabled: !!(userData as any).buyer_matrix_enabled,
       }
     : null
 

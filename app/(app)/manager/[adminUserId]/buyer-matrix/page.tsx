@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ManagerViewTabs from '@/components/manager/ManagerViewTabs'
-import AccountHealthView from '@/components/account-health/AccountHealthView'
+import BuyerMatrixView from '@/components/buyer-matrix/BuyerMatrixView'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export default async function ManagerAccountHealthPage({
+export default async function ManagerBuyerMatrixPage({
   params,
 }: {
   params: Promise<{ adminUserId: string }>
@@ -28,23 +28,20 @@ export default async function ManagerAccountHealthPage({
     .maybeSingle()
   if (!rel) redirect('/manager')
 
-  // Check that the managed user has account health enabled
+  // Check that the managed user has buyer matrix enabled
   const { data: adminUserData } = await supabase
     .from('users')
     .select('account_health_enabled, buyer_matrix_enabled')
     .eq('id', adminUserId)
     .single()
-  if (!adminUserData?.account_health_enabled) redirect(`/manager/${adminUserId}`)
-  const buyerMatrixEnabled = (adminUserData as any)?.buyer_matrix_enabled ?? false
+  if (!(adminUserData as any)?.buyer_matrix_enabled) redirect(`/manager/${adminUserId}`)
+
+  const accountHealthEnabled = adminUserData?.account_health_enabled ?? false
 
   return (
     <div className="flex flex-col h-full">
-      <ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={true} buyerMatrixEnabled={buyerMatrixEnabled} />
-      <AccountHealthView
-        viewAsUserId={adminUserId}
-        readOnly={true}
-        managerUserId={userId}
-      />
+      <ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} buyerMatrixEnabled={true} />
+      <BuyerMatrixView viewAsUserId={adminUserId} readOnly={true} />
     </div>
   )
 }

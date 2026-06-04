@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const [profileResult, relResult, countResult] = await Promise.all([
     supabase
       .from('users')
-      .select('first_name, last_name, email, account_health_enabled')
+      .select('first_name, last_name, email, account_health_enabled, buyer_matrix_enabled')
       .eq('id', user.id)
       .single(),
     supabase

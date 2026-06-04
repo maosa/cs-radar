@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ListTodo, ChartGantt, Users, Settings, ChevronRight, ChevronLeft, AlertCircle, Gauge, LogOut } from 'lucide-react'
+import { ListTodo, ChartGantt, Users, Settings, ChevronRight, ChevronLeft, AlertCircle, Gauge, UserKey, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useSidebarCounter } from '@/lib/sidebar-context'
@@ -22,6 +22,7 @@ interface SidebarInitialData {
     last_name: string | null
     email: string
     account_health_enabled: boolean
+    buyer_matrix_enabled: boolean
   } | null
   hasManagerRelationships: boolean
   pendingInviteCount: number
@@ -46,6 +47,7 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
   const [hasManagerRelationships, setHasManagerRelationships] = useState(initialData.hasManagerRelationships)
   const [pendingInviteCount, setPendingInviteCount] = useState(initialData.pendingInviteCount)
   const [accountHealthEnabled, setAccountHealthEnabled] = useState(initialData.profile?.account_health_enabled ?? false)
+  const [buyerMatrixEnabled, setBuyerMatrixEnabled] = useState(initialData.profile?.buyer_matrix_enabled ?? false)
   const [fetchError, setFetchError] = useState(false)
   const [initials, setInitials] = useState(derived.initials)
   const [fullName, setFullName] = useState(derived.fullName)
@@ -86,7 +88,7 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
           .eq('status', 'pending'),
         supabase
           .from('users')
-          .select('account_health_enabled')
+          .select('account_health_enabled, buyer_matrix_enabled')
           .eq('id', userId)
           .single(),
       ])
@@ -99,7 +101,8 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
       setFetchError(false)
       setHasManagerRelationships(Array.isArray(relResult.data) && relResult.data.length > 0)
       setPendingInviteCount(countResult.count ?? 0)
-      setAccountHealthEnabled(userResult.data?.account_health_enabled ?? false)
+      setAccountHealthEnabled((userResult.data as any)?.account_health_enabled ?? false)
+      setBuyerMatrixEnabled((userResult.data as any)?.buyer_matrix_enabled ?? false)
     }
 
     fetchRelationshipData()
@@ -155,6 +158,9 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
     { href: '/project-tracker', label: 'Project Tracker', icon: <ChartGantt size={20} /> },
     ...(accountHealthEnabled
       ? [{ href: '/account-health', label: 'Account Health', icon: <Gauge size={20} /> }]
+      : []),
+    ...(buyerMatrixEnabled
+      ? [{ href: '/buyer-matrix', label: 'Buyer Matrix', icon: <UserKey size={20} /> }]
       : []),
     ...(hasManagerRelationships
       ? [{ href: '/manager', label: 'Manager view', icon: <Users size={20} /> }]
