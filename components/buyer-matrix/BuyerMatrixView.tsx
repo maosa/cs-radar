@@ -73,6 +73,28 @@ export default function BuyerMatrixView({
       })
   }, [effectiveUserId])
 
+  // Fetch entries client-side:
+  // - Skip when we have server-provided initial data AND this is the owner view
+  // - Always fetch for the manager view so existing entries are loaded on mount
+  useEffect(() => {
+    if (!effectiveUserId) return
+    if (initialEntries && !viewAsUserId) return
+    supabase
+      .from('buyer_matrix_entries')
+      .select('id, client_account_id, admin_user_id, economic_buyer, technical_buyer, user_buyer, coach_champion, gatekeeper, influencer, created_at, updated_at, updated_by')
+      .eq('admin_user_id', effectiveUserId)
+      .then(({ data }) => {
+        if (!data) return
+        setEntriesMap(() => {
+          const map = new Map<string, BuyerMatrixEntry>()
+          for (const entry of data as BuyerMatrixEntry[]) {
+            map.set(entry.client_account_id, entry)
+          }
+          return map
+        })
+      })
+  }, [effectiveUserId])
+
   // Realtime subscription for live entry updates (owner and manager view)
   useEffect(() => {
     if (!effectiveUserId) return
