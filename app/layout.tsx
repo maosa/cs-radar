@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { APP_NAME } from '@/lib/app-config'
 
 export const metadata: Metadata = {
-  title: 'CS Radar — Access Infinity',
-  description: 'CS Radar for Access Infinity teams',
+  title: `${APP_NAME} — Access Infinity`,
+  description: `${APP_NAME} for Access Infinity teams`,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

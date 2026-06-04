@@ -7,6 +7,7 @@ import { ListTodo, Route, Users, Settings, ChevronRight, ChevronLeft, AlertCircl
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useSidebarCounter } from '@/lib/sidebar-context'
+import { APP_NAME } from '@/lib/app-config'
 
 const STORAGE_KEY = 'sidebar_expanded'
 
@@ -197,7 +198,7 @@ export default function Sidebar({ initialData }: { initialData: SidebarInitialDa
         </div>
         {isExpanded && (
           <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-            CS Radar
+            {APP_NAME}
           </span>
         )}
       </div>
