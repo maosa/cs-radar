@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Info } from 'lucide-react'
 import type { ClientAccountRow, BuyerMatrixEntry } from '@/lib/supabase/types'
 import CommentCell from '@/components/account-health/CommentCell'
+import ProductBadge from '@/components/tasks/ProductBadge'
 
 type BuyerMatrixField = keyof Pick<
   BuyerMatrixEntry,
@@ -166,15 +167,17 @@ export default function BuyerMatrixTable({
         <tbody>
           {accounts.map((account) => {
             const entry = entriesMap.get(account.id)
-            const displayName = account.product ? `${account.product} - ${account.name}` : account.name
 
             return (
               <tr key={account.id} className="border-b border-border hover:bg-[#FAFAFA]">
                 <td
-                  className="px-4 py-0 text-[13px] font-medium text-navy border-r border-border align-top"
+                  className="px-4 py-0 border-r border-border align-top"
                   style={{ width: '200px', minWidth: '160px' }}
                 >
-                  <div className="py-3">{displayName}</div>
+                  <div className="py-3 flex items-center gap-2">
+                    {account.product && <ProductBadge product={account.product} />}
+                    <span className="text-[13px] font-medium text-navy">{account.name}</span>
+                  </div>
                 </td>
                 {COLUMNS.map((col) => (
                   <td
