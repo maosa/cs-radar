@@ -111,12 +111,12 @@ export default function BuyerMatrixTable({
 
   return (
     <div className="w-full overflow-hidden rounded-[8px] border border-border">
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
         <thead>
           <tr className="bg-[#E8E8E8]">
             <th
-              className="text-left px-2 py-2.5 text-[13px] font-medium text-navy border-r border-border whitespace-nowrap"
-              style={{ width: '1px' }}
+              className="text-left px-2 py-2.5 text-[13px] font-medium text-navy border-r border-border"
+              style={{ width: '180px' }}
             >
               Client Accounts
             </th>
@@ -170,14 +170,14 @@ export default function BuyerMatrixTable({
             return (
               <tr key={account.id} className="border-t border-border hover:bg-[#FAFAFA]">
                 <td
-                  className="px-2 py-0 border-r border-border align-top whitespace-nowrap"
+                  className="px-2 py-0 border-r border-border align-top"
                 >
-                  <div className="py-3 flex items-center gap-3">
+                  <div className="py-3 flex items-start gap-3">
                     {/* Fixed-width slot sized to NURO (widest badge) keeps all names left-aligned */}
-                    <div className="w-[46px] flex-shrink-0 flex items-center">
+                    <div className="w-[46px] flex-shrink-0 flex items-center pt-0.5">
                       {account.product && <ProductBadge product={account.product} />}
                     </div>
-                    <span className="text-[13px] font-medium text-navy whitespace-nowrap">{account.name}</span>
+                    <span className="text-[13px] font-medium text-navy">{account.name}</span>
                   </div>
                 </td>
                 {COLUMNS.map((col) => (

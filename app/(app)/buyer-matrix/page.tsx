@@ -32,9 +32,11 @@ export default async function BuyerMatrixPage() {
   if (!(userData as any)?.buyer_matrix_enabled) redirect('/tasks')
 
   return (
-    <BuyerMatrixView
-      initialAccounts={(accountsData as ClientAccountRow[]) ?? []}
-      initialEntries={(entriesData as BuyerMatrixEntry[]) ?? []}
-    />
+    <div className="flex flex-col h-full min-w-0">
+      <BuyerMatrixView
+        initialAccounts={(accountsData as ClientAccountRow[]) ?? []}
+        initialEntries={(entriesData as BuyerMatrixEntry[]) ?? []}
+      />
+    </div>
   )
 }
