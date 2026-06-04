@@ -103,17 +103,17 @@ export default function BuyerMatrixTable({
 
   if (accounts.length === 0) {
     return (
-      <div className="flex items-center justify-center py-16">
+      <div className="rounded-[8px] border border-border bg-white flex items-center justify-center py-16">
         <p className="text-[13px] text-text-muted">No client accounts found. Add them in Settings.</p>
       </div>
     )
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-[8px] border border-border">
       <table className="w-full border-collapse" style={{ minWidth: '960px' }}>
         <thead>
-          <tr className="border-b border-border bg-[#F7F7F7]">
+          <tr className="bg-[#E8E8E8]">
             <th
               className="text-left px-4 py-2.5 text-[12px] font-medium text-text-secondary border-r border-border whitespace-nowrap"
               style={{ width: '1px' }}
@@ -169,7 +169,7 @@ export default function BuyerMatrixTable({
             const entry = entriesMap.get(account.id)
 
             return (
-              <tr key={account.id} className="border-b border-border hover:bg-[#FAFAFA]">
+              <tr key={account.id} className="border-t border-border hover:bg-[#FAFAFA]">
                 <td
                   className="px-4 py-0 border-r border-border align-top whitespace-nowrap"
                 >

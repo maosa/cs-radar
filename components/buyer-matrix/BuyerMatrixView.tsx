@@ -184,17 +184,18 @@ export default function BuyerMatrixView({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
+      {/* Manager back button bar — matches Account Health's manager header exactly */}
       {readOnly && adminName && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-border flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-border">
           <Link
             href="/manager"
-            className="flex items-center gap-1 text-[13px] text-text-secondary hover:text-navy transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 text-[13px] font-medium border border-border rounded-[6px] text-text-secondary hover:border-border-hover hover:text-navy bg-white transition-colors"
           >
             <ArrowLeft size={14} />
             Back
           </Link>
-          <span className="text-[13px] font-medium text-navy">
+          <span className="text-[13px] font-medium text-navy truncate max-w-[200px]">
             {adminName}&rsquo;s Buyer Matrix
           </span>
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-bg text-text-muted border border-border">
@@ -203,18 +204,21 @@ export default function BuyerMatrixView({
         </div>
       )}
 
-      <div className="flex-1 overflow-auto">
-        <div className="px-6 pt-5 pb-4">
-          {!readOnly && (
-            <h1 className="text-[15px] font-medium text-navy mb-4">Buyer Matrix</h1>
-          )}
-          <BuyerMatrixTable
-            accounts={accounts}
-            entriesMap={entriesMap}
-            readOnly={readOnly}
-            onSave={handleSave}
-          />
+      {/* Page title header — owner only, matches Account Health's header section */}
+      {!readOnly && (
+        <div className="px-6 pt-6 pb-4 border-b border-border bg-white">
+          <h1 className="text-base font-medium text-navy">Buyer Matrix</h1>
         </div>
+      )}
+
+      {/* Body — same bg-white + padding pattern as Account Health */}
+      <div className="px-6 py-6 bg-white">
+        <BuyerMatrixTable
+          accounts={accounts}
+          entriesMap={entriesMap}
+          readOnly={readOnly}
+          onSave={handleSave}
+        />
       </div>
     </div>
   )
