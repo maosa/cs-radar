@@ -115,7 +115,7 @@ export default function BuyerMatrixTable({
         <thead>
           <tr className="bg-[#E8E8E8]">
             <th
-              className="text-left px-4 py-2.5 text-[12px] font-medium text-text-secondary border-r border-border whitespace-nowrap"
+              className="text-left px-4 py-2.5 text-[13px] font-medium text-navy border-r border-border whitespace-nowrap"
               style={{ width: '1px' }}
             >
               Client Accounts
@@ -123,7 +123,7 @@ export default function BuyerMatrixTable({
             {COLUMNS.map((col) => (
               <th
                 key={col.key}
-                className="text-left px-4 py-2.5 text-[12px] font-medium text-text-secondary border-r border-border last:border-r-0"
+                className="text-left px-4 py-2.5 text-[13px] font-medium text-navy border-r border-border last:border-r-0"
                 style={{ minWidth: '180px' }}
               >
                 <div className="flex items-center gap-1.5">
