@@ -116,6 +116,7 @@ export default function BuyerMatrixTable({
           <tr className="border-b border-border bg-[#F7F7F7]">
             <th
               className="text-left px-4 py-2.5 text-[12px] font-medium text-text-secondary border-r border-border whitespace-nowrap"
+              style={{ width: '1px' }}
             >
               Client Accounts
             </th>
