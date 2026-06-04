@@ -95,6 +95,38 @@ export default function BuyerMatrixView({
       })
   }, [effectiveUserId])
 
+  // Realtime subscription for client_accounts changes (reorder, add, hide/unhide)
+  // Re-fetches the full accounts list so row order stays in sync for both
+  // the owner's page and the manager view without a manual refresh.
+  useEffect(() => {
+    if (!effectiveUserId) return
+    const channel = supabase
+      .channel(`bm_accounts:${effectiveUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'client_accounts',
+          filter: `admin_user_id=eq.${effectiveUserId}`,
+        },
+        () => {
+          supabase
+            .from('client_accounts')
+            .select('id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at')
+            .eq('admin_user_id', effectiveUserId)
+            .eq('is_visible', true)
+            .is('deleted_at', null)
+            .order('sort_order')
+            .then(({ data }) => {
+              setAccounts((data as ClientAccountRow[]) ?? [])
+            })
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [effectiveUserId])
+
   // Realtime subscription for live entry updates (owner and manager view)
   useEffect(() => {
     if (!effectiveUserId) return
