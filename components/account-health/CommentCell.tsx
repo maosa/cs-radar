@@ -68,7 +68,7 @@ export default function CommentCell({
 
   if (isEditing) {
     return (
-      <div className="px-4 py-3 flex flex-col gap-2">
+      <div className="px-3 py-3 flex flex-col gap-2">
         <textarea
           ref={textareaRef}
           value={draft}
@@ -106,7 +106,7 @@ export default function CommentCell({
   if (hasContent) {
     return (
       <div
-        className={`group px-4 py-3 flex items-start gap-2 ${!readOnly ? 'cursor-pointer hover:bg-[#F7F7F7]' : ''}`}
+        className={`group px-3 py-3 flex items-start gap-2 ${!readOnly ? 'cursor-pointer hover:bg-[#F7F7F7]' : ''}`}
         onClick={!readOnly ? enterEdit : undefined}
       >
         <p className="text-[13px] text-navy whitespace-pre-wrap flex-1 min-w-0">{initialValue}</p>
@@ -125,14 +125,14 @@ export default function CommentCell({
 
   // Empty cell — read-only: always blank regardless of emptyHint
   if (readOnly) {
-    return <div className="px-4 py-3" />
+    return <div className="px-3 py-3" />
   }
 
   // Empty cell — owner, icon hint: blank with hover-reveal pencil
   if (emptyHint === 'icon') {
     return (
       <div
-        className="group px-4 py-3 flex items-center justify-end cursor-text hover:bg-[#F7F7F7]"
+        className="group px-3 py-3 flex items-center justify-end cursor-text hover:bg-[#F7F7F7]"
         onClick={enterEdit}
       >
         <button
@@ -149,7 +149,7 @@ export default function CommentCell({
   // Empty cell — owner, text hint (default): always-visible placeholder
   return (
     <div
-      className="px-4 py-3 cursor-text hover:bg-[#F7F7F7]"
+      className="px-3 py-3 cursor-text hover:bg-[#F7F7F7]"
       onClick={enterEdit}
     >
       <p className="text-[12px] text-text-muted italic">Add a comment…</p>

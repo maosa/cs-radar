@@ -111,20 +111,19 @@ export default function BuyerMatrixTable({
 
   return (
     <div className="overflow-x-auto rounded-[8px] border border-border">
-      <table className="w-full border-collapse" style={{ minWidth: '960px' }}>
+      <table className="w-full border-collapse">
         <thead>
           <tr className="bg-[#E8E8E8]">
             <th
-              className="text-left px-4 py-2.5 text-[13px] font-medium text-navy border-r border-border whitespace-nowrap"
+              className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-r border-border whitespace-nowrap"
               style={{ width: '1px' }}
             >
               Client Accounts
             </th>
-            {COLUMNS.map((col) => (
+            {COLUMNS.map((col, colIndex) => (
               <th
                 key={col.key}
-                className="text-left px-4 py-2.5 text-[13px] font-medium text-navy border-r border-border last:border-r-0"
-                style={{ minWidth: '180px' }}
+                className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-r border-border last:border-r-0"
               >
                 <div className="flex items-center gap-1.5">
                   <span>{col.label}</span>
@@ -139,7 +138,7 @@ export default function BuyerMatrixTable({
                     {openPopoverId === col.key && (
                       <div
                         ref={popoverRef}
-                        className="absolute left-5 top-0 z-10 bg-white rounded-[8px] shadow-lg border border-border p-3 w-60"
+                        className={`absolute top-full mt-1 z-10 bg-white rounded-[8px] shadow-lg border border-border p-3 w-60 ${colIndex >= COLUMNS.length - 2 ? 'right-0' : 'left-0'}`}
                       >
                         <p className="text-[13px] font-medium text-navy mb-2">{col.label}</p>
                         <div className="flex flex-col gap-1.5 font-normal">
@@ -171,7 +170,7 @@ export default function BuyerMatrixTable({
             return (
               <tr key={account.id} className="border-t border-border hover:bg-[#FAFAFA]">
                 <td
-                  className="px-4 py-0 border-r border-border align-top whitespace-nowrap"
+                  className="px-3 py-0 border-r border-border align-top whitespace-nowrap"
                 >
                   <div className="py-3 flex items-center gap-3">
                     {/* Fixed-width slot sized to NURO (widest badge) keeps all names left-aligned */}
@@ -185,7 +184,6 @@ export default function BuyerMatrixTable({
                   <td
                     key={col.key}
                     className="p-0 border-r border-border last:border-r-0 align-top"
-                    style={{ minWidth: '180px' }}
                   >
                     <CommentCell
                       initialValue={entry?.[col.key] ?? null}
