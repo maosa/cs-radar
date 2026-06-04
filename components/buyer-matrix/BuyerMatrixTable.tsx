@@ -110,12 +110,12 @@ export default function BuyerMatrixTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-[8px] border border-border">
+    <div className="overflow-hidden rounded-[8px] border border-border">
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-[#E8E8E8]">
             <th
-              className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-r border-border whitespace-nowrap"
+              className="text-left px-2 py-2.5 text-[13px] font-medium text-navy border-r border-border whitespace-nowrap"
               style={{ width: '1px' }}
             >
               Client Accounts
@@ -123,7 +123,7 @@ export default function BuyerMatrixTable({
             {COLUMNS.map((col, colIndex) => (
               <th
                 key={col.key}
-                className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-r border-border last:border-r-0"
+                className="text-left px-2 py-2.5 text-[13px] font-medium text-navy border-r border-border last:border-r-0"
               >
                 <div className="flex items-center gap-1.5">
                   <span>{col.label}</span>
@@ -170,7 +170,7 @@ export default function BuyerMatrixTable({
             return (
               <tr key={account.id} className="border-t border-border hover:bg-[#FAFAFA]">
                 <td
-                  className="px-3 py-0 border-r border-border align-top whitespace-nowrap"
+                  className="px-2 py-0 border-r border-border align-top whitespace-nowrap"
                 >
                   <div className="py-3 flex items-center gap-3">
                     {/* Fixed-width slot sized to NURO (widest badge) keeps all names left-aligned */}
