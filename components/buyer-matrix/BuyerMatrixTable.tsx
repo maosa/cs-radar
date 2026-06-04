@@ -141,7 +141,7 @@ export default function BuyerMatrixTable({
                         className="absolute left-5 top-0 z-10 bg-white rounded-[8px] shadow-lg border border-border p-3 w-60"
                       >
                         <p className="text-[13px] font-medium text-navy mb-2">{col.label}</p>
-                        <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-col gap-1.5 font-normal">
                           <p className="text-[12px]">
                             <span className="text-text-muted">Role in Decision: </span>
                             <span className="text-navy">{col.popover.role}</span>
