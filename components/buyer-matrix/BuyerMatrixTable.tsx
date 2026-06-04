@@ -172,7 +172,7 @@ export default function BuyerMatrixTable({
                 <td
                   className="px-4 py-0 border-r border-border align-top whitespace-nowrap"
                 >
-                  <div className="py-3 flex items-center gap-2">
+                  <div className="py-3 flex items-center gap-3">
                     {/* Fixed-width slot sized to NURO (widest badge) keeps all names left-aligned */}
                     <div className="w-[46px] flex-shrink-0 flex items-center">
                       {account.product && <ProductBadge product={account.product} />}
