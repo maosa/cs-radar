@@ -78,7 +78,7 @@ export default function CommentCell({
             autoResize(e.target)
           }}
           disabled={saving}
-          className="w-full px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy resize-none overflow-hidden disabled:opacity-50"
+          className="w-full min-w-0 px-2 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy resize-none overflow-hidden disabled:opacity-50"
         />
         {error && (
           <p className="text-[12px] text-[#C0001A]">{error}</p>

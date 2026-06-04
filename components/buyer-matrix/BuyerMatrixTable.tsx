@@ -110,7 +110,7 @@ export default function BuyerMatrixTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-[8px] border border-border">
+    <div className="w-full overflow-hidden rounded-[8px] border border-border">
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-[#E8E8E8]">
