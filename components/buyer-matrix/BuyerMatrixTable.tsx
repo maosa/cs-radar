@@ -190,6 +190,7 @@ export default function BuyerMatrixTable({
                     <CommentCell
                       initialValue={entry?.[col.key] ?? null}
                       readOnly={readOnly}
+                      emptyHint="icon"
                       onSave={(value) => onSave(account.id, col.key, value)}
                     />
                   </td>

@@ -7,12 +7,16 @@ interface CommentCellProps {
   initialValue: string | null
   onSave: (value: string) => Promise<void>
   readOnly?: boolean
+  // 'text' (default): always show "Add a comment…" placeholder when empty
+  // 'icon': show pencil on hover only — no text; read-only empty cells are always blank
+  emptyHint?: 'text' | 'icon'
 }
 
 export default function CommentCell({
   initialValue,
   onSave,
   readOnly = false,
+  emptyHint = 'text',
 }: CommentCellProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -119,10 +123,34 @@ export default function CommentCell({
     )
   }
 
+  // Empty cell — read-only: always blank regardless of emptyHint
+  if (readOnly) {
+    return <div className="px-4 py-3" />
+  }
+
+  // Empty cell — owner, icon hint: blank with hover-reveal pencil
+  if (emptyHint === 'icon') {
+    return (
+      <div
+        className="group px-4 py-3 flex items-center justify-end cursor-text hover:bg-[#F7F7F7]"
+        onClick={enterEdit}
+      >
+        <button
+          onClick={e => { e.stopPropagation(); enterEdit() }}
+          className="p-1 rounded text-text-muted opacity-0 group-hover:opacity-100 hover:text-navy hover:bg-[#EBEBEB] transition-all"
+          title="Add a comment"
+        >
+          <Pencil size={12} />
+        </button>
+      </div>
+    )
+  }
+
+  // Empty cell — owner, text hint (default): always-visible placeholder
   return (
     <div
-      className={`px-4 py-3 ${!readOnly ? 'cursor-text hover:bg-[#F7F7F7]' : ''}`}
-      onClick={!readOnly ? enterEdit : undefined}
+      className="px-4 py-3 cursor-text hover:bg-[#F7F7F7]"
+      onClick={enterEdit}
     >
       <p className="text-[12px] text-text-muted italic">Add a comment…</p>
     </div>
