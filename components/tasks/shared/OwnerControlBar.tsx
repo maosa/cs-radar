@@ -68,7 +68,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 ]
 
 // chipBase intentionally omits horizontal padding so each chip can specify its own
-const chipBase    = 'flex items-center gap-1 py-1 text-[12px] font-medium rounded-[4px] border transition-colors'
+const chipBase    = 'flex items-center gap-1 h-7 text-[12px] font-medium rounded-[4px] border transition-colors'
 const chipActive  = 'bg-navy text-white border-navy'
 const chipInactive = 'bg-white text-text-secondary border-border hover:border-border-hover hover:text-navy'
 
