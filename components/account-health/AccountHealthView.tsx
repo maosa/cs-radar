@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import type { ClientAccountRow, AccountHealthMetadata, EngagementType } from '@/lib/supabase/types'
 import RiskAssessmentTable from './RiskAssessmentTable'
+import PageHeader from '@/components/ui/PageHeader'
 
 const ENGAGEMENT_TYPE_LABELS: Record<EngagementType, string> = {
   monthly_review: 'Monthly review',
@@ -236,11 +237,8 @@ export default function AccountHealthView({
             </span>
           </div>
         ) : null}
-        <div className="px-6 pt-6 pb-4 flex flex-col gap-3 border-b border-border">
-          {!readOnly && <h1 className="text-base font-medium text-navy">Account Health</h1>}
-
-          {/* Single combined row */}
-          <div className="flex items-end gap-3">
+        {!readOnly && <PageHeader title="Account Health" />}
+        <div className="px-6 py-3 flex items-end gap-3 border-b border-border">
             {/* Client account selector */}
             <div className="flex flex-col gap-0.5">
               <label className="text-[11px] text-text-muted">Client account</label>
@@ -396,7 +394,6 @@ export default function AccountHealthView({
                 )}
               </>
             )}
-          </div>
         </div>
 
         {/* Table column header — only when an account is selected */}
