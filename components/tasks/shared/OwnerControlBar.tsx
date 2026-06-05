@@ -392,7 +392,59 @@ export default function OwnerControlBar({
       {/* ── Spacer ────────────────────────────────────────────────────── */}
       <div className="flex-1 min-w-0" />
 
-      {/* ── Group 4: Search ───────────────────────────────────────────── */}
+      {/* ── Group 4: Filter chips ─────────────────────────────────────── */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <ProductChip filterProducts={filterProducts} onToggleProduct={onToggleProduct} />
+        <ProjectChip
+          uniqueProjects={uniqueProjects}
+          filterProjects={filterProjects}
+          onToggleProject={onToggleProject}
+        />
+        {!hideStatus && (
+          <StatusChip filterStatuses={filterStatuses} onToggleStatus={onToggleStatus} />
+        )}
+        {hasActiveFilters && onClearFilters && (
+          <button
+            onClick={onClearFilters}
+            className="flex items-center gap-1 px-1.5 py-1 text-[12px] font-medium text-text-muted hover:text-red-dark transition-colors"
+            title="Clear all filters"
+          >
+            <X size={12} />
+            <span className="hidden lg:inline">Clear</span>
+          </button>
+        )}
+      </div>
+
+      <div className="w-px h-4 bg-border flex-shrink-0" />
+
+      {/* ── Group 5: Sort chips ───────────────────────────────────────── */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <button
+          onClick={handleSortProduct}
+          className={`${chipBase} px-1.5 lg:px-2.5 ${flags.product ? chipActive : chipInactive}`}
+        >
+          By product
+        </button>
+        <button
+          onClick={handleSortProject}
+          className={`${chipBase} px-1.5 lg:px-2.5 ${flags.project ? chipActive : chipInactive}`}
+        >
+          By project
+        </button>
+        {!hideDragSort && (
+          <button
+            onClick={handleSortDrag}
+            className={`${chipBase} px-2.5 ${flags.drag ? chipActive : chipInactive}`}
+          >
+            <GripVertical size={13} />
+            <span className="hidden lg:inline">Drag &amp; drop</span>
+          </button>
+        )}
+      </div>
+
+      <div className="w-px h-4 bg-border flex-shrink-0" />
+
+      {/* ── Group 6: Search ───────────────────────────────────────────── */}
       <div ref={searchRef} className="relative flex items-center flex-shrink-0">
         <span className="absolute left-2.5 text-text-muted pointer-events-none">
           <Search size={14} />
@@ -427,61 +479,6 @@ export default function OwnerControlBar({
               </button>
             ))}
           </div>
-        )}
-      </div>
-
-      <div className="w-px h-4 bg-border flex-shrink-0" />
-
-      {/* ── Group 5: Filter chips ─────────────────────────────────────── */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <ProductChip filterProducts={filterProducts} onToggleProduct={onToggleProduct} />
-        <ProjectChip
-          uniqueProjects={uniqueProjects}
-          filterProjects={filterProjects}
-          onToggleProject={onToggleProject}
-        />
-        {!hideStatus && (
-          <StatusChip filterStatuses={filterStatuses} onToggleStatus={onToggleStatus} />
-        )}
-        {hasActiveFilters && onClearFilters && (
-          <button
-            onClick={onClearFilters}
-            className="flex items-center gap-1 px-1.5 py-1 text-[12px] font-medium text-text-muted hover:text-red-dark transition-colors"
-            title="Clear all filters"
-          >
-            <X size={12} />
-            <span className="hidden lg:inline">Clear</span>
-          </button>
-        )}
-      </div>
-
-      <div className="w-px h-4 bg-border flex-shrink-0" />
-
-      {/* ── Group 6: Sort chips ───────────────────────────────────────── */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <button
-          onClick={handleSortProduct}
-          className={`${chipBase} px-1.5 lg:px-2.5 ${flags.product ? chipActive : chipInactive}`}
-        >
-          By product
-        </button>
-        <button
-          onClick={handleSortProject}
-          className={`${chipBase} px-1.5 lg:px-2.5 ${flags.project ? chipActive : chipInactive}`}
-        >
-          By project
-        </button>
-        {!hideDragSort && (
-          <>
-            <div className="w-px h-4 bg-border flex-shrink-0" />
-            <button
-              onClick={handleSortDrag}
-              className={`${chipBase} px-2.5 ${flags.drag ? chipActive : chipInactive}`}
-            >
-              <GripVertical size={13} />
-              <span className="hidden lg:inline">Drag &amp; drop</span>
-            </button>
-          </>
         )}
       </div>
 
