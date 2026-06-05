@@ -439,7 +439,7 @@ export default function OwnerControlBar({
             onClick={handleSortDrag}
             className={`${chipBase} px-2.5 ${flags.drag ? chipActive : chipInactive}`}
           >
-            <GripVertical size={13} />
+            <GripVertical size={13} className="lg:hidden" />
             <span className="hidden lg:inline">Drag &amp; drop</span>
           </button>
         )}
