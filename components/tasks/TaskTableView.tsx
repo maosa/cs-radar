@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/ui/PageHeader'
 import AddTaskModal from './AddTaskModal'
 import DetailPanel from './DetailPanel'
 import DeleteConfirmModal from './task-table/DeleteConfirmModal'
@@ -330,6 +331,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
 
   return (
     <div className="flex flex-col h-full">
+      {!readOnly && <PageHeader title="My Tasks" />}
       <SharedToolbar
         adminName={readOnly ? adminName : undefined}
         viewMode={viewMode}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import type { ClientAccountRow, BuyerMatrixEntry } from '@/lib/supabase/types'
@@ -204,12 +205,8 @@ export default function BuyerMatrixView({
         </div>
       )}
 
-      {/* Page title header — owner only, matches Account Health's header section */}
-      {!readOnly && (
-        <div className="px-6 pt-6 pb-4 border-b border-border bg-white">
-          <h1 className="text-base font-medium text-navy">Buyer Matrix</h1>
-        </div>
-      )}
+      {/* Page title header — owner only */}
+      {!readOnly && <PageHeader title="Buyer Matrix" />}
 
       {/* Body — same bg-white + padding pattern as Account Health */}
       <div className="px-6 py-6 bg-white">

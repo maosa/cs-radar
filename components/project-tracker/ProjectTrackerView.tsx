@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import PageHeader from '@/components/ui/PageHeader'
 import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
 import SharedFilterBar, { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
 import ProjectTrackerTable from './ProjectTrackerTable'
@@ -264,6 +265,7 @@ export default function ProjectTrackerView() {
 
   return (
     <div className="flex flex-col h-full">
+      <PageHeader title="Project Tracker" />
       <SharedToolbar
         viewMode={viewMode}
         onViewModeChange={setViewMode}
