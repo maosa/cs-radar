@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import PageHeader from '@/components/ui/PageHeader'
-import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
-import SharedFilterBar, { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
+import { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
+import OwnerControlBar from '@/components/tasks/shared/OwnerControlBar'
 import ProjectTrackerTable from './ProjectTrackerTable'
 import AddProjectModal from './AddProjectModal'
 import ProjectDetails from './ProjectDetails'
@@ -266,7 +266,7 @@ export default function ProjectTrackerView() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Project Tracker" />
-      <SharedToolbar
+      <OwnerControlBar
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         centerWeekIndex={centerWeekIndex}
@@ -276,7 +276,7 @@ export default function ProjectTrackerView() {
         onToday={() => setCenterWeekIndex(todayWeekIndex)}
         onAddTask={() => setModalOpen(true)}
         addButtonLabel="Add project"
-        searchPlaceholder="Search…"
+        searchPlaceholder="Search..."
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchResults={searchResults}
@@ -284,9 +284,6 @@ export default function ProjectTrackerView() {
         onSearchResultClick={handleSearchResultClick}
         onSearchClose={() => setShowSearchDropdown(false)}
         projectNameFn={(e: ProjectTrackerEntry) => e.project_name ?? '—'}
-      />
-
-      <SharedFilterBar
         uniqueProjects={uniqueProjects}
         filterProducts={filterProducts}
         filterProjects={filterProjects}

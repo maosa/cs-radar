@@ -15,6 +15,7 @@ import { ToastContainer, type Toast } from '@/components/ui/ToastContainer'
 import { projectName } from '@/lib/taskUtils'
 import SharedToolbar from './shared/SharedToolbar'
 import SharedFilterBar, { type SortMode, type UniqueProject } from './shared/SharedFilterBar'
+import OwnerControlBar from './shared/OwnerControlBar'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { useTasks, useTasksQuery, useProjectsQuery } from '@/lib/hooks/useTasks'
 import type { ViewMode, AnyTask } from './task-table/types'
@@ -332,38 +333,67 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   return (
     <div className="flex flex-col h-full">
       {!readOnly && <PageHeader title="My Tasks" />}
-      <SharedToolbar
-        adminName={readOnly ? adminName : undefined}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        centerWeekIndex={centerWeekIndex}
-        currentWeekIndex={todayWeekIndex}
-        onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}
-        onNext={() => setCenterWeekIndex((w) => w + 1)}
-        onToday={() => setCenterWeekIndex(todayWeekIndex)}
-        onAddTask={readOnly ? undefined : () => setAddModalWeekIndex(centerWeekIndex)}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchResults={searchResults}
-        showSearchDropdown={showSearchDropdown}
-        onSearchResultClick={handleSearchResultClick}
-        onSearchClose={() => setShowSearchDropdown(false)}
-        projectNameFn={projectName}
-      />
-
-      <SharedFilterBar
-        uniqueProjects={uniqueProjects}
-        filterProducts={filterProducts}
-        filterProjects={filterProjects}
-        filterStatuses={filterStatuses}
-        sortMode={currentSortMode}
-        onToggleProduct={handleToggleProduct}
-        onToggleProject={handleToggleProject}
-        onToggleStatus={handleToggleStatus}
-        onSortMode={handleSortMode}
-        onClearFilters={readOnly ? undefined : handleClearFilters}
-        hideDragSort={readOnly}
-      />
+      {readOnly ? (
+        <>
+          <SharedToolbar
+            adminName={adminName}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            centerWeekIndex={centerWeekIndex}
+            currentWeekIndex={todayWeekIndex}
+            onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}
+            onNext={() => setCenterWeekIndex((w) => w + 1)}
+            onToday={() => setCenterWeekIndex(todayWeekIndex)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchResults={searchResults}
+            showSearchDropdown={showSearchDropdown}
+            onSearchResultClick={handleSearchResultClick}
+            onSearchClose={() => setShowSearchDropdown(false)}
+            projectNameFn={projectName}
+          />
+          <SharedFilterBar
+            uniqueProjects={uniqueProjects}
+            filterProducts={filterProducts}
+            filterProjects={filterProjects}
+            filterStatuses={filterStatuses}
+            sortMode={currentSortMode}
+            onToggleProduct={handleToggleProduct}
+            onToggleProject={handleToggleProject}
+            onToggleStatus={handleToggleStatus}
+            onSortMode={handleSortMode}
+            hideDragSort
+          />
+        </>
+      ) : (
+        <OwnerControlBar
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          centerWeekIndex={centerWeekIndex}
+          currentWeekIndex={todayWeekIndex}
+          onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}
+          onNext={() => setCenterWeekIndex((w) => w + 1)}
+          onToday={() => setCenterWeekIndex(todayWeekIndex)}
+          onAddTask={() => setAddModalWeekIndex(centerWeekIndex)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchResults={searchResults}
+          showSearchDropdown={showSearchDropdown}
+          onSearchResultClick={handleSearchResultClick}
+          onSearchClose={() => setShowSearchDropdown(false)}
+          projectNameFn={projectName}
+          uniqueProjects={uniqueProjects}
+          filterProducts={filterProducts}
+          filterProjects={filterProjects}
+          filterStatuses={filterStatuses}
+          sortMode={currentSortMode}
+          onToggleProduct={handleToggleProduct}
+          onToggleProject={handleToggleProject}
+          onToggleStatus={handleToggleStatus}
+          onSortMode={handleSortMode}
+          onClearFilters={handleClearFilters}
+        />
+      )}
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-[13px] text-text-muted">
