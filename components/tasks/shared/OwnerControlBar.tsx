@@ -5,6 +5,7 @@ import {
   Plus, Search, ChevronLeft, ChevronRight, X, ChevronDown,
   CalendarCheck, Focus, Expand,
   ScanBarcode, FolderGit2, ChartBarDecreasing, GripVertical,
+  Funnel, ArrowDownUp,
 } from 'lucide-react'
 import ProductBadge from '@/components/tasks/ProductBadge'
 import {
@@ -394,6 +395,7 @@ export default function OwnerControlBar({
 
       {/* ── Group 4: Filter chips ─────────────────────────────────────── */}
       <div className="flex items-center gap-1 flex-shrink-0">
+        <Funnel size={13} className="text-text-muted flex-shrink-0" />
         <ProductChip filterProducts={filterProducts} onToggleProduct={onToggleProduct} />
         <ProjectChip
           uniqueProjects={uniqueProjects}
@@ -419,6 +421,7 @@ export default function OwnerControlBar({
 
       {/* ── Group 5: Sort chips ───────────────────────────────────────── */}
       <div className="flex items-center gap-1 flex-shrink-0">
+        <ArrowDownUp size={13} className="text-text-muted flex-shrink-0" />
         <button
           onClick={handleSortProduct}
           className={`${chipBase} px-1.5 lg:px-2.5 ${flags.product ? chipActive : chipInactive}`}
