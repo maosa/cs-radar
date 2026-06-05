@@ -109,7 +109,7 @@ export default function CommentCell({
         className={`group relative px-2 py-3 ${!readOnly ? 'cursor-pointer hover:bg-[#F7F7F7]' : ''}`}
         onClick={!readOnly ? enterEdit : undefined}
       >
-        <p className="text-[13px] text-navy whitespace-pre-wrap">{initialValue}</p>
+        <p className="text-[13px] text-navy whitespace-pre-wrap break-words">{initialValue}</p>
         {!readOnly && (
           <button
             onClick={e => { e.stopPropagation(); enterEdit() }}
