@@ -108,7 +108,7 @@ function ProductChip({
         className={`${chipBase} px-2.5 ${activeCount > 0 ? chipActive : chipInactive}`}
         aria-label="Filter by product"
       >
-        <ScanBarcode size={13} />
+        <ScanBarcode size={13} className="lg:hidden" />
         <span className="hidden lg:inline">Product</span>
         {activeCount > 0 && (
           <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white text-navy text-[10px] font-semibold leading-none">
@@ -162,7 +162,7 @@ function ProjectChip({
         className={`${chipBase} px-2.5 ${activeCount > 0 ? chipActive : chipInactive}`}
         aria-label="Filter by project"
       >
-        <FolderGit2 size={13} />
+        <FolderGit2 size={13} className="lg:hidden" />
         <span className="hidden lg:inline">Project</span>
         {activeCount > 0 && (
           <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white text-navy text-[10px] font-semibold leading-none">
@@ -212,7 +212,7 @@ function StatusChip({
         className={`${chipBase} px-2.5 ${activeCount > 0 ? chipActive : chipInactive}`}
         aria-label="Filter by status"
       >
-        <ChartBarDecreasing size={13} />
+        <ChartBarDecreasing size={13} className="lg:hidden" />
         <span className="hidden lg:inline">Status</span>
         {activeCount > 0 && (
           <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white text-navy text-[10px] font-semibold leading-none">
