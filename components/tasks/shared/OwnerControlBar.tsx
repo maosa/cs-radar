@@ -345,7 +345,7 @@ export default function OwnerControlBar({
         </button>
         <button
           onClick={onToday}
-          className={`flex items-center justify-center w-7 h-7 rounded border transition-colors bg-white ${
+          className={`flex items-center justify-center w-14 h-7 rounded border transition-colors bg-white ${
             isAtCurrentWeek
               ? 'border-teal text-teal cursor-default'
               : 'border-border text-text-secondary hover:border-teal hover:text-teal'
