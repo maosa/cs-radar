@@ -110,7 +110,7 @@ export default function SharedToolbar({
 
         <button
           onClick={onToday}
-          className={`px-2.5 py-1 text-[12px] font-medium rounded border transition-colors ${
+          className={`flex items-center justify-center w-14 h-7 text-[12px] font-medium rounded border transition-colors ${
             isAtCurrentWeek
               ? 'border-teal text-teal bg-white cursor-default'
               : 'border-border text-text-secondary bg-white hover:border-teal hover:text-teal'
