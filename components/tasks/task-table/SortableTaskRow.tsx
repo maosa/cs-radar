@@ -44,8 +44,7 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
   return (
     <tr ref={setNodeRef} style={style} className="group">
       <td
-        className="sticky left-0 z-10 border-l border-r border-border px-3 py-2.5 bg-white"
-        style={{ boxShadow: 'inset 0 -1px 0 0 #DADADA' }}
+        className="sticky left-0 z-10 border-l border-r border-b border-border px-3 py-2.5 bg-white"
       >
         <div className="flex items-center gap-1.5">
           {isDragMode && (
@@ -63,8 +62,8 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
       </td>
 
       <td
-        className="sticky z-10 border-r border-border px-3 py-2.5 text-[13px] text-text-secondary whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]"
-        style={{ left: 84, backgroundColor: '#FFFFFF', boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
+        className="sticky z-10 border-r border-b border-border px-3 py-2.5 text-[13px] text-text-secondary whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]"
+        style={{ left: 84, backgroundColor: '#FFFFFF', boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
       >
         {projectName(task)}
       </td>
