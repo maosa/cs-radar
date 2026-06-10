@@ -35,16 +35,16 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id })
 
-  const style: React.CSSProperties = {
+  const tdStyle: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
   }
 
   return (
-    <tr ref={setNodeRef} style={style} className="group">
+    <tr ref={setNodeRef} className={`group${isDragging ? ' opacity-40' : ''}`}>
       <td
         className="sticky left-0 z-10 border-l border-r border-b border-border px-3 py-2.5 bg-white"
+        style={tdStyle}
       >
         <div className="flex items-center gap-1.5">
           {isDragMode && (
@@ -63,7 +63,7 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
 
       <td
         className="sticky z-10 border-r border-b border-border px-3 py-2.5 text-[13px] text-text-secondary whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]"
-        style={{ left: 84, backgroundColor: '#FFFFFF', boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
+        style={{ left: 84, backgroundColor: '#FFFFFF', boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)', ...tdStyle }}
       >
         {projectName(task)}
       </td>
@@ -74,7 +74,7 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
           <td
             key={wi}
             className="border-b border-r border-border px-3 py-2.5 text-[13px]"
-            style={isTaskWeek ? bg : { backgroundColor: '#FFFFFF' }}
+            style={{ ...(isTaskWeek ? bg : { backgroundColor: '#FFFFFF' }), ...tdStyle }}
           >
             {isTaskWeek && (
               <div className={`flex items-center gap-2 min-w-0 rounded-[4px] transition-all ${isHighlighted ? 'ring-2 ring-navy-mid ring-offset-1' : ''}`}>
