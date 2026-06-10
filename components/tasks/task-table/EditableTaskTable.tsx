@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -60,6 +60,7 @@ export default function EditableTaskTable({
   onReorder,
 }: EditableTaskTableProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const tbodyRef = useRef<HTMLTableSectionElement>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const visibleWeekStrings = useMemo(
@@ -109,6 +110,18 @@ export default function EditableTaskTable({
       weekTasks.findIndex((t) => t.id === over.id),
     )
     onReorder(reordered.map((t) => t.id), weekStr)
+    // Force a repaint of sticky cells after React reorders <tr> DOM nodes.
+    // Chrome doesn't invalidate compositor tiles for position:sticky children
+    // when their parent <tr> is physically moved by React's reconciler, leaving
+    // border-b faint. Hiding and immediately restoring the tbody (before any
+    // paint) forces Chrome to repaint all cells from scratch.
+    requestAnimationFrame(() => {
+      const tbody = tbodyRef.current
+      if (!tbody) return
+      tbody.style.display = 'none'
+      void tbody.offsetHeight
+      tbody.style.display = ''
+    })
   }
 
   return (
@@ -121,7 +134,7 @@ export default function EditableTaskTable({
             {visibleWeekIndices.map((wi) => <col key={wi} />)}
           </colgroup>
           <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={currentWeekIndex} />
-          <tbody>
+          <tbody ref={tbodyRef}>
             <SortableContext items={visibleTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
               {visibleTasks.length === 0 && (
                 <tr>
