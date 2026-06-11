@@ -75,7 +75,7 @@ export default function ReadOnlyProjectTrackerTable({
           {visibleWeekIndices.map((wi) => <col key={wi} />)}
         </colgroup>
         <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={currentWeekIndex} />
-        <tbody>
+        <tbody className="[&_tr:last-child_td]:border-b-0">
           {displayEntries.length === 0 ? (
             <tr>
               <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-text-muted">

@@ -122,7 +122,7 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
         return (
           <td
             key={wi}
-            className={`border-b border-r border-border px-3 py-2.5 align-top${isEntryWeek ? '' : ' bg-white group-hover:bg-[#FAFAFA]'}`}
+            className={`border-b border-r last:border-r-0 border-border px-3 py-2.5 align-top${isEntryWeek ? '' : ' bg-white group-hover:bg-[#FAFAFA]'}`}
             style={isEntryWeek ? { backgroundColor: cellBg, ...tdStyle } : tdStyle}
           >
             {isEntryWeek && (

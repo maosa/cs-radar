@@ -134,7 +134,7 @@ export default function EditableTaskTable({
             {visibleWeekIndices.map((wi) => <col key={wi} />)}
           </colgroup>
           <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={currentWeekIndex} />
-          <tbody ref={tbodyRef}>
+          <tbody ref={tbodyRef} className="[&_tr:last-child_td]:border-b-0">
             <SortableContext items={visibleTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
               {visibleTasks.length === 0 && (
                 <tr>
@@ -164,7 +164,7 @@ export default function EditableTaskTable({
               <td className="sticky left-0 z-10 bg-white border-r border-border" style={{ boxShadow: 'inset 0 -1px 0 0 #DADADA' }} />
               <td className="sticky z-10 bg-white border-r border-border" style={{ left: 84, boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }} />
               {visibleWeekIndices.map((wi) => (
-                <td key={wi} className="border-b border-r border-border px-3 py-2">
+                <td key={wi} className="border-b border-r last:border-r-0 border-border px-3 py-2">
                   <button
                     onClick={() => onAddTaskInWeek(wi)}
                     className="text-[12px] text-text-muted hover:text-navy-mid transition-colors"

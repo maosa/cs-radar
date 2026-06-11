@@ -52,7 +52,7 @@ const ReadOnlyProjectTrackerRow = memo(function ReadOnlyProjectTrackerRow({
         return (
           <td
             key={wi}
-            className="border-b border-r border-border px-3 py-2.5 align-top"
+            className="border-b border-r last:border-r-0 border-border px-3 py-2.5 align-top"
             style={{ backgroundColor: isEntryWeek ? cellBg : '#FFFFFF' }}
           >
             {isEntryWeek && (

@@ -73,7 +73,7 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
         return (
           <td
             key={wi}
-            className={`border-b border-r border-border px-3 py-2.5 text-[13px]${isTaskWeek ? '' : ' bg-white group-hover:bg-[#FAFAFA]'}`}
+            className={`border-b border-r last:border-r-0 border-border px-3 py-2.5 text-[13px]${isTaskWeek ? '' : ' bg-white group-hover:bg-[#FAFAFA]'}`}
             style={isTaskWeek ? { ...bg, ...tdStyle } : tdStyle}
           >
             {isTaskWeek && (

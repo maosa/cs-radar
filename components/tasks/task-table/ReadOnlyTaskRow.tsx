@@ -35,7 +35,7 @@ const ReadOnlyTaskRow = memo(function ReadOnlyTaskRow({ task, visibleWeekIndices
         return (
           <td
             key={wi}
-            className="border-b border-r border-border px-3 py-2.5 text-[13px]"
+            className="border-b border-r last:border-r-0 border-border px-3 py-2.5 text-[13px]"
             style={isTaskWeek ? bg : { backgroundColor: '#FFFFFF' }}
           >
             {isTaskWeek && (

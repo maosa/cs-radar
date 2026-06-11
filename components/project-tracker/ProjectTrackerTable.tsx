@@ -128,7 +128,7 @@ export default function ProjectTrackerTable({
             {visibleWeekIndices.map((wi) => <col key={wi} />)}
           </colgroup>
           <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={currentWeekIndex} />
-          <tbody>
+          <tbody className="[&_tr:last-child_td]:border-b-0">
             <SortableContext items={displayEntries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
               {displayEntries.length === 0 ? (
                 <tr>
