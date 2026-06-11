@@ -303,25 +303,27 @@ export default function ProjectTrackerView() {
           Loading…
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden">
-          <ProjectTrackerTable
-            entries={entries}
-            visibleWeekIndices={visibleWeekIndices}
-            currentWeekIndex={todayWeekIndex}
-            weekSortModes={weekSortModes}
-            defaultSortMode="product_project"
-            filterProducts={filterProducts}
-            filterProjects={filterProjects}
-            onFlag={(id) => {
-              const e = entries.find((x) => x.id === id)
-              if (e) updateEntry(id, { is_flagged: !e.is_flagged })
-            }}
-            onDelete={setDeleteEntryId}
-            onOpenPanel={handleOpenPanel}
-            onOpenComments={handleOpenComments}
-            onDescriptionSave={(id, description) => updateEntry(id, { description })}
-            onSortOrderChange={batchUpdateSortOrder}
-          />
+        <div className="flex-1 overflow-hidden flex px-6 pb-6">
+          <div className="overflow-hidden rounded-[8px] border border-border flex-1 flex">
+            <ProjectTrackerTable
+              entries={entries}
+              visibleWeekIndices={visibleWeekIndices}
+              currentWeekIndex={todayWeekIndex}
+              weekSortModes={weekSortModes}
+              defaultSortMode="product_project"
+              filterProducts={filterProducts}
+              filterProjects={filterProjects}
+              onFlag={(id) => {
+                const e = entries.find((x) => x.id === id)
+                if (e) updateEntry(id, { is_flagged: !e.is_flagged })
+              }}
+              onDelete={setDeleteEntryId}
+              onOpenPanel={handleOpenPanel}
+              onOpenComments={handleOpenComments}
+              onDescriptionSave={(id, description) => updateEntry(id, { description })}
+              onSortOrderChange={batchUpdateSortOrder}
+            />
+          </div>
         </div>
       )}
 

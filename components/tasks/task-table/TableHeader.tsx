@@ -10,12 +10,12 @@ interface TableHeaderProps {
 export default function TableHeader({ visibleWeekIndices, currentWeekIndex }: TableHeaderProps) {
   return (
     <thead>
-      <tr>
-        <th className="sticky left-0 top-0 z-30 bg-bg border-t border-b border-l border-r border-border px-3 py-2 text-left text-[11px] font-medium text-text-muted uppercase tracking-wide">
+      <tr className="bg-[#E8E8E8]">
+        <th className="sticky left-0 top-0 z-30 bg-[#E8E8E8] border-b border-r border-border px-3 py-2 text-left text-[13px] font-medium text-navy">
           Product
         </th>
         <th
-          className="sticky top-0 z-30 bg-bg border-t border-b border-r border-border px-3 py-2 text-left text-[11px] font-medium text-text-muted uppercase tracking-wide"
+          className="sticky top-0 z-30 bg-[#E8E8E8] border-b border-r border-border px-3 py-2 text-left text-[13px] font-medium text-navy"
           style={{ left: 84, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
         >
           Project
@@ -25,7 +25,7 @@ export default function TableHeader({ visibleWeekIndices, currentWeekIndex }: Ta
           return (
             <th
               key={wi}
-              className="sticky top-0 z-20 border-t border-b border-r border-border px-3 py-2 text-left text-[13px] font-medium text-navy bg-bg"
+              className="sticky top-0 z-20 border-b border-r border-border px-3 py-2 text-left text-[13px] font-medium text-navy bg-[#E8E8E8]"
             >
               <div className="inline-flex items-center gap-2">
                 <span className={`self-stretch flex items-center border-b-2 ${isCurrent ? 'border-teal' : 'border-transparent'}`}>{formatWeekHeader(wi)}</span>

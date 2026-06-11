@@ -28,7 +28,7 @@ const ReadOnlyProjectTrackerRow = memo(function ReadOnlyProjectTrackerRow({
 
       {/* Product — sticky left, ~84px */}
       <td
-        className="sticky left-0 z-10 border-l border-r border-border px-3 py-2.5"
+        className="sticky left-0 z-10 border-r border-border px-3 py-2.5"
         style={{ backgroundColor: '#FFFFFF', boxShadow: 'inset 0 -1px 0 0 #DADADA' }}
       >
         <ProductBadge product={entry.product} />

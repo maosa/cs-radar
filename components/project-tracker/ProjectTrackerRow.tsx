@@ -39,10 +39,9 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
     disabled: isEditing,
   })
 
-  const style: React.CSSProperties = {
+  const tdStyle: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
   }
 
   // Size the textarea to fit its content whenever editing starts or value changes
@@ -83,12 +82,12 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
   const textColorClass = entry.is_flagged ? 'text-red-dark' : 'text-navy'
 
   return (
-    <tr ref={setNodeRef} style={style} className="group">
+    <tr ref={setNodeRef} className={`group${isDragging ? ' opacity-40' : ''}`}>
 
       {/* Product — sticky left, ~84px */}
       <td
-        className="sticky left-0 z-10 border-l border-r border-border px-3 py-2.5"
-        style={{ backgroundColor: '#FFFFFF', boxShadow: 'inset 0 -1px 0 0 #DADADA' }}
+        className="sticky left-0 z-10 border-r border-border px-3 py-2.5 bg-white group-hover:bg-[#FAFAFA]"
+        style={{ boxShadow: 'inset 0 -1px 0 0 #DADADA', ...tdStyle }}
       >
         <div className="flex items-center gap-1.5">
           {isDragActive && (
@@ -107,11 +106,11 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
 
       {/* Project name — sticky at 84px, ~240px */}
       <td
-        className="sticky z-10 border-r border-border px-3 py-2.5 text-[13px] text-navy whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]"
+        className="sticky z-10 border-r border-border px-3 py-2.5 text-[13px] text-navy whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px] bg-white group-hover:bg-[#FAFAFA]"
         style={{
           left: 84,
-          backgroundColor: '#FFFFFF',
           boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)',
+          ...tdStyle,
         }}
       >
         {entry.project_name ?? '—'}
@@ -123,8 +122,8 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
         return (
           <td
             key={wi}
-            className="border-b border-r border-border px-3 py-2.5 align-top"
-            style={{ backgroundColor: isEntryWeek ? cellBg : '#FFFFFF' }}
+            className={`border-b border-r border-border px-3 py-2.5 align-top${isEntryWeek ? '' : ' bg-white group-hover:bg-[#FAFAFA]'}`}
+            style={isEntryWeek ? { backgroundColor: cellBg, ...tdStyle } : tdStyle}
           >
             {isEntryWeek && (
               <div className="flex items-start gap-2 min-w-0">

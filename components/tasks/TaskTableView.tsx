@@ -400,36 +400,38 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
           Loading…
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden flex">
-          {readOnly ? (
-            <ReadOnlyTaskTable
-              tasks={filteredTasks}
-              visibleWeekIndices={visibleWeekIndices}
-              currentWeekIndex={todayWeekIndex}
-              weekSortModes={{}}
-              defaultSortMode={managerSortMode}
-              highlightedTaskId={highlightedTaskId}
-              onOpenPanel={handleOpenPanel}
-            />
-          ) : (
-            <EditableTaskTable
-              tasks={filteredTasks}
-              visibleWeekIndices={visibleWeekIndices}
-              currentWeekIndex={todayWeekIndex}
-              weekSortModes={weekSortModes}
-              defaultSortMode="product_project"
-              highlightedTaskId={highlightedTaskId}
-              onToggleComplete={toggleComplete}
-              onToggleFlag={toggleFlag}
-              onMove={moveTask}
-              onCopy={copyTask}
-              onDelete={setDeleteTaskId}
-              onOpenPanel={handleOpenPanel}
-              onEditDescription={editDescription}
-              onAddTaskInWeek={(wi) => setAddModalWeekIndex(wi)}
-              onReorder={reorderTasks}
-            />
-          )}
+        <div className="flex-1 overflow-hidden flex px-6 pb-6">
+          <div className="overflow-hidden rounded-[8px] border border-border flex-1 flex">
+            {readOnly ? (
+              <ReadOnlyTaskTable
+                tasks={filteredTasks}
+                visibleWeekIndices={visibleWeekIndices}
+                currentWeekIndex={todayWeekIndex}
+                weekSortModes={{}}
+                defaultSortMode={managerSortMode}
+                highlightedTaskId={highlightedTaskId}
+                onOpenPanel={handleOpenPanel}
+              />
+            ) : (
+              <EditableTaskTable
+                tasks={filteredTasks}
+                visibleWeekIndices={visibleWeekIndices}
+                currentWeekIndex={todayWeekIndex}
+                weekSortModes={weekSortModes}
+                defaultSortMode="product_project"
+                highlightedTaskId={highlightedTaskId}
+                onToggleComplete={toggleComplete}
+                onToggleFlag={toggleFlag}
+                onMove={moveTask}
+                onCopy={copyTask}
+                onDelete={setDeleteTaskId}
+                onOpenPanel={handleOpenPanel}
+                onEditDescription={editDescription}
+                onAddTaskInWeek={(wi) => setAddModalWeekIndex(wi)}
+                onReorder={reorderTasks}
+              />
+            )}
+          </div>
         </div>
       )}
 

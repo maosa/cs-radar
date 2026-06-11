@@ -205,18 +205,20 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
           Loading…
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden">
-          <ReadOnlyProjectTrackerTable
-            entries={entries}
-            visibleWeekIndices={visibleWeekIndices}
-            currentWeekIndex={todayWeekIndex}
-            weekSortModes={effectiveWeekSortModes}
-            defaultSortMode={effectiveDefaultSortMode}
-            filterProducts={filterProducts}
-            filterProjects={filterProjects}
-            onOpenPanel={handleOpenPanel}
-            onOpenComments={handleOpenComments}
-          />
+        <div className="flex-1 overflow-hidden flex px-6 pb-6">
+          <div className="overflow-hidden rounded-[8px] border border-border flex-1 flex">
+            <ReadOnlyProjectTrackerTable
+              entries={entries}
+              visibleWeekIndices={visibleWeekIndices}
+              currentWeekIndex={todayWeekIndex}
+              weekSortModes={effectiveWeekSortModes}
+              defaultSortMode={effectiveDefaultSortMode}
+              filterProducts={filterProducts}
+              filterProjects={filterProjects}
+              onOpenPanel={handleOpenPanel}
+              onOpenComments={handleOpenComments}
+            />
+          </div>
         </div>
       )}
 
