@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Users } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
@@ -32,6 +32,7 @@ export default function BuyerMatrixView({
 
   const [adminName, setAdminName] = useState('')
   const [accounts, setAccounts] = useState<ClientAccountRow[]>(initialAccounts ?? [])
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [entriesMap, setEntriesMap] = useState<Map<string, BuyerMatrixEntry>>(() => {
     const map = new Map<string, BuyerMatrixEntry>()
     for (const entry of initialEntries ?? []) {
@@ -184,9 +185,11 @@ export default function BuyerMatrixView({
     }
   }
 
+  const selectedAccount = accounts.find(a => a.id === selectedAccountId) ?? null
+
   return (
     <div className="flex flex-col min-w-0">
-      {/* Manager back button bar — matches Account Health's manager header exactly */}
+      {/* Manager back button bar */}
       {readOnly && adminName && (
         <div className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-border">
           <Link
@@ -208,15 +211,41 @@ export default function BuyerMatrixView({
       {/* Page title header — owner only */}
       {!readOnly && <PageHeader title="Buyer Matrix" />}
 
-      {/* Body — same bg-white + padding pattern as Account Health */}
-      <div className="px-6 py-6 bg-white">
-        <BuyerMatrixTable
-          accounts={accounts}
-          entriesMap={entriesMap}
-          readOnly={readOnly}
-          onSave={handleSave}
-        />
+      {/* Client account selector — same pattern as Account Health */}
+      <div className="px-6 py-3 flex items-center gap-3 border-b border-border bg-white">
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[11px] text-text-muted">Client account</label>
+          <select
+            value={selectedAccountId}
+            onChange={e => setSelectedAccountId(e.target.value)}
+            className="h-8 min-w-max pl-3 pr-7 py-1.5 rounded-[6px] border border-border text-[13px] text-navy bg-white outline-none focus:border-navy"
+          >
+            <option value="">Select a client account…</option>
+            {accounts.map(a => (
+              <option key={a.id} value={a.id}>
+                {a.product ? `${a.product} - ${a.name}` : a.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {/* Body */}
+      {!selectedAccount ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-2">
+          <Users size={28} className="text-border" />
+          <p className="text-[13px] text-text-muted">Select a client account above to begin.</p>
+        </div>
+      ) : (
+        <div className="px-6 py-6 bg-white">
+          <BuyerMatrixTable
+            accounts={[selectedAccount]}
+            entriesMap={entriesMap}
+            readOnly={readOnly}
+            onSave={handleSave}
+          />
+        </div>
+      )}
     </div>
   )
 }
