@@ -205,7 +205,7 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
           Loading…
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden flex px-6 pb-6">
+        <div className="flex-1 overflow-hidden flex px-6 pt-4 pb-6 bg-white">
           <div className="overflow-hidden rounded-[8px] border border-border flex-1 flex">
             <ReadOnlyProjectTrackerTable
               entries={entries}
