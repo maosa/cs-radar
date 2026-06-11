@@ -3,7 +3,6 @@
 import { useMemo } from 'react'
 import { weekIndexToDateString, dateStringToWeekIndex } from '@/lib/weeks'
 import { projectName } from '@/lib/taskUtils'
-import TableHeader from './TableHeader'
 import ReadOnlyTaskRow from './ReadOnlyTaskRow'
 import { PRODUCT_ORDER, type AnyTask } from './types'
 import { parseSortMode, type SortMode } from '../shared/SharedFilterBar'
@@ -52,15 +51,13 @@ export default function ReadOnlyTaskTable({
     }), [tasks, visibleWeekStrings, weekSortModes, defaultSortMode])
 
   return (
-    <div className="overflow-y-auto flex-1">
-      <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
-        <colgroup>
-          <col style={{ width: 84, minWidth: 84 }} />
-          <col style={{ width: 240, minWidth: 240 }} />
-          {visibleWeekIndices.map((wi) => <col key={wi} />)}
-        </colgroup>
-        <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={currentWeekIndex} />
-        <tbody className="[&_tr:last-child_td]:border-b-0">
+    <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
+      <colgroup>
+        <col style={{ width: 84, minWidth: 84 }} />
+        <col style={{ width: 240, minWidth: 240 }} />
+        {visibleWeekIndices.map((wi) => <col key={wi} />)}
+      </colgroup>
+      <tbody className="[&_tr:last-child_td]:border-b-0">
           {visibleTasks.length === 0 && (
             <tr>
               <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-text-muted">
@@ -79,6 +76,5 @@ export default function ReadOnlyTaskTable({
           ))}
         </tbody>
       </table>
-    </div>
   )
 }

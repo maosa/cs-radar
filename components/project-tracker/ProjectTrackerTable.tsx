@@ -18,7 +18,6 @@ import {
 } from '@dnd-kit/sortable'
 import ProductBadge from '@/components/tasks/ProductBadge'
 import ProjectTrackerRow from './ProjectTrackerRow'
-import TableHeader from '@/components/tasks/task-table/TableHeader'
 import { parseSortMode, type SortMode } from '@/components/tasks/shared/SharedFilterBar'
 import { weekIndexToDateString, dateStringToWeekIndex } from '@/lib/weeks'
 import type { ProjectTrackerEntry } from '@/lib/supabase/types'
@@ -120,15 +119,13 @@ export default function ProjectTrackerTable({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="overflow-y-auto flex-1">
-        <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
-          <colgroup>
-            <col style={{ width: 84, minWidth: 84 }} />
-            <col style={{ width: 240, minWidth: 240 }} />
-            {visibleWeekIndices.map((wi) => <col key={wi} />)}
-          </colgroup>
-          <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={currentWeekIndex} />
-          <tbody className="[&_tr:last-child_td]:border-b-0">
+      <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: 84, minWidth: 84 }} />
+          <col style={{ width: 240, minWidth: 240 }} />
+          {visibleWeekIndices.map((wi) => <col key={wi} />)}
+        </colgroup>
+        <tbody className="[&_tr:last-child_td]:border-b-0">
             <SortableContext items={displayEntries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
               {displayEntries.length === 0 ? (
                 <tr>
@@ -154,7 +151,6 @@ export default function ProjectTrackerTable({
             </SortableContext>
           </tbody>
         </table>
-      </div>
 
       <DragOverlay>
         {activeEntry && (

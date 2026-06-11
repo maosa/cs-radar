@@ -8,6 +8,7 @@ import DetailPanel from './DetailPanel'
 import DeleteConfirmModal from './task-table/DeleteConfirmModal'
 import EditableTaskTable from './task-table/EditableTaskTable'
 import ReadOnlyTaskTable from './task-table/ReadOnlyTaskTable'
+import TableHeader from './task-table/TableHeader'
 import { supabase } from '@/lib/supabase/client'
 import { getCurrentWeekIndex, formatWeekHeader, dateStringToWeekIndex, weekIndexToDateString } from '@/lib/weeks'
 import { useAuth } from '@/lib/auth-context'
@@ -400,39 +401,57 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
           Loading…
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden flex px-6 pt-4 pb-6 bg-white">
-          <div className="overflow-hidden rounded-[8px] border border-border flex-1 flex">
-            {readOnly ? (
-              <ReadOnlyTaskTable
-                tasks={filteredTasks}
-                visibleWeekIndices={visibleWeekIndices}
-                currentWeekIndex={todayWeekIndex}
-                weekSortModes={{}}
-                defaultSortMode={managerSortMode}
-                highlightedTaskId={highlightedTaskId}
-                onOpenPanel={handleOpenPanel}
-              />
-            ) : (
-              <EditableTaskTable
-                tasks={filteredTasks}
-                visibleWeekIndices={visibleWeekIndices}
-                currentWeekIndex={todayWeekIndex}
-                weekSortModes={weekSortModes}
-                defaultSortMode="product_project"
-                highlightedTaskId={highlightedTaskId}
-                onToggleComplete={toggleComplete}
-                onToggleFlag={toggleFlag}
-                onMove={moveTask}
-                onCopy={copyTask}
-                onDelete={setDeleteTaskId}
-                onOpenPanel={handleOpenPanel}
-                onEditDescription={editDescription}
-                onAddTaskInWeek={(wi) => setAddModalWeekIndex(wi)}
-                onReorder={reorderTasks}
-              />
-            )}
+        <>
+          {/* Fixed column headers — never scrolls */}
+          <div className="px-6 pt-4 bg-white flex-shrink-0">
+            <div className="overflow-hidden rounded-t-[8px] border-t border-l border-r border-border">
+              <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
+                <colgroup>
+                  <col style={{ width: 84, minWidth: 84 }} />
+                  <col style={{ width: 240, minWidth: 240 }} />
+                  {visibleWeekIndices.map((wi) => <col key={wi} />)}
+                </colgroup>
+                <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={todayWeekIndex} />
+              </table>
+            </div>
           </div>
-        </div>
+          {/* Scrollable rows — scroll bar at far-right page edge */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
+            <div className="px-6 pb-6">
+              <div className="overflow-hidden rounded-b-[8px] border-b border-l border-r border-border">
+                {readOnly ? (
+                  <ReadOnlyTaskTable
+                    tasks={filteredTasks}
+                    visibleWeekIndices={visibleWeekIndices}
+                    currentWeekIndex={todayWeekIndex}
+                    weekSortModes={{}}
+                    defaultSortMode={managerSortMode}
+                    highlightedTaskId={highlightedTaskId}
+                    onOpenPanel={handleOpenPanel}
+                  />
+                ) : (
+                  <EditableTaskTable
+                    tasks={filteredTasks}
+                    visibleWeekIndices={visibleWeekIndices}
+                    currentWeekIndex={todayWeekIndex}
+                    weekSortModes={weekSortModes}
+                    defaultSortMode="product_project"
+                    highlightedTaskId={highlightedTaskId}
+                    onToggleComplete={toggleComplete}
+                    onToggleFlag={toggleFlag}
+                    onMove={moveTask}
+                    onCopy={copyTask}
+                    onDelete={setDeleteTaskId}
+                    onOpenPanel={handleOpenPanel}
+                    onEditDescription={editDescription}
+                    onAddTaskInWeek={(wi) => setAddModalWeekIndex(wi)}
+                    onReorder={reorderTasks}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Owner-only modals */}

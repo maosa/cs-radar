@@ -19,7 +19,6 @@ import {
 import { weekIndexToDateString, dateStringToWeekIndex } from '@/lib/weeks'
 import { projectName } from '@/lib/taskUtils'
 import ProductBadge from '../ProductBadge'
-import TableHeader from './TableHeader'
 import SortableTaskRow from './SortableTaskRow'
 import { PRODUCT_ORDER, type AnyTask } from './types'
 import { parseSortMode, type SortMode } from '../shared/SharedFilterBar'
@@ -126,15 +125,13 @@ export default function EditableTaskTable({
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="overflow-y-auto flex-1">
-        <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
-          <colgroup>
-            <col style={{ width: 84, minWidth: 84 }} />
-            <col style={{ width: 240, minWidth: 240 }} />
-            {visibleWeekIndices.map((wi) => <col key={wi} />)}
-          </colgroup>
-          <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={currentWeekIndex} />
-          <tbody ref={tbodyRef} className="[&_tr:last-child_td]:border-b-0">
+      <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: 84, minWidth: 84 }} />
+          <col style={{ width: 240, minWidth: 240 }} />
+          {visibleWeekIndices.map((wi) => <col key={wi} />)}
+        </colgroup>
+        <tbody ref={tbodyRef} className="[&_tr:last-child_td]:border-b-0">
             <SortableContext items={visibleTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
               {visibleTasks.length === 0 && (
                 <tr>
@@ -176,7 +173,6 @@ export default function EditableTaskTable({
             </tr>
           </tbody>
         </table>
-      </div>
       <DragOverlay>
         {activeTask && (
           <div

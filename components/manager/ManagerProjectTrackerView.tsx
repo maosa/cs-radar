@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
 import SharedFilterBar, { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
 import ReadOnlyProjectTrackerTable from '@/components/project-tracker/ReadOnlyProjectTrackerTable'
+import TableHeader from '@/components/tasks/task-table/TableHeader'
 import ProjectDetails from '@/components/project-tracker/ProjectDetails'
 import { useProjectTrackerEntries } from '@/lib/hooks/useProjectTrackerEntries'
 import { useProjectsQuery } from '@/lib/hooks/useTasks'
@@ -205,21 +206,39 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
           Loading…
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden flex px-6 pt-4 pb-6 bg-white">
-          <div className="overflow-hidden rounded-[8px] border border-border flex-1 flex">
-            <ReadOnlyProjectTrackerTable
-              entries={entries}
-              visibleWeekIndices={visibleWeekIndices}
-              currentWeekIndex={todayWeekIndex}
-              weekSortModes={effectiveWeekSortModes}
-              defaultSortMode={effectiveDefaultSortMode}
-              filterProducts={filterProducts}
-              filterProjects={filterProjects}
-              onOpenPanel={handleOpenPanel}
-              onOpenComments={handleOpenComments}
-            />
+        <>
+          {/* Fixed column headers — never scrolls */}
+          <div className="px-6 pt-4 bg-white flex-shrink-0">
+            <div className="overflow-hidden rounded-t-[8px] border-t border-l border-r border-border">
+              <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
+                <colgroup>
+                  <col style={{ width: 84, minWidth: 84 }} />
+                  <col style={{ width: 240, minWidth: 240 }} />
+                  {visibleWeekIndices.map((wi) => <col key={wi} />)}
+                </colgroup>
+                <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={todayWeekIndex} />
+              </table>
+            </div>
           </div>
-        </div>
+          {/* Scrollable rows — scroll bar at far-right page edge */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
+            <div className="px-6 pb-6">
+              <div className="overflow-hidden rounded-b-[8px] border-b border-l border-r border-border">
+                <ReadOnlyProjectTrackerTable
+                  entries={entries}
+                  visibleWeekIndices={visibleWeekIndices}
+                  currentWeekIndex={todayWeekIndex}
+                  weekSortModes={effectiveWeekSortModes}
+                  defaultSortMode={effectiveDefaultSortMode}
+                  filterProducts={filterProducts}
+                  filterProjects={filterProjects}
+                  onOpenPanel={handleOpenPanel}
+                  onOpenComments={handleOpenComments}
+                />
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       <ProjectDetails

@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react'
 import ReadOnlyProjectTrackerRow from './ReadOnlyProjectTrackerRow'
-import TableHeader from '@/components/tasks/task-table/TableHeader'
 import { parseSortMode, type SortMode } from '@/components/tasks/shared/SharedFilterBar'
 import { weekIndexToDateString, dateStringToWeekIndex } from '@/lib/weeks'
 import type { ProjectTrackerEntry } from '@/lib/supabase/types'
@@ -67,15 +66,13 @@ export default function ReadOnlyProjectTrackerTable({
   }, [entries, visibleWeekStrings, filterProducts, filterProjects, weekSortModes, defaultSortMode])
 
   return (
-    <div className="overflow-y-auto flex-1">
-      <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
-        <colgroup>
-          <col style={{ width: 84, minWidth: 84 }} />
-          <col style={{ width: 240, minWidth: 240 }} />
-          {visibleWeekIndices.map((wi) => <col key={wi} />)}
-        </colgroup>
-        <TableHeader visibleWeekIndices={visibleWeekIndices} currentWeekIndex={currentWeekIndex} />
-        <tbody className="[&_tr:last-child_td]:border-b-0">
+    <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
+      <colgroup>
+        <col style={{ width: 84, minWidth: 84 }} />
+        <col style={{ width: 240, minWidth: 240 }} />
+        {visibleWeekIndices.map((wi) => <col key={wi} />)}
+      </colgroup>
+      <tbody className="[&_tr:last-child_td]:border-b-0">
           {displayEntries.length === 0 ? (
             <tr>
               <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-text-muted">
@@ -95,6 +92,5 @@ export default function ReadOnlyProjectTrackerTable({
           )}
         </tbody>
       </table>
-    </div>
   )
 }
