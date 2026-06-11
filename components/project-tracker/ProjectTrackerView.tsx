@@ -266,7 +266,7 @@ export default function ProjectTrackerView() {
 
   return (
     <div className="flex flex-col">
-      <div className="sticky top-0 z-10 bg-white">
+      <div className="sticky top-0 z-20 bg-white">
       <PageHeader title="Project Tracker" />
       <OwnerControlBar
         viewMode={viewMode}
