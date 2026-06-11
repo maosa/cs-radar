@@ -265,7 +265,8 @@ export default function ProjectTrackerView() {
   )
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
+      <div className="sticky top-0 z-10 bg-white">
       <PageHeader title="Project Tracker" />
       <OwnerControlBar
         viewMode={viewMode}
@@ -299,14 +300,8 @@ export default function ProjectTrackerView() {
         dragExclusive
       />
 
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center text-[13px] text-text-muted">
-          Loading…
-        </div>
-      ) : (
-        <>
-          {/* Fixed column headers — never scrolls */}
-          <div className="px-6 pt-4 bg-white flex-shrink-0">
+        {!isLoading && (
+          <div className="px-6 pt-4 bg-white">
             <div className="overflow-hidden rounded-t-[8px] border-t border-l border-r border-border">
               <table className="border-separate border-spacing-0" style={{ width: '100%', tableLayout: 'fixed' }}>
                 <colgroup>
@@ -318,10 +313,17 @@ export default function ProjectTrackerView() {
               </table>
             </div>
           </div>
-          {/* Scrollable rows — scroll bar at far-right page edge */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
-            <div className="px-6 pb-6">
-              <div className="overflow-hidden rounded-b-[8px] border-b border-l border-r border-border">
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16 text-[13px] text-text-muted">
+          Loading…
+        </div>
+      ) : (
+        <div className="bg-white">
+          <div className="px-6 pb-6">
+            <div className="overflow-hidden rounded-b-[8px] border-b border-l border-r border-border">
                 <ProjectTrackerTable
                   entries={entries}
                   visibleWeekIndices={visibleWeekIndices}
@@ -343,7 +345,6 @@ export default function ProjectTrackerView() {
               </div>
             </div>
           </div>
-        </>
       )}
 
       <AddProjectModal
