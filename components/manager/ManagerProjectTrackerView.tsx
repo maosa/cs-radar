@@ -18,9 +18,10 @@ interface Props {
   adminFirstName: string
   adminFullName?: string
   accountHealthEnabled: boolean
+  tabBar?: React.ReactNode
 }
 
-export default function ManagerProjectTrackerView({ adminUserId, adminFirstName, adminFullName }: Props) {
+export default function ManagerProjectTrackerView({ adminUserId, adminFirstName, adminFullName, tabBar }: Props) {
   const { userId: currentUserId } = useAuth()
   const queryClient = useQueryClient()
 
@@ -168,6 +169,7 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
   return (
     <div className="flex flex-col">
       <div className="sticky top-0 z-10 bg-white">
+        {tabBar}
       <SharedToolbar
         viewMode={viewMode}
         onViewModeChange={setViewMode}

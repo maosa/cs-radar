@@ -38,7 +38,7 @@ export default async function ManagerAccountHealthPage({
   const buyerMatrixEnabled = (adminUserData as any)?.buyer_matrix_enabled ?? false
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       <ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={true} buyerMatrixEnabled={buyerMatrixEnabled} />
       <AccountHealthView
         viewAsUserId={adminUserId}

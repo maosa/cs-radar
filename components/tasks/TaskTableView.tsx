@@ -24,9 +24,10 @@ import type { ViewMode, AnyTask } from './task-table/types'
 interface TaskTableViewProps {
   readOnly?: boolean
   adminUserId?: string
+  tabBar?: React.ReactNode
 }
 
-export default function TaskTableView({ readOnly = false, adminUserId }: TaskTableViewProps) {
+export default function TaskTableView({ readOnly = false, adminUserId, tabBar }: TaskTableViewProps) {
   const { userId } = useAuth()
   const router = useRouter()
   const todayWeekIndex = getCurrentWeekIndex()
@@ -334,6 +335,7 @@ export default function TaskTableView({ readOnly = false, adminUserId }: TaskTab
   return (
     <div className="flex flex-col">
       <div className="sticky top-0 z-10 bg-white">
+        {tabBar}
         {!readOnly && <PageHeader title="My Tasks" />}
         {readOnly ? (
           <>

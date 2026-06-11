@@ -9,9 +9,12 @@ interface ManagerTaskViewProps {
 
 export default function ManagerTaskView({ adminUserId, accountHealthEnabled, buyerMatrixEnabled = false }: ManagerTaskViewProps) {
   return (
-    <div className="flex flex-col h-full">
-      <ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} buyerMatrixEnabled={buyerMatrixEnabled} />
-      <TaskTableView readOnly adminUserId={adminUserId} />
+    <div className="flex flex-col">
+      <TaskTableView
+        readOnly
+        adminUserId={adminUserId}
+        tabBar={<ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} buyerMatrixEnabled={buyerMatrixEnabled} />}
+      />
     </div>
   )
 }
