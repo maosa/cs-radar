@@ -318,7 +318,7 @@ export default function OwnerControlBar({
     filterProducts.length > 0 || filterProjects.length > 0 || filterStatuses.length > 0
 
   return (
-    <div className="flex items-center gap-1.5 px-4 py-2 bg-white border-b border-border flex-shrink-0">
+    <div className="flex items-center gap-1.5 px-6 py-2 bg-white border-b border-border flex-shrink-0">
 
       {/* ── Group 1: Add task / project ──────────────────────────────── */}
       {onAddTask && (

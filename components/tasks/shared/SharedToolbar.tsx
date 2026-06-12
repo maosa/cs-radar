@@ -67,7 +67,7 @@ export default function SharedToolbar({
   }, [onSearchClose])
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-border flex-shrink-0">
+    <div className="flex items-center gap-3 px-6 py-2.5 bg-white border-b border-border flex-shrink-0">
       {/* Manager View specifics */}
       {adminName ? (
         <>
