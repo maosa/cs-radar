@@ -1,6 +1,6 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Search, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight, ArrowLeft, CalendarCheck } from 'lucide-react'
 import ProductBadge from '@/components/tasks/ProductBadge'
 
 interface SearchResult {
@@ -49,6 +49,18 @@ export default function SharedToolbar({
 }: SharedToolbarProps) {
   const isAtCurrentWeek = centerWeekIndex === currentWeekIndex
   const searchRef = useRef<HTMLDivElement>(null)
+  const todayBtnRef = useRef<HTMLButtonElement>(null)
+  const [todayShowText, setTodayShowText] = useState(true)
+
+  useLayoutEffect(() => {
+    const btn = todayBtnRef.current
+    if (!btn) return
+    const ro = new ResizeObserver(([entry]) => {
+      setTodayShowText(entry.contentRect.width >= 44)
+    })
+    ro.observe(btn)
+    return () => ro.disconnect()
+  }, [])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -96,26 +108,30 @@ export default function SharedToolbar({
         <button
           onClick={onPrev}
           disabled={centerWeekIndex === 0}
-          className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white"
+          className="flex items-center justify-center w-7 h-7 flex-shrink-0 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white"
           aria-label="Previous week"
         >
           <ChevronLeft size={16} />
         </button>
 
         <button
+          ref={todayBtnRef}
           onClick={onToday}
-          className={`flex items-center justify-center w-14 h-7 text-[12px] font-medium rounded border transition-colors ${
+          className={`flex items-center justify-center min-w-[28px] w-14 flex-shrink h-7 text-[12px] font-medium rounded border transition-colors ${
             isAtCurrentWeek
               ? 'border-teal text-teal bg-white cursor-default'
               : 'border-border text-text-secondary bg-white hover:border-teal hover:text-teal'
           }`}
         >
-          Today
+          {todayShowText
+            ? <span className="whitespace-nowrap">Today</span>
+            : <CalendarCheck size={15} />
+          }
         </button>
 
         <button
           onClick={onNext}
-          className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
+          className="flex items-center justify-center w-7 h-7 flex-shrink-0 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
           aria-label="Next week"
         >
           <ChevronRight size={16} />

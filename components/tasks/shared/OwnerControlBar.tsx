@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect } from 'react'
 import {
   Plus, Search, ChevronLeft, ChevronRight, X, ChevronDown,
   CalendarCheck,
@@ -273,6 +273,18 @@ export default function OwnerControlBar({
 }: OwnerControlBarProps) {
   const isAtCurrentWeek = centerWeekIndex === currentWeekIndex
   const searchRef = useRef<HTMLDivElement>(null)
+  const todayBtnRef = useRef<HTMLButtonElement>(null)
+  const [todayShowText, setTodayShowText] = useState(true)
+
+  useLayoutEffect(() => {
+    const btn = todayBtnRef.current
+    if (!btn) return
+    const ro = new ResizeObserver(([entry]) => {
+      setTodayShowText(entry.contentRect.width >= 44)
+    })
+    ro.observe(btn)
+    return () => ro.disconnect()
+  }, [])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -328,18 +340,19 @@ export default function OwnerControlBar({
       <div className="w-px h-4 bg-border flex-shrink-0" />
 
       {/* ── Group 2: Week navigation ──────────────────────────────────── */}
-      <div className="flex items-center gap-0.5 flex-shrink-0">
+      <div className="flex items-center gap-0.5">
         <button
           onClick={onPrev}
           disabled={centerWeekIndex === 0}
-          className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white"
+          className="flex items-center justify-center w-7 h-7 flex-shrink-0 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white"
           aria-label="Previous week"
         >
           <ChevronLeft size={16} />
         </button>
         <button
+          ref={todayBtnRef}
           onClick={onToday}
-          className={`flex items-center justify-center w-14 h-7 rounded border transition-colors bg-white ${
+          className={`flex items-center justify-center min-w-[28px] w-14 flex-shrink h-7 rounded border transition-colors bg-white ${
             isAtCurrentWeek
               ? 'border-teal text-teal cursor-default'
               : 'border-border text-text-secondary hover:border-teal hover:text-teal'
@@ -347,11 +360,14 @@ export default function OwnerControlBar({
           aria-label="Go to current week"
           title="Today"
         >
-          <CalendarCheck size={15} />
+          {todayShowText
+            ? <span className="text-[12px] font-medium whitespace-nowrap">Today</span>
+            : <CalendarCheck size={15} />
+          }
         </button>
         <button
           onClick={onNext}
-          className="flex items-center justify-center w-7 h-7 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
+          className="flex items-center justify-center w-7 h-7 flex-shrink-0 rounded border border-border text-text-secondary hover:border-border-hover hover:text-navy transition-colors bg-white"
           aria-label="Next week"
         >
           <ChevronRight size={16} />
