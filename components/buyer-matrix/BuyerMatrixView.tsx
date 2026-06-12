@@ -123,7 +123,6 @@ export default function BuyerMatrixView({
     const now = new Date().toISOString()
 
     if (editingContact) {
-      // Data fields propagate to every row sharing this person_id
       const sharedFields = {
         full_name:          data.full_name,
         email:              data.email  || null,
@@ -132,33 +131,63 @@ export default function BuyerMatrixView({
         updated_at:         now,
         updated_by:         loggedInUserId,
       }
+
+      // Compute which columns are being added / removed
+      const prevTypes = contacts
+        .filter(c => c.person_id === editingContact.person_id)
+        .map(c => c.buyer_type)
+      const added   = data.buyer_types.filter(t => !prevTypes.includes(t))
+      const removed = prevTypes.filter(t => !data.buyer_types.includes(t))
+
+      // Update data fields on all existing rows for this person
       const { error: dataError } = await supabase
         .from('buyer_matrix_contacts')
         .update(sharedFields)
         .eq('person_id', editingContact.person_id)
       if (dataError) throw dataError
 
-      // If the column changed, update buyer_type on this specific row only
-      const newType = data.buyer_types[0]
-      if (newType !== editingContact.buyer_type) {
-        const { error: typeError } = await supabase
+      // Remove unchecked columns
+      if (removed.length > 0) {
+        const { error: removeError } = await supabase
           .from('buyer_matrix_contacts')
-          .update({ buyer_type: newType })
-          .eq('id', editingContact.id)
-        if (typeError) throw typeError
+          .delete()
+          .eq('person_id', editingContact.person_id)
+          .in('buyer_type', removed)
+        if (removeError) throw removeError
       }
 
-      // Optimistic state update
-      setContacts(prev => prev.map(c => {
-        if (c.person_id === editingContact.person_id) {
-          const updated = { ...c, ...sharedFields }
-          if (c.id === editingContact.id && newType !== editingContact.buyer_type) {
-            updated.buyer_type = newType
-          }
-          return updated
-        }
-        return c
-      }))
+      // Insert newly checked columns
+      const newRows = removed.length + added.length > 0
+        ? await Promise.all(
+            added.map(async (type) => {
+              const maxOrder = contacts
+                .filter(c => c.buyer_type === type)
+                .reduce((m, c) => Math.max(m, c.sort_order), -1)
+              const { data: inserted, error } = await supabase
+                .from('buyer_matrix_contacts')
+                .insert({
+                  client_account_id:  selectedAccountId,
+                  admin_user_id:      effectiveUserId,
+                  person_id:          editingContact.person_id,
+                  buyer_type:         type,
+                  sort_order:         maxOrder + 1,
+                  ...sharedFields,
+                })
+                .select()
+                .single()
+              if (error) throw error
+              return inserted as BuyerMatrixContact
+            })
+          )
+        : []
+
+      // Optimistic state: update data, remove dropped columns, append new ones
+      setContacts(prev => {
+        const updated = prev
+          .filter(c => !(c.person_id === editingContact.person_id && removed.includes(c.buyer_type)))
+          .map(c => c.person_id === editingContact.person_id ? { ...c, ...sharedFields } : c)
+        return [...updated, ...newRows]
+      })
     } else {
       // Generate one person_id shared across all selected columns
       const personId = crypto.randomUUID()
@@ -192,12 +221,13 @@ export default function BuyerMatrixView({
 
   const handleDelete = async () => {
     if (!editingContact) return
+    // Delete all column appearances for this person
     const { error } = await supabase
       .from('buyer_matrix_contacts')
       .delete()
-      .eq('id', editingContact.id)
+      .eq('person_id', editingContact.person_id)
     if (error) throw error
-    setContacts(prev => prev.filter(c => c.id !== editingContact.id))
+    setContacts(prev => prev.filter(c => c.person_id !== editingContact.person_id))
   }
 
   const handleReorder = useCallback(async (buyerType: BuyerMatrixBuyerType, orderedIds: string[]) => {
@@ -285,6 +315,11 @@ export default function BuyerMatrixView({
       {modalOpen && (
         <AddEditContactModal
           contact={editingContact}
+          initialSelectedTypes={
+            editingContact
+              ? contacts.filter(c => c.person_id === editingContact.person_id).map(c => c.buyer_type)
+              : []
+          }
           onClose={closeModal}
           onSave={handleModalSave}
           onDelete={editingContact ? handleDelete : undefined}

@@ -13,7 +13,7 @@ const BUYER_TYPE_OPTIONS: { value: BuyerMatrixBuyerType; label: string }[] = [
 ]
 
 export interface ContactFormData {
-  buyer_types: BuyerMatrixBuyerType[]   // array; single-element in edit mode
+  buyer_types: BuyerMatrixBuyerType[]
   full_name: string
   email: string
   role: string
@@ -22,19 +22,25 @@ export interface ContactFormData {
 
 interface Props {
   contact?: BuyerMatrixContact | null
+  /** All columns the person currently appears in — used to pre-check boxes in edit mode */
+  initialSelectedTypes?: BuyerMatrixBuyerType[]
   onClose: () => void
   onSave: (data: ContactFormData) => Promise<void>
   onDelete?: () => Promise<void>
 }
 
-export default function AddEditContactModal({ contact, onClose, onSave, onDelete }: Props) {
+export default function AddEditContactModal({
+  contact,
+  initialSelectedTypes = [],
+  onClose,
+  onSave,
+  onDelete,
+}: Props) {
   const isEdit = !!contact
 
-  // Add mode: multi-select via Set
-  const [selectedTypes, setSelectedTypes] = useState<Set<BuyerMatrixBuyerType>>(new Set())
-  // Edit mode: single select
-  const [buyerType, setBuyerType] = useState<BuyerMatrixBuyerType | ''>(contact?.buyer_type ?? '')
-
+  const [selectedTypes, setSelectedTypes] = useState<Set<BuyerMatrixBuyerType>>(
+    () => new Set(isEdit ? initialSelectedTypes : [])
+  )
   const [fullName, setFullName] = useState(contact?.full_name ?? '')
   const [email, setEmail]       = useState(contact?.email ?? '')
   const [role, setRole]         = useState(contact?.role ?? '')
@@ -61,18 +67,12 @@ export default function AddEditContactModal({ contact, onClose, onSave, onDelete
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-
-    if (isEdit) {
-      if (!buyerType) { setError('Please select a column.'); return }
-    } else {
-      if (selectedTypes.size === 0) { setError('Please select at least one column.'); return }
-    }
-    if (!fullName.trim()) { setError('Full name is required.'); return }
-
+    if (selectedTypes.size === 0) { setError('Please select at least one column.'); return }
+    if (!fullName.trim())         { setError('Full name is required.');              return }
     setSaving(true)
     try {
       await onSave({
-        buyer_types:        isEdit ? [buyerType as BuyerMatrixBuyerType] : Array.from(selectedTypes),
+        buyer_types:        Array.from(selectedTypes),
         full_name:          fullName.trim(),
         email:              email.trim(),
         role:               role.trim(),
@@ -111,40 +111,24 @@ export default function AddEditContactModal({ contact, onClose, onSave, onDelete
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-          {/* Column selector */}
+          {/* Column checkboxes — same UI for add and edit */}
           <div className="flex flex-col gap-2">
             <label className="text-[12px] font-medium text-text-secondary">
-              {isEdit ? 'Column' : 'Columns'} <span className="text-red-flag">*</span>
+              Columns <span className="text-red-flag">*</span>
             </label>
-
-            {isEdit ? (
-              /* Edit mode: single select — only moves this specific card */
-              <select
-                value={buyerType}
-                onChange={e => setBuyerType(e.target.value as BuyerMatrixBuyerType | '')}
-                className="pl-3 pr-7 py-2 text-[13px] border border-border rounded-[6px] bg-white text-navy focus:outline-none focus:border-navy"
-              >
-                <option value="">Select column…</option>
-                {BUYER_TYPE_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            ) : (
-              /* Add mode: checkbox grid — person can appear in multiple columns */
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-1">
-                {BUYER_TYPE_OPTIONS.map(o => (
-                  <label key={o.value} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedTypes.has(o.value)}
-                      onChange={() => toggleType(o.value)}
-                      className="w-3.5 h-3.5 accent-navy flex-shrink-0"
-                    />
-                    <span className="text-[13px] text-navy">{o.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-1">
+              {BUYER_TYPE_OPTIONS.map(o => (
+                <label key={o.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedTypes.has(o.value)}
+                    onChange={() => toggleType(o.value)}
+                    className="w-3.5 h-3.5 accent-navy flex-shrink-0"
+                  />
+                  <span className="text-[13px] text-navy">{o.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Full name */}
