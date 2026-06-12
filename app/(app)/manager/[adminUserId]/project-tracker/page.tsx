@@ -83,16 +83,14 @@ export default async function ManagerProjectTrackerPage({
   ])
 
   return (
-    <div className="flex flex-col min-h-full">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <ManagerProjectTrackerView
-          adminUserId={adminUserId}
-          adminFirstName={adminFirstName}
-          adminFullName={adminFullName}
-          accountHealthEnabled={accountHealthEnabled}
-          tabBar={<ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} buyerMatrixEnabled={buyerMatrixEnabled} />}
-        />
-      </HydrationBoundary>
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ManagerProjectTrackerView
+        adminUserId={adminUserId}
+        adminFirstName={adminFirstName}
+        adminFullName={adminFullName}
+        accountHealthEnabled={accountHealthEnabled}
+        tabBar={<ManagerViewTabs adminUserId={adminUserId} accountHealthEnabled={accountHealthEnabled} buyerMatrixEnabled={buyerMatrixEnabled} />}
+      />
+    </HydrationBoundary>
   )
 }
