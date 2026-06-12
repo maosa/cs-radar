@@ -287,7 +287,7 @@ function ContactCard({
   dragHandleProps?: React.HTMLAttributes<HTMLSpanElement>
 }) {
   const [showInfo, setShowInfo] = useState(false)
-  const [infoPos, setInfoPos] = useState({ top: 0, right: 0 })
+  const [infoPos, setInfoPos] = useState({ top: 0, right: 0, maxWidth: 400 })
   const infoBtnRef = useRef<HTMLButtonElement>(null)
   const infoPopRef = useRef<HTMLDivElement>(null)
 
@@ -306,8 +306,13 @@ function ContactCard({
     if (showInfo) { setShowInfo(false); return }
     const rect = infoBtnRef.current?.getBoundingClientRect()
     if (!rect) return
-    // Anchor the popover's right edge to the button's right edge; expands leftward
-    setInfoPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    // Anchor right edge to button; cap left edge at main content boundary (don't cover sidebar)
+    const mainLeft = document.querySelector('main')?.getBoundingClientRect().left ?? 0
+    setInfoPos({
+      top: rect.bottom + 4,
+      right: window.innerWidth - rect.right,
+      maxWidth: rect.right - mainLeft - 8,
+    })
     setShowInfo(true)
   }
 
@@ -355,14 +360,14 @@ function ContactCard({
         {showInfo && createPortal(
           <div
             ref={infoPopRef}
-            style={{ position: 'fixed', top: infoPos.top, right: infoPos.right, zIndex: 9999 }}
-            className="bg-white rounded-[8px] shadow-lg border border-border p-3 min-w-[208px] w-max"
+            style={{ position: 'fixed', top: infoPos.top, right: infoPos.right, maxWidth: infoPos.maxWidth, minWidth: Math.min(208, infoPos.maxWidth), zIndex: 9999 }}
+            className="bg-white rounded-[8px] shadow-lg border border-border p-3 w-max"
           >
             <p className="text-[12px] font-medium text-navy mb-2 max-w-[208px]">{contact.full_name}</p>
             {hasInfo ? (
               <div className="flex flex-col gap-1.5">
                 {contact.email && (
-                  <p className="text-[12px] whitespace-nowrap">
+                  <p className="text-[12px] whitespace-nowrap overflow-hidden">
                     <span className="text-text-muted">Email: </span>
                     <span className="text-navy">{contact.email}</span>
                   </p>
