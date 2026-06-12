@@ -21,12 +21,12 @@ const ReadOnlyTaskRow = memo(function ReadOnlyTaskRow({ task, visibleWeekIndices
 
   return (
     <tr className="group">
-      <td className="sticky left-0 z-10 border-r border-border px-3 py-2.5" style={{ backgroundColor: '#FFFFFF', boxShadow: 'inset 0 -1px 0 0 #DADADA' }}>
+      <td className="sticky left-0 z-10 border-r border-b border-border px-3 py-2.5" style={{ backgroundColor: '#FFFFFF' }}>
         <ProductBadge product={task.product} />
       </td>
       <td
-        className="sticky z-10 border-r border-border px-3 py-2.5 text-[13px] text-text-secondary whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]"
-        style={{ left: 84, backgroundColor: '#FFFFFF', boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)' }}
+        className="sticky z-10 border-r border-b border-border px-3 py-2.5 text-[13px] text-text-secondary whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]"
+        style={{ left: 84, backgroundColor: '#FFFFFF', boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }}
       >
         {projectName(task)}
       </td>

@@ -86,8 +86,8 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
 
       {/* Product — sticky left, ~84px */}
       <td
-        className="sticky left-0 z-10 border-r border-border px-3 py-2.5 bg-white group-hover:bg-[#FAFAFA]"
-        style={{ boxShadow: 'inset 0 -1px 0 0 #DADADA', ...tdStyle }}
+        className="sticky left-0 z-10 border-r border-b border-border px-3 py-2.5 bg-white group-hover:bg-[#FAFAFA]"
+        style={{ ...tdStyle }}
       >
         <div className="flex items-center gap-1.5">
           {isDragActive && (
@@ -106,10 +106,10 @@ const ProjectTrackerRow = memo(function ProjectTrackerRow({
 
       {/* Project name — sticky at 84px, ~240px */}
       <td
-        className="sticky z-10 border-r border-border px-3 py-2.5 text-[13px] text-navy whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px] bg-white group-hover:bg-[#FAFAFA]"
+        className="sticky z-10 border-r border-b border-border px-3 py-2.5 text-[13px] text-navy whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px] bg-white group-hover:bg-[#FAFAFA]"
         style={{
           left: 84,
-          boxShadow: 'inset 0 -1px 0 0 #DADADA, 2px 0 4px -1px rgba(0,0,0,0.08)',
+          boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)',
           ...tdStyle,
         }}
       >
