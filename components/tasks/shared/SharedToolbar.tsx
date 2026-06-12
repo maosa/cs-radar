@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect, useLayoutEffect } from 'react'
-import Link from 'next/link'
-import { Plus, Search, ChevronLeft, ChevronRight, ArrowLeft, CalendarCheck } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight, CalendarCheck } from 'lucide-react'
 import ProductBadge from '@/components/tasks/ProductBadge'
 
 interface SearchResult {
@@ -74,24 +73,7 @@ export default function SharedToolbar({
 
   return (
     <div className="flex items-center gap-3 px-6 py-2.5 bg-white border-b border-border flex-shrink-0">
-      {/* Manager View specifics */}
-      {adminName ? (
-        <>
-          <Link
-            href="/manager"
-            className="flex items-center gap-1.5 px-3 py-1 text-[13px] font-medium border border-border rounded-[6px] text-text-secondary hover:border-border-hover hover:text-navy bg-white transition-colors"
-          >
-            <ArrowLeft size={14} />
-            Back
-          </Link>
-          <span className="text-[13px] font-medium text-navy truncate max-w-[200px]">
-            {managerViewTitle ?? `${adminName}’s Task List`}
-          </span>
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-bg text-text-muted border border-border">
-            Read only
-          </span>
-        </>
-      ) : onAddTask ? (
+      {onAddTask ? (
         <button
           onClick={onAddTask}
           className="flex items-center gap-1.5 px-3 py-1 bg-navy text-white text-[13px] font-medium rounded-[6px] border border-transparent hover:bg-navy-hover transition-colors"

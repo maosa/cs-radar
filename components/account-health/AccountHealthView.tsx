@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import { ChevronDown, ChevronLeft, ChevronRight, Gauge, ArrowLeft, Copy } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Gauge, Copy } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import type { ClientAccountRow, AccountHealthMetadata, EngagementType } from '@/lib/supabase/types'
@@ -43,7 +42,6 @@ export default function AccountHealthView({
   const { userId: loggedInUserId } = useAuth()
   const effectiveUserId = viewAsUserId ?? loggedInUserId
 
-  const [adminName, setAdminName] = useState('')
   const [accounts, setAccounts] = useState<ClientAccountRow[]>(initialAccounts ?? [])
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [metadata, setMetadata] = useState<AccountHealthMetadata | null>(null)
@@ -74,20 +72,6 @@ export default function AccountHealthView({
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showCopyDropdown])
-
-  useEffect(() => {
-    if (!readOnly || !viewAsUserId) return
-    supabase
-      .from('users')
-      .select('first_name, last_name')
-      .eq('id', viewAsUserId)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setAdminName([data.first_name, data.last_name].filter(Boolean).join(' ') || 'Unknown')
-        }
-      })
-  }, [readOnly, viewAsUserId])
 
   useEffect(() => {
     if (!effectiveUserId) return
@@ -220,23 +204,6 @@ export default function AccountHealthView({
     <div className="flex flex-col">
       {/* Sticky header: controls + table column header */}
       <div className="sticky top-0 z-10 bg-white">
-        {readOnly && adminName ? (
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-border flex-shrink-0">
-            <Link
-              href="/manager"
-              className="flex items-center gap-1.5 px-3 py-1 text-[13px] font-medium border border-border rounded-[6px] text-text-secondary hover:border-border-hover hover:text-navy bg-white transition-colors"
-            >
-              <ArrowLeft size={14} />
-              Back
-            </Link>
-            <span className="text-[13px] font-medium text-navy truncate max-w-[200px]">
-              {adminName}&rsquo;s Account Health
-            </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-bg text-text-muted border border-border">
-              Read only
-            </span>
-          </div>
-        ) : null}
         {!readOnly && <PageHeader title="Account Health" />}
         <div className="px-6 py-3 flex items-end gap-3 border-b border-border">
             {/* Client account selector */}

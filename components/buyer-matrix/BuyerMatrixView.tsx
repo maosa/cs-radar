@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { ArrowLeft, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
@@ -30,7 +29,6 @@ export default function BuyerMatrixView({
   const { userId: loggedInUserId } = useAuth()
   const effectiveUserId = viewAsUserId ?? loggedInUserId
 
-  const [adminName, setAdminName] = useState('')
   const [accounts, setAccounts] = useState<ClientAccountRow[]>(initialAccounts ?? [])
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [entriesMap, setEntriesMap] = useState<Map<string, BuyerMatrixEntry>>(() => {
@@ -40,21 +38,6 @@ export default function BuyerMatrixView({
     }
     return map
   })
-
-  // Fetch admin name for manager view header
-  useEffect(() => {
-    if (!readOnly || !viewAsUserId) return
-    supabase
-      .from('users')
-      .select('first_name, last_name')
-      .eq('id', viewAsUserId)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setAdminName([data.first_name, data.last_name].filter(Boolean).join(' ') || 'Unknown')
-        }
-      })
-  }, [readOnly, viewAsUserId])
 
   // Fetch accounts client-side:
   // - Skip when we have server-provided initial data AND this is the owner view
@@ -189,25 +172,6 @@ export default function BuyerMatrixView({
 
   return (
     <div className="flex flex-col min-w-0">
-      {/* Manager back button bar */}
-      {readOnly && adminName && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-border">
-          <Link
-            href="/manager"
-            className="flex items-center gap-1.5 px-3 py-1 text-[13px] font-medium border border-border rounded-[6px] text-text-secondary hover:border-border-hover hover:text-navy bg-white transition-colors"
-          >
-            <ArrowLeft size={14} />
-            Back
-          </Link>
-          <span className="text-[13px] font-medium text-navy truncate max-w-[200px]">
-            {adminName}&rsquo;s Buyer Matrix
-          </span>
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-bg text-text-muted border border-border">
-            Read only
-          </span>
-        </div>
-      )}
-
       {/* Page title header — owner only */}
       {!readOnly && <PageHeader title="Buyer Matrix" />}
 
