@@ -358,7 +358,7 @@ function ContactCard({
             style={{ position: 'fixed', top: infoPos.top, right: infoPos.right, zIndex: 9999 }}
             className="bg-white rounded-[8px] shadow-lg border border-border p-3 min-w-[208px] w-max"
           >
-            <p className="text-[12px] font-medium text-navy mb-2">{contact.full_name}</p>
+            <p className="text-[12px] font-medium text-navy mb-2 max-w-[208px]">{contact.full_name}</p>
             {hasInfo ? (
               <div className="flex flex-col gap-1.5">
                 {contact.email && (
@@ -368,20 +368,20 @@ function ContactCard({
                   </p>
                 )}
                 {contact.role && (
-                  <p className="text-[12px]">
+                  <p className="text-[12px] max-w-[208px]">
                     <span className="text-text-muted">Role: </span>
                     <span className="text-navy">{contact.role}</span>
                   </p>
                 )}
                 {contact.additional_details && (
-                  <p className="text-[12px]">
+                  <p className="text-[12px] max-w-[208px]">
                     <span className="text-text-muted">Notes: </span>
                     <span className="text-navy whitespace-pre-wrap">{contact.additional_details}</span>
                   </p>
                 )}
               </div>
             ) : (
-              <p className="text-[12px] text-text-muted italic">No additional details.</p>
+              <p className="text-[12px] text-text-muted italic max-w-[208px]">No additional details.</p>
             )}
           </div>,
           document.body
