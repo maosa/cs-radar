@@ -92,21 +92,6 @@ export type AccountHealthResponse = {
   updated_by: string | null
 }
 
-export type BuyerMatrixEntry = {
-  id: string
-  client_account_id: string
-  admin_user_id: string
-  economic_buyer: string | null
-  technical_buyer: string | null
-  user_buyer: string | null
-  coach_champion: string | null
-  gatekeeper: string | null
-  influencer: string | null
-  created_at: string
-  updated_at: string | null
-  updated_by: string | null
-}
-
 export type BuyerMatrixBuyerType =
   | 'economic_buyer'
   | 'technical_buyer'
