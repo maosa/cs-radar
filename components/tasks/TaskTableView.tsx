@@ -14,8 +14,8 @@ import { getCurrentWeekIndex, formatWeekHeader, dateStringToWeekIndex, weekIndex
 import { useAuth } from '@/lib/auth-context'
 import { ToastContainer, type Toast } from '@/components/ui/ToastContainer'
 import { projectName } from '@/lib/taskUtils'
-import SharedToolbar from './shared/SharedToolbar'
-import SharedFilterBar, { type SortMode, type UniqueProject } from './shared/SharedFilterBar'
+import { type SortMode, type UniqueProject } from './shared/SharedFilterBar'
+import ManagerControlBar from '@/components/manager/ManagerControlBar'
 import OwnerControlBar from './shared/OwnerControlBar'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { useTasks, useTasksQuery, useProjectsQuery } from '@/lib/hooks/useTasks'
@@ -331,35 +331,30 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
         {tabBar}
         {!readOnly && <PageHeader title="My Tasks" />}
         {readOnly ? (
-          <>
-            <SharedToolbar
-              adminName={adminName}
-              centerWeekIndex={centerWeekIndex}
-              currentWeekIndex={todayWeekIndex}
-              onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}
-              onNext={() => setCenterWeekIndex((w) => w + 1)}
-              onToday={() => setCenterWeekIndex(todayWeekIndex)}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              searchResults={searchResults}
-              showSearchDropdown={showSearchDropdown}
-              onSearchResultClick={handleSearchResultClick}
-              onSearchClose={() => setShowSearchDropdown(false)}
-              projectNameFn={projectName}
-            />
-            <SharedFilterBar
-              uniqueProjects={uniqueProjects}
-              filterProducts={filterProducts}
-              filterProjects={filterProjects}
-              filterStatuses={filterStatuses}
-              sortMode={currentSortMode}
-              onToggleProduct={handleToggleProduct}
-              onToggleProject={handleToggleProject}
-              onToggleStatus={handleToggleStatus}
-              onSortMode={handleSortMode}
-              hideDragSort
-            />
-          </>
+          <ManagerControlBar
+            centerWeekIndex={centerWeekIndex}
+            currentWeekIndex={todayWeekIndex}
+            onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}
+            onNext={() => setCenterWeekIndex((w) => w + 1)}
+            onToday={() => setCenterWeekIndex(todayWeekIndex)}
+            uniqueProjects={uniqueProjects}
+            filterProducts={filterProducts}
+            filterProjects={filterProjects}
+            filterStatuses={filterStatuses}
+            onToggleProduct={handleToggleProduct}
+            onToggleProject={handleToggleProject}
+            onToggleStatus={handleToggleStatus}
+            onClearFilters={handleClearFilters}
+            sortMode={currentSortMode}
+            onSortMode={handleSortMode}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchResults={searchResults}
+            showSearchDropdown={showSearchDropdown}
+            onSearchResultClick={handleSearchResultClick}
+            onSearchClose={() => setShowSearchDropdown(false)}
+            projectNameFn={projectName}
+          />
         ) : (
           <OwnerControlBar
             centerWeekIndex={centerWeekIndex}

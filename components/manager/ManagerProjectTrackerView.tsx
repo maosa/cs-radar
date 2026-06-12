@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import SharedToolbar from '@/components/tasks/shared/SharedToolbar'
-import SharedFilterBar, { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
+import { type SortMode, type UniqueProject } from '@/components/tasks/shared/SharedFilterBar'
+import ManagerControlBar from '@/components/manager/ManagerControlBar'
 import ReadOnlyProjectTrackerTable from '@/components/project-tracker/ReadOnlyProjectTrackerTable'
 import TableHeader from '@/components/tasks/task-table/TableHeader'
 import ProjectDetails from '@/components/project-tracker/ProjectDetails'
@@ -162,36 +162,29 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
     <div className="flex flex-col min-h-full bg-white">
       <div className="sticky top-0 z-20 bg-white">
         {tabBar}
-      <SharedToolbar
+      <ManagerControlBar
         centerWeekIndex={centerWeekIndex}
         currentWeekIndex={todayWeekIndex}
         onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}
         onNext={() => setCenterWeekIndex((w) => w + 1)}
         onToday={() => setCenterWeekIndex(todayWeekIndex)}
-        adminName={adminFirstName}
-        managerViewTitle={`${adminFullName ?? adminFirstName}'s Project Tracker`}
-        searchPlaceholder="Search…"
+        uniqueProjects={uniqueProjects}
+        filterProducts={filterProducts}
+        filterProjects={filterProjects}
+        filterStatuses={[]}
+        onToggleProduct={handleToggleProduct}
+        onToggleProject={handleToggleProject}
+        onToggleStatus={() => {}}
+        onClearFilters={handleClearFilters}
+        hideStatus
+        sortMode={sortMode}
+        onSortMode={setSortMode}
         searchQuery=""
         onSearchChange={() => {}}
         searchResults={[]}
         showSearchDropdown={false}
         onSearchResultClick={() => {}}
         onSearchClose={() => {}}
-      />
-
-      <SharedFilterBar
-        uniqueProjects={uniqueProjects}
-        filterProducts={filterProducts}
-        filterProjects={filterProjects}
-        filterStatuses={[]}
-        sortMode={sortMode}
-        onToggleProduct={handleToggleProduct}
-        onToggleProject={handleToggleProject}
-        onToggleStatus={() => {}}
-        onSortMode={setSortMode}
-        onClearFilters={handleClearFilters}
-        hideStatus
-        hideDragSort
       />
 
         {!isLoading && (
