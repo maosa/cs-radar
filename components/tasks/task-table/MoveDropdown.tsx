@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronRight, ChevronLeft } from 'lucide-react'
 
 const WEEK_OPTIONS = [
@@ -18,22 +19,27 @@ const FORWARD = WEEK_OPTIONS.slice(0, 4)
 const BACK = WEEK_OPTIONS.slice(4)
 
 interface MoveDropdownProps {
-  align?: 'left' | 'right'
+  anchor: { top: number; bottom: number; left: number; right: number }
   onMove: (weeks: number) => void
   onCopy: (weeks: number) => void
   onClose: () => void
 }
 
-export default function MoveDropdown({ align = 'right', onMove, onCopy, onClose }: MoveDropdownProps) {
+export default function MoveDropdown({ anchor, onMove, onCopy, onClose }: MoveDropdownProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [mode, setMode] = useState<null | 'move' | 'copy'>(null)
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handleOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose()
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const handleScroll = () => onClose()
+    document.addEventListener('mousedown', handleOutside)
+    window.addEventListener('scroll', handleScroll, true)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      window.removeEventListener('scroll', handleScroll, true)
+    }
   }, [onClose])
 
   const handleWeekClick = (weeks: number) => {
@@ -42,10 +48,22 @@ export default function MoveDropdown({ align = 'right', onMove, onCopy, onClose 
     onClose()
   }
 
-  return (
+  // Open below the button if there's room; otherwise open above
+  const openBelow = anchor.bottom + 260 <= window.innerHeight
+  const style: React.CSSProperties = {
+    position: 'fixed',
+    right: window.innerWidth - anchor.right,
+    zIndex: 9999,
+    ...(openBelow
+      ? { top: anchor.bottom + 4 }
+      : { bottom: window.innerHeight - anchor.top + 4 }),
+  }
+
+  return createPortal(
     <div
       ref={ref}
-      className={`absolute top-full mt-1 z-30 bg-white border border-border rounded-[6px] shadow-md min-w-[190px] py-1 overflow-hidden ${align === 'right' ? 'right-0' : 'left-0'}`}
+      style={style}
+      className="bg-white border border-border rounded-[6px] shadow-md min-w-[190px] py-1 overflow-hidden"
     >
       {mode === null ? (
         <>
@@ -95,6 +113,7 @@ export default function MoveDropdown({ align = 'right', onMove, onCopy, onClose 
           ))}
         </>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }

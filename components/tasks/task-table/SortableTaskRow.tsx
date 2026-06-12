@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { useState, useRef, memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Flag, ChevronsLeftRight, Trash2, GripVertical, PanelRight, Pencil, MessageSquare } from 'lucide-react'
@@ -26,7 +26,8 @@ interface EditableRowProps {
 
 const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
   const { task, visibleWeekIndices, onToggleComplete, onToggleFlag, onMove, onCopy, onDelete, onOpenPanel, onEditDescription, isDragMode, isHighlighted } = props
-  const [showMoveDropdown, setShowMoveDropdown] = useState(false)
+  const [moveDropdownAnchor, setMoveDropdownAnchor] = useState<{ top: number; bottom: number; left: number; right: number } | null>(null)
+  const moveDropdownBtnRef = useRef<HTMLButtonElement>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const taskWeekIndex = dateStringToWeekIndex(task.week_start_date)
@@ -130,20 +131,28 @@ const SortableTaskRow = memo(function SortableTaskRow(props: EditableRowProps) {
                     >
                       <Flag size={14} className={task.is_flagged ? 'text-red-flag fill-red-flag' : ''} />
                     </button>
-                    <div className="relative">
+                    <div>
                       <button
-                        onClick={() => setShowMoveDropdown((v) => !v)}
+                        ref={moveDropdownBtnRef}
+                        onClick={() => {
+                          if (moveDropdownBtnRef.current && !moveDropdownAnchor) {
+                            const r = moveDropdownBtnRef.current.getBoundingClientRect()
+                            setMoveDropdownAnchor({ top: r.top, bottom: r.bottom, left: r.left, right: r.right })
+                          } else {
+                            setMoveDropdownAnchor(null)
+                          }
+                        }}
                         className="p-1 rounded text-text-muted hover:text-navy hover:bg-bg transition-colors"
                         title="Move to another week"
                       >
                         <ChevronsLeftRight size={14} />
                       </button>
-                      {showMoveDropdown && (
+                      {moveDropdownAnchor && (
                         <MoveDropdown
-                          align="right"
+                          anchor={moveDropdownAnchor}
                           onMove={(weeks) => onMove(task.id, weeks)}
                           onCopy={(weeks) => onCopy(task.id, weeks)}
-                          onClose={() => setShowMoveDropdown(false)}
+                          onClose={() => setMoveDropdownAnchor(null)}
                         />
                       )}
                     </div>
