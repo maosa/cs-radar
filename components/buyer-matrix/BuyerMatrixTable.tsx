@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   DndContext,
   PointerSensor,
@@ -73,67 +74,13 @@ export default function BuyerMatrixTable({
   onEdit,
   onReorder,
 }: BuyerMatrixTableProps) {
-  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null)
-  const popoverRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!openPopoverId) return
-    const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setOpenPopoverId(null)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [openPopoverId])
-
   return (
     <div className="w-full overflow-hidden rounded-[8px] border border-border">
       <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
         <thead>
           <tr className="bg-[#E8E8E8]">
             {COLUMNS.map((col, colIndex) => (
-              <th
-                key={col.key}
-                className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-r border-border last:border-r-0"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>{col.label}</span>
-                  <div className="relative flex-shrink-0">
-                    <button
-                      onClick={() => setOpenPopoverId(openPopoverId === col.key ? null : col.key)}
-                      className="flex items-center text-text-muted hover:text-navy transition-colors"
-                      aria-label={`Info about ${col.label}`}
-                    >
-                      <Info size={13} />
-                    </button>
-                    {openPopoverId === col.key && (
-                      <div
-                        ref={popoverRef}
-                        className={`absolute top-full mt-1 z-10 bg-white rounded-[8px] shadow-lg border border-border p-3 w-60 font-normal ${
-                          colIndex >= COLUMNS.length - 2 ? 'right-0' : 'left-0'
-                        }`}
-                      >
-                        <p className="text-[13px] font-medium text-navy mb-2">{col.label}</p>
-                        <div className="flex flex-col gap-1.5">
-                          <p className="text-[12px]">
-                            <span className="text-text-muted">Role in Decision: </span>
-                            <span className="text-navy">{col.popover.role}</span>
-                          </p>
-                          <p className="text-[12px]">
-                            <span className="text-text-muted">Motivations: </span>
-                            <span className="text-navy">{col.popover.motivations}</span>
-                          </p>
-                          <p className="text-[12px]">
-                            <span className="text-text-muted">Engagement Strategy: </span>
-                            <span className="text-navy">{col.popover.strategy}</span>
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </th>
+              <ColumnHeader key={col.key} col={col} colIndex={colIndex} />
             ))}
           </tr>
         </thead>
@@ -161,6 +108,77 @@ export default function BuyerMatrixTable({
         </tbody>
       </table>
     </div>
+  )
+}
+
+// ─── ColumnHeader ─────────────────────────────────────────────────────────────
+// Each column header renders its popover via createPortal with position:fixed
+// so overflow:hidden on the table wrapper cannot clip it.
+
+function ColumnHeader({ col, colIndex }: { col: Column; colIndex: number }) {
+  const [showPopover, setShowPopover] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const popRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showPopover) return
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (popRef.current && !popRef.current.contains(e.target as Node)) setShowPopover(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showPopover])
+
+  const toggle = () => {
+    if (showPopover) { setShowPopover(false); return }
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (!rect) return
+    // Right-align popover (w-60 = 240px) for last 2 columns to avoid viewport overflow
+    const left = colIndex >= COLUMNS.length - 2 ? rect.right - 240 : rect.left
+    setPos({ top: rect.bottom + 4, left })
+    setShowPopover(true)
+  }
+
+  return (
+    <th className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-r border-border last:border-r-0">
+      <div className="flex items-center gap-1.5">
+        <span>{col.label}</span>
+        <button
+          ref={btnRef}
+          onClick={toggle}
+          className="flex items-center text-text-muted hover:text-navy transition-colors flex-shrink-0"
+          aria-label={`Info about ${col.label}`}
+        >
+          <Info size={13} />
+        </button>
+        {showPopover && createPortal(
+          <div
+            ref={popRef}
+            style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
+            className="bg-white rounded-[8px] shadow-lg border border-border p-3 w-60 font-normal"
+          >
+            <p className="text-[13px] font-medium text-navy mb-2">{col.label}</p>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[12px]">
+                <span className="text-text-muted">Role in Decision: </span>
+                <span className="text-navy">{col.popover.role}</span>
+              </p>
+              <p className="text-[12px]">
+                <span className="text-text-muted">Motivations: </span>
+                <span className="text-navy">{col.popover.motivations}</span>
+              </p>
+              <p className="text-[12px]">
+                <span className="text-text-muted">Engagement Strategy: </span>
+                <span className="text-navy">{col.popover.strategy}</span>
+              </p>
+            </div>
+          </div>,
+          document.body
+        )}
+      </div>
+    </th>
   )
 }
 
@@ -254,6 +272,8 @@ function SortableContactCard({
 }
 
 // ─── ContactCard ─────────────────────────────────────────────────────────────
+// The info popover is rendered via createPortal with position:fixed so it
+// escapes the table wrapper's overflow:hidden and is never clipped.
 
 function ContactCard({
   contact,
@@ -267,18 +287,29 @@ function ContactCard({
   dragHandleProps?: React.HTMLAttributes<HTMLSpanElement>
 }) {
   const [showInfo, setShowInfo] = useState(false)
-  const infoWrapRef = useRef<HTMLDivElement>(null)
+  const [infoPos, setInfoPos] = useState({ top: 0, left: 0 })
+  const infoBtnRef = useRef<HTMLButtonElement>(null)
+  const infoPopRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!showInfo) return
     const handler = (e: MouseEvent) => {
-      if (infoWrapRef.current && !infoWrapRef.current.contains(e.target as Node)) {
-        setShowInfo(false)
-      }
+      if (infoBtnRef.current?.contains(e.target as Node)) return
+      if (infoPopRef.current && !infoPopRef.current.contains(e.target as Node)) setShowInfo(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showInfo])
+
+  const toggleInfo = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (showInfo) { setShowInfo(false); return }
+    const rect = infoBtnRef.current?.getBoundingClientRect()
+    if (!rect) return
+    // Right-align the popover (w-52 = 208px) with the button's right edge
+    setInfoPos({ top: rect.bottom + 4, left: Math.max(8, rect.right - 208) })
+    setShowInfo(true)
+  }
 
   const hasInfo = !!(contact.email || contact.role || contact.additional_details)
 
@@ -313,44 +344,48 @@ function ContactCard({
         )}
 
         {/* Info popover */}
-        <div ref={infoWrapRef} className="relative">
-          <button
-            onClick={e => { e.stopPropagation(); setShowInfo(v => !v) }}
-            className="p-1 rounded text-text-muted hover:text-navy hover:bg-[#EBEBEB] transition-colors"
-            title="View details"
+        <button
+          ref={infoBtnRef}
+          onClick={toggleInfo}
+          className="p-1 rounded text-text-muted hover:text-navy hover:bg-[#EBEBEB] transition-colors"
+          title="View details"
+        >
+          <Info size={11} />
+        </button>
+        {showInfo && createPortal(
+          <div
+            ref={infoPopRef}
+            style={{ position: 'fixed', top: infoPos.top, left: infoPos.left, zIndex: 9999 }}
+            className="bg-white rounded-[8px] shadow-lg border border-border p-3 w-52"
           >
-            <Info size={11} />
-          </button>
-          {showInfo && (
-            <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-[8px] shadow-lg border border-border p-3 w-52">
-              <p className="text-[12px] font-medium text-navy mb-2">{contact.full_name}</p>
-              {hasInfo ? (
-                <div className="flex flex-col gap-1.5">
-                  {contact.email && (
-                    <p className="text-[12px]">
-                      <span className="text-text-muted">Email: </span>
-                      <span className="text-navy break-all">{contact.email}</span>
-                    </p>
-                  )}
-                  {contact.role && (
-                    <p className="text-[12px]">
-                      <span className="text-text-muted">Role: </span>
-                      <span className="text-navy">{contact.role}</span>
-                    </p>
-                  )}
-                  {contact.additional_details && (
-                    <p className="text-[12px]">
-                      <span className="text-text-muted">Notes: </span>
-                      <span className="text-navy whitespace-pre-wrap">{contact.additional_details}</span>
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-[12px] text-text-muted italic">No additional details.</p>
-              )}
-            </div>
-          )}
-        </div>
+            <p className="text-[12px] font-medium text-navy mb-2">{contact.full_name}</p>
+            {hasInfo ? (
+              <div className="flex flex-col gap-1.5">
+                {contact.email && (
+                  <p className="text-[12px]">
+                    <span className="text-text-muted">Email: </span>
+                    <span className="text-navy break-all">{contact.email}</span>
+                  </p>
+                )}
+                {contact.role && (
+                  <p className="text-[12px]">
+                    <span className="text-text-muted">Role: </span>
+                    <span className="text-navy">{contact.role}</span>
+                  </p>
+                )}
+                {contact.additional_details && (
+                  <p className="text-[12px]">
+                    <span className="text-text-muted">Notes: </span>
+                    <span className="text-navy whitespace-pre-wrap">{contact.additional_details}</span>
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-[12px] text-text-muted italic">No additional details.</p>
+            )}
+          </div>,
+          document.body
+        )}
       </div>
     </div>
   )
