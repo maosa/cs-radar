@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import BuyerMatrixView from '@/components/buyer-matrix/BuyerMatrixView'
-import type { ClientAccountRow, BuyerMatrixEntry } from '@/lib/supabase/types'
+import type { ClientAccountRow } from '@/lib/supabase/types'
 
 export default async function BuyerMatrixPage() {
   const supabase = await createClient()
@@ -10,7 +10,7 @@ export default async function BuyerMatrixPage() {
 
   if (!userId) redirect('/login')
 
-  const [{ data: userData }, { data: accountsData }, { data: entriesData }] = await Promise.all([
+  const [{ data: userData }, { data: accountsData }] = await Promise.all([
     supabase
       .from('users')
       .select('buyer_matrix_enabled')
@@ -23,10 +23,6 @@ export default async function BuyerMatrixPage() {
       .eq('is_visible', true)
       .is('deleted_at', null)
       .order('sort_order'),
-    supabase
-      .from('buyer_matrix_entries')
-      .select('id, client_account_id, admin_user_id, economic_buyer, technical_buyer, user_buyer, coach_champion, gatekeeper, influencer, created_at, updated_at, updated_by')
-      .eq('admin_user_id', userId),
   ])
 
   if (!(userData as any)?.buyer_matrix_enabled) redirect('/tasks')
@@ -35,7 +31,6 @@ export default async function BuyerMatrixPage() {
     <div className="flex flex-col h-full min-w-0">
       <BuyerMatrixView
         initialAccounts={(accountsData as ClientAccountRow[]) ?? []}
-        initialEntries={(entriesData as BuyerMatrixEntry[]) ?? []}
       />
     </div>
   )

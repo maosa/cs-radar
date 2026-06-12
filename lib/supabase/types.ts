@@ -107,6 +107,29 @@ export type BuyerMatrixEntry = {
   updated_by: string | null
 }
 
+export type BuyerMatrixBuyerType =
+  | 'economic_buyer'
+  | 'technical_buyer'
+  | 'user_buyer'
+  | 'coach_champion'
+  | 'gatekeeper'
+  | 'influencer'
+
+export type BuyerMatrixContact = {
+  id: string
+  client_account_id: string
+  admin_user_id: string
+  buyer_type: BuyerMatrixBuyerType
+  full_name: string
+  email: string | null
+  role: string | null
+  additional_details: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string | null
+  updated_by: string | null
+}
+
 export type TaskStatus = 'open' | 'complete'
 export type RelationshipStatus = 'pending' | 'accepted' | 'archived'
 export type DefaultLanding = 'task_list' | 'manager_view'
