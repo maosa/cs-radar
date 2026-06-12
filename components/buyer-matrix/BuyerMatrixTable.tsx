@@ -142,7 +142,7 @@ function ColumnHeader({ col, colIndex }: { col: Column; colIndex: number }) {
   }
 
   return (
-    <th className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-r border-border last:border-r-0">
+    <th className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-b border-r border-border last:border-r-0">
       <div className="flex items-center gap-1.5">
         <span>{col.label}</span>
         <button
