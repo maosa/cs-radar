@@ -37,7 +37,6 @@ interface EditableTaskTableProps {
   onDelete: (id: string) => void
   onOpenPanel: (id: string, section: 'notes' | 'comments') => void
   onEditDescription: (id: string, description: string) => void
-  onAddTaskInWeek: (weekIndex: number) => void
   onReorder: (orderedIds: string[], weekDateStr: string) => void
 }
 
@@ -55,7 +54,6 @@ export default function EditableTaskTable({
   onDelete,
   onOpenPanel,
   onEditDescription,
-  onAddTaskInWeek,
   onReorder,
 }: EditableTaskTableProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -157,20 +155,6 @@ export default function EditableTaskTable({
                 />
               ))}
             </SortableContext>
-            <tr className="group">
-              <td className="sticky left-0 z-10 bg-white border-r border-b border-border" />
-              <td className="sticky z-10 bg-white border-r border-b border-border" style={{ left: 84, boxShadow: '2px 0 4px -1px rgba(0,0,0,0.08)' }} />
-              {visibleWeekIndices.map((wi) => (
-                <td key={wi} className="border-b border-r last:border-r-0 border-border px-3 py-2">
-                  <button
-                    onClick={() => onAddTaskInWeek(wi)}
-                    className="text-[12px] text-text-muted hover:text-navy-mid transition-colors"
-                  >
-                    + Add task
-                  </button>
-                </td>
-              ))}
-            </tr>
           </tbody>
         </table>
       <DragOverlay>

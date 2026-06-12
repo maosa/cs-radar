@@ -436,7 +436,6 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
                   onDelete={setDeleteTaskId}
                   onOpenPanel={handleOpenPanel}
                   onEditDescription={editDescription}
-                  onAddTaskInWeek={(wi) => setAddModalWeekIndex(wi)}
                   onReorder={reorderTasks}
                 />
               )}
