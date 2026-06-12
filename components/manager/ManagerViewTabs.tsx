@@ -36,7 +36,7 @@ export default function ManagerViewTabs({ adminUserId, accountHealthEnabled, buy
   const isTaskList = pathname.includes('/tasks')
 
   return (
-    <div className="flex gap-0 border-b border-border bg-white pl-4 pr-4">
+    <div className="flex gap-0 border-b border-border bg-white pl-6 pr-4">
       {/* Back button + name */}
       <div className="flex items-center gap-2 self-center pr-2">
         <Link
