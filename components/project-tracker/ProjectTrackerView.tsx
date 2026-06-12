@@ -18,8 +18,6 @@ import { supabase } from '@/lib/supabase/client'
 import { formatWeekHeader, weekIndexToDateString } from '@/lib/weeks'
 import type { ProjectTrackerEntry, Product } from '@/lib/supabase/types'
 
-type ViewMode = 'focused' | 'expanded'
-
 export default function ProjectTrackerView() {
   const { userId } = useAuth()
 
@@ -49,20 +47,12 @@ export default function ProjectTrackerView() {
 
   const { data: projects = [] } = useProjectsQuery(userId)
 
-  // ── View mode & visible weeks ─────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<ViewMode>('focused')
-
-  const visibleWeekIndices = useMemo(
-    () =>
-      viewMode === 'focused'
-        ? [centerWeekIndex]
-        : [centerWeekIndex - 1, centerWeekIndex, centerWeekIndex + 1].filter((w) => w >= 0),
-    [viewMode, centerWeekIndex],
-  )
+  // ── Visible weeks ─────────────────────────────────────────────────────────
+  const visibleWeekIndices = useMemo(() => [centerWeekIndex], [centerWeekIndex])
 
   const visibleWeekDates = useMemo(
-    () => new Set(visibleWeekIndices.map(weekIndexToDateString)),
-    [visibleWeekIndices],
+    () => new Set([weekIndexToDateString(centerWeekIndex)]),
+    [centerWeekIndex],
   )
 
   // ── Filters & sort ────────────────────────────────────────────────────────
@@ -269,8 +259,6 @@ export default function ProjectTrackerView() {
       <div className="sticky top-0 z-20 bg-white">
       <PageHeader title="Project Tracker" />
       <OwnerControlBar
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         centerWeekIndex={centerWeekIndex}
         currentWeekIndex={todayWeekIndex}
         onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}

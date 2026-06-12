@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import {
   Plus, Search, ChevronLeft, ChevronRight, X, ChevronDown,
-  CalendarCheck, Focus, Expand,
+  CalendarCheck,
   ScanBarcode, FolderGit2, ChartBarDecreasing, GripVertical,
   Funnel, ArrowDownUp,
 } from 'lucide-react'
@@ -15,8 +15,6 @@ import {
   buildSortMode,
 } from '@/components/tasks/shared/SharedFilterBar'
 
-type ViewMode = 'focused' | 'expanded'
-
 interface SearchResult {
   task: any
   weekLabel: string
@@ -24,8 +22,6 @@ interface SearchResult {
 
 interface OwnerControlBarProps {
   // ── Toolbar ──────────────────────────────────────────────────────────
-  viewMode: ViewMode
-  onViewModeChange: (mode: ViewMode) => void
   centerWeekIndex: number
   currentWeekIndex: number
   onPrev: () => void
@@ -246,8 +242,6 @@ function StatusChip({
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function OwnerControlBar({
-  viewMode,
-  onViewModeChange,
   centerWeekIndex,
   currentWeekIndex,
   onPrev,
@@ -361,32 +355,6 @@ export default function OwnerControlBar({
           aria-label="Next week"
         >
           <ChevronRight size={16} />
-        </button>
-      </div>
-
-      <div className="w-px h-4 bg-border flex-shrink-0" />
-
-      {/* ── Group 3: View mode ────────────────────────────────────────── */}
-      <div className="flex rounded border border-border overflow-hidden bg-white flex-shrink-0">
-        <button
-          onClick={() => onViewModeChange('focused')}
-          className={`flex items-center justify-center w-7 h-7 transition-colors ${
-            viewMode === 'focused' ? 'bg-navy text-white' : 'text-text-secondary hover:bg-bg'
-          }`}
-          aria-label="Focused view"
-          title="Focused"
-        >
-          <Focus size={14} />
-        </button>
-        <button
-          onClick={() => onViewModeChange('expanded')}
-          className={`flex items-center justify-center w-7 h-7 transition-colors ${
-            viewMode === 'expanded' ? 'bg-navy text-white' : 'text-text-secondary hover:bg-bg'
-          }`}
-          aria-label="Expanded view"
-          title="Expanded"
-        >
-          <Expand size={14} />
         </button>
       </div>
 

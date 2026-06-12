@@ -3,16 +3,12 @@ import Link from 'next/link'
 import { Plus, Search, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
 import ProductBadge from '@/components/tasks/ProductBadge'
 
-type ViewMode = 'focused' | 'expanded'
-
 interface SearchResult {
   task: any
   weekLabel: string
 }
 
 interface SharedToolbarProps {
-  viewMode: ViewMode
-  onViewModeChange: (mode: ViewMode) => void
   centerWeekIndex: number
   currentWeekIndex: number
   onPrev: () => void
@@ -33,8 +29,6 @@ interface SharedToolbarProps {
 }
 
 export default function SharedToolbar({
-  viewMode,
-  onViewModeChange,
   centerWeekIndex,
   currentWeekIndex,
   onPrev,
@@ -126,23 +120,6 @@ export default function SharedToolbar({
         >
           <ChevronRight size={16} />
         </button>
-      </div>
-
-      {/* View toggle */}
-      <div className="flex rounded border border-border overflow-hidden bg-white">
-        {(['focused', 'expanded'] as const).map((mode) => (
-          <button
-            key={mode}
-            onClick={() => onViewModeChange(mode)}
-            className={`px-3 py-1 text-[12px] font-medium capitalize transition-colors ${
-              viewMode === mode
-                ? 'bg-navy text-white'
-                : 'text-text-secondary hover:bg-bg'
-            }`}
-          >
-            {mode}
-          </button>
-        ))}
       </div>
 
       {/* Search */}

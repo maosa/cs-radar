@@ -66,20 +66,12 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
 
   const { data: projects = [] } = useProjectsQuery(adminUserId)
 
-  // ── View mode & visible weeks ─────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<'focused' | 'expanded'>('focused')
-
-  const visibleWeekIndices = useMemo(
-    () =>
-      viewMode === 'focused'
-        ? [centerWeekIndex]
-        : [centerWeekIndex - 1, centerWeekIndex, centerWeekIndex + 1].filter((w) => w >= 0),
-    [viewMode, centerWeekIndex],
-  )
+  // ── Visible weeks ─────────────────────────────────────────────────────────
+  const visibleWeekIndices = useMemo(() => [centerWeekIndex], [centerWeekIndex])
 
   const visibleWeekDates = useMemo(
-    () => new Set(visibleWeekIndices.map(weekIndexToDateString)),
-    [visibleWeekIndices],
+    () => new Set([weekIndexToDateString(centerWeekIndex)]),
+    [centerWeekIndex],
   )
 
   // ── Filters & sort ────────────────────────────────────────────────────────
@@ -171,8 +163,6 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
       <div className="sticky top-0 z-20 bg-white">
         {tabBar}
       <SharedToolbar
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         centerWeekIndex={centerWeekIndex}
         currentWeekIndex={todayWeekIndex}
         onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}

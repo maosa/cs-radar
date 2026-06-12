@@ -19,7 +19,7 @@ import SharedFilterBar, { type SortMode, type UniqueProject } from './shared/Sha
 import OwnerControlBar from './shared/OwnerControlBar'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { useTasks, useTasksQuery, useProjectsQuery } from '@/lib/hooks/useTasks'
-import type { ViewMode, AnyTask } from './task-table/types'
+import type { AnyTask } from './task-table/types'
 
 interface TaskTableViewProps {
   readOnly?: boolean
@@ -32,7 +32,6 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
   const router = useRouter()
   const todayWeekIndex = getCurrentWeekIndex()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('focused')
   const [centerWeekIndex, setCenterWeekIndex] = useState(todayWeekIndex)
 
   // Week window — fetch a rolling range instead of all tasks.
@@ -188,13 +187,10 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
   }, [debouncedSearchQuery, tasks])
 
   // Date strings for the currently visible weeks — used to scope the project filter
-  const visibleWeekDates = useMemo(() => {
-    const indices =
-      viewMode === 'focused'
-        ? [centerWeekIndex]
-        : [centerWeekIndex - 1, centerWeekIndex, centerWeekIndex + 1].filter((w) => w >= 0)
-    return new Set(indices.map(weekIndexToDateString))
-  }, [viewMode, centerWeekIndex])
+  const visibleWeekDates = useMemo(
+    () => new Set([weekIndexToDateString(centerWeekIndex)]),
+    [centerWeekIndex],
+  )
 
   // Unique projects for the filter bar — scoped to the visible weeks
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
@@ -246,10 +242,7 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
     })
   }, [tasks])
 
-  const visibleWeekIndices =
-    viewMode === 'focused'
-      ? [centerWeekIndex]
-      : [centerWeekIndex - 1, centerWeekIndex, centerWeekIndex + 1].filter((w) => w >= 0)
+  const visibleWeekIndices = [centerWeekIndex]
 
   // Sort mode reflected in the filter bar — center week's mode for owner, global for manager
   const currentSortMode: SortMode = readOnly
@@ -341,8 +334,6 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
           <>
             <SharedToolbar
               adminName={adminName}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
               centerWeekIndex={centerWeekIndex}
               currentWeekIndex={todayWeekIndex}
               onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}
@@ -371,8 +362,6 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
           </>
         ) : (
           <OwnerControlBar
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
             centerWeekIndex={centerWeekIndex}
             currentWeekIndex={todayWeekIndex}
             onPrev={() => setCenterWeekIndex((w) => Math.max(0, w - 1))}
