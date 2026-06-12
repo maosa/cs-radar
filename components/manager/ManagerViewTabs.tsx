@@ -38,7 +38,7 @@ export default function ManagerViewTabs({ adminUserId, accountHealthEnabled, buy
   return (
     <div className="flex gap-0 border-b border-border bg-white pl-6 pr-4">
       {/* Back button + name */}
-      <div className="flex items-center gap-2 self-center pr-2">
+      <div className="flex items-center gap-6 self-center pr-2">
         <Link
           href="/manager"
           className="flex items-center gap-1.5 px-3 py-1 text-[13px] font-medium border border-border rounded-[6px] text-text-secondary hover:border-border-hover hover:text-navy bg-white transition-colors"
