@@ -167,7 +167,7 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
   const handleClosePanel = useCallback(() => setSidebarOpen(false), [])
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-full bg-white">
       <div className="sticky top-0 z-20 bg-white">
         {tabBar}
       <SharedToolbar

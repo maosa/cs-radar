@@ -83,7 +83,7 @@ export default async function ManagerProjectTrackerPage({
   ])
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-full">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ManagerProjectTrackerView
           adminUserId={adminUserId}
