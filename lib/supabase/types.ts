@@ -102,6 +102,7 @@ export type BuyerMatrixBuyerType =
 
 export type BuyerMatrixContact = {
   id: string
+  person_id: string
   client_account_id: string
   admin_user_id: string
   buyer_type: BuyerMatrixBuyerType

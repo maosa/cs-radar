@@ -123,43 +123,70 @@ export default function BuyerMatrixView({
     const now = new Date().toISOString()
 
     if (editingContact) {
-      const { data: updated, error } = await supabase
+      // Data fields propagate to every row sharing this person_id
+      const sharedFields = {
+        full_name:          data.full_name,
+        email:              data.email  || null,
+        role:               data.role   || null,
+        additional_details: data.additional_details || null,
+        updated_at:         now,
+        updated_by:         loggedInUserId,
+      }
+      const { error: dataError } = await supabase
         .from('buyer_matrix_contacts')
-        .update({
-          buyer_type:         data.buyer_type,
-          full_name:          data.full_name,
-          email:              data.email  || null,
-          role:               data.role   || null,
-          additional_details: data.additional_details || null,
-          updated_at:         now,
-          updated_by:         loggedInUserId,
-        })
-        .eq('id', editingContact.id)
-        .select()
-        .single()
-      if (error) throw error
-      setContacts(prev => prev.map(c => c.id === editingContact.id ? updated as BuyerMatrixContact : c))
+        .update(sharedFields)
+        .eq('person_id', editingContact.person_id)
+      if (dataError) throw dataError
+
+      // If the column changed, update buyer_type on this specific row only
+      const newType = data.buyer_types[0]
+      if (newType !== editingContact.buyer_type) {
+        const { error: typeError } = await supabase
+          .from('buyer_matrix_contacts')
+          .update({ buyer_type: newType })
+          .eq('id', editingContact.id)
+        if (typeError) throw typeError
+      }
+
+      // Optimistic state update
+      setContacts(prev => prev.map(c => {
+        if (c.person_id === editingContact.person_id) {
+          const updated = { ...c, ...sharedFields }
+          if (c.id === editingContact.id && newType !== editingContact.buyer_type) {
+            updated.buyer_type = newType
+          }
+          return updated
+        }
+        return c
+      }))
     } else {
-      const maxOrder = contacts
-        .filter(c => c.buyer_type === data.buyer_type)
-        .reduce((m, c) => Math.max(m, c.sort_order), -1)
-      const { data: inserted, error } = await supabase
-        .from('buyer_matrix_contacts')
-        .insert({
-          client_account_id:  selectedAccountId,
-          admin_user_id:      effectiveUserId,
-          buyer_type:         data.buyer_type,
-          full_name:          data.full_name,
-          email:              data.email  || null,
-          role:               data.role   || null,
-          additional_details: data.additional_details || null,
-          sort_order:         maxOrder + 1,
-          updated_by:         loggedInUserId,
+      // Generate one person_id shared across all selected columns
+      const personId = crypto.randomUUID()
+      const sharedFields = {
+        client_account_id:  selectedAccountId,
+        admin_user_id:      effectiveUserId,
+        person_id:          personId,
+        full_name:          data.full_name,
+        email:              data.email  || null,
+        role:               data.role   || null,
+        additional_details: data.additional_details || null,
+        updated_by:         loggedInUserId,
+      }
+      const newContacts = await Promise.all(
+        data.buyer_types.map(async (type) => {
+          const maxOrder = contacts
+            .filter(c => c.buyer_type === type)
+            .reduce((m, c) => Math.max(m, c.sort_order), -1)
+          const { data: inserted, error } = await supabase
+            .from('buyer_matrix_contacts')
+            .insert({ ...sharedFields, buyer_type: type, sort_order: maxOrder + 1 })
+            .select()
+            .single()
+          if (error) throw error
+          return inserted as BuyerMatrixContact
         })
-        .select()
-        .single()
-      if (error) throw error
-      setContacts(prev => [...prev, inserted as BuyerMatrixContact])
+      )
+      setContacts(prev => [...prev, ...newContacts])
     }
   }
 
