@@ -32,6 +32,7 @@ interface Props {
   defaultSortMode: SortMode
   filterProducts: string[]
   filterProjects: string[]
+  hasActiveFilters?: boolean
   onFlag: (id: string) => void
   onDelete: (id: string) => void
   onOpenPanel: (id: string) => void
@@ -48,6 +49,7 @@ export default function ProjectTrackerTable({
   defaultSortMode,
   filterProducts,
   filterProjects,
+  hasActiveFilters = false,
   onFlag,
   onDelete,
   onOpenPanel,
@@ -130,7 +132,7 @@ export default function ProjectTrackerTable({
               {displayEntries.length === 0 ? (
                 <tr>
                   <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-text-muted">
-                    No entries for this week.
+                    {hasActiveFilters ? 'No entries match the current filters.' : 'No entries for this week.'}
                   </td>
                 </tr>
               ) : (

@@ -30,6 +30,7 @@ interface EditableTaskTableProps {
   weekSortModes: Record<number, SortMode>
   defaultSortMode: SortMode
   highlightedTaskId: string | null
+  hasActiveFilters?: boolean
   onToggleComplete: (id: string) => void
   onToggleFlag: (id: string) => void
   onMove: (id: string, weeks: number) => void
@@ -47,6 +48,7 @@ export default function EditableTaskTable({
   weekSortModes,
   defaultSortMode,
   highlightedTaskId,
+  hasActiveFilters = false,
   onToggleComplete,
   onToggleFlag,
   onMove,
@@ -134,7 +136,7 @@ export default function EditableTaskTable({
               {visibleTasks.length === 0 && (
                 <tr>
                   <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-text-muted">
-                    No tasks for this period.
+                    {hasActiveFilters ? 'No tasks match the current filters.' : 'No tasks for this period.'}
                   </td>
                 </tr>
               )}

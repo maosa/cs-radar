@@ -14,6 +14,7 @@ interface ReadOnlyTaskTableProps {
   weekSortModes: Record<number, SortMode>
   defaultSortMode: SortMode
   highlightedTaskId: string | null
+  hasActiveFilters?: boolean
   onOpenPanel: (id: string, section: 'notes' | 'comments') => void
 }
 
@@ -24,6 +25,7 @@ export default function ReadOnlyTaskTable({
   weekSortModes,
   defaultSortMode,
   highlightedTaskId,
+  hasActiveFilters = false,
   onOpenPanel,
 }: ReadOnlyTaskTableProps) {
   const visibleWeekStrings = useMemo(
@@ -61,7 +63,7 @@ export default function ReadOnlyTaskTable({
           {visibleTasks.length === 0 && (
             <tr>
               <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-text-muted">
-                No tasks for this period.
+                {hasActiveFilters ? 'No tasks match the current filters.' : 'No tasks for this period.'}
               </td>
             </tr>
           )}

@@ -11,7 +11,6 @@ import { useProjectTrackerEntries } from '@/lib/hooks/useProjectTrackerEntries'
 import { useProjectsQuery } from '@/lib/hooks/useTasks'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase/client'
-import { weekIndexToDateString } from '@/lib/weeks'
 
 interface Props {
   adminUserId: string
@@ -69,11 +68,6 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
   // ── Visible weeks ─────────────────────────────────────────────────────────
   const visibleWeekIndices = useMemo(() => [centerWeekIndex], [centerWeekIndex])
 
-  const visibleWeekDates = useMemo(
-    () => new Set([weekIndexToDateString(centerWeekIndex)]),
-    [centerWeekIndex],
-  )
-
   // ── Filters & sort ────────────────────────────────────────────────────────
   const [filterProducts, setFilterProducts] = useState<string[]>([])
   const [filterProjects, setFilterProjects] = useState<string[]>([])
@@ -102,28 +96,16 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
 
   const effectiveDefaultSortMode: SortMode = sortMode !== 'none' ? sortMode : 'product_project'
 
+  // Full project roster (stable across weeks) — drives the project filter list
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
-    const usedProjectIds = new Set(
-      entries
-        .filter((e) => visibleWeekDates.has(e.week_start_date))
-        .map((e) => e.project_id),
-    )
     return projects
-      .filter((p) => usedProjectIds.has(p.id) && p.is_visible !== false)
+      .filter((p) => p.is_visible !== false)
       .map((p) => ({ id: p.id, name: p.name }))
       .sort((a, b) => a.name.localeCompare(b.name))
-  }, [entries, projects, visibleWeekDates])
+  }, [projects])
 
-  // Products present in the visible week — scopes the product filter options
-  const availableProducts = useMemo(() => {
-    const seen = new Set<string>()
-    entries
-      .filter((e) => visibleWeekDates.has(e.week_start_date))
-      .forEach((e) => seen.add(e.product))
-    return Array.from(seen)
-  }, [entries, visibleWeekDates])
-
-  // Auto-clear stale filters when their value is absent from the current week
+  // Clear a selected project filter only if that project leaves the roster
+  // (deleted/hidden). Filters otherwise persist across week navigation.
   useEffect(() => {
     const validIds = new Set(uniqueProjects.map((p) => p.id))
     setFilterProjects((prev) => {
@@ -131,14 +113,6 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
       return next.length === prev.length ? prev : next
     })
   }, [uniqueProjects])
-
-  useEffect(() => {
-    const valid = new Set(availableProducts)
-    setFilterProducts((prev) => {
-      const next = prev.filter((p) => valid.has(p))
-      return next.length === prev.length ? prev : next
-    })
-  }, [availableProducts])
 
   const handleToggleProduct = useCallback((p: string) => {
     setFilterProducts((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])
@@ -186,7 +160,6 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
         onNext={() => setCenterWeekIndex((w) => w + 1)}
         onToday={() => setCenterWeekIndex(todayWeekIndex)}
         uniqueProjects={uniqueProjects}
-        availableProducts={availableProducts}
         filterProducts={filterProducts}
         filterProjects={filterProjects}
         filterStatuses={[]}
@@ -237,6 +210,7 @@ export default function ManagerProjectTrackerView({ adminUserId, adminFirstName,
                 defaultSortMode={effectiveDefaultSortMode}
                 filterProducts={filterProducts}
                 filterProjects={filterProjects}
+                hasActiveFilters={filterProducts.length > 0 || filterProjects.length > 0}
                 onOpenPanel={handleOpenPanel}
                 onOpenComments={handleOpenComments}
               />

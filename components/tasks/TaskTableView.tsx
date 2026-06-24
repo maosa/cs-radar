@@ -186,30 +186,19 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
     setShowSearchDropdown(results.length > 0)
   }, [debouncedSearchQuery, tasks])
 
-  // Date strings for the currently visible weeks — used to scope the project filter
-  const visibleWeekDates = useMemo(
-    () => new Set([weekIndexToDateString(centerWeekIndex)]),
-    [centerWeekIndex],
-  )
-
-  // Unique projects for the filter bar — scoped to the visible weeks
+  // Unique projects for the filter bar — the full roster (owner) or every
+  // project seen across loaded tasks (manager), so the list is stable as the
+  // user navigates between weeks rather than reshuffling per week.
   const uniqueProjects = useMemo<UniqueProject[]>(() => {
     if (readOnly) {
       const seen = new Map<string, string>()
       tasks
-        .filter((t) => visibleWeekDates.has(t.week_start_date))
         .forEach((t) => { if (t.project_id && !seen.has(t.project_id)) seen.set(t.project_id, projectName(t)) })
       return Array.from(seen.entries())
         .map(([id, name]) => ({ id, name, displayName: name }))
         .sort((a, b) => a.name.localeCompare(b.name))
     }
-    const usedProjectIds = new Set(
-      tasks
-        .filter((t) => visibleWeekDates.has(t.week_start_date))
-        .map((t) => t.project_id)
-        .filter(Boolean)
-    )
-    const filtered = projects.filter((p) => usedProjectIds.has(p.id) && p.is_visible !== false)
+    const filtered = projects.filter((p) => p.is_visible !== false)
     const nameCounts = filtered.reduce<Record<string, number>>((acc, p) => {
       const key = p.name.toLowerCase()
       acc[key] = (acc[key] ?? 0) + 1
@@ -223,31 +212,10 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
           ? `${p.name} (${p.product ?? 'Unassigned'})`
           : p.name,
     }))
-  }, [readOnly, tasks, projects, visibleWeekDates])
+  }, [readOnly, tasks, projects])
 
-  // Products present in the visible week — scopes the product filter options
-  const availableProducts = useMemo(() => {
-    const seen = new Set<string>()
-    tasks
-      .filter((t) => visibleWeekDates.has(t.week_start_date))
-      .forEach((t) => seen.add(t.product))
-    return Array.from(seen)
-  }, [tasks, visibleWeekDates])
-
-  // Statuses present in the visible week — scopes the status filter options
-  const availableStatuses = useMemo(() => {
-    const seen = new Set<string>()
-    tasks
-      .filter((t) => visibleWeekDates.has(t.week_start_date))
-      .forEach((t) => {
-        if (t.status === 'open') seen.add('open')
-        if (t.status === 'complete') seen.add('complete')
-        if (t.is_flagged) seen.add('flagged')
-      })
-    return Array.from(seen)
-  }, [tasks, visibleWeekDates])
-
-  // Auto-clear stale filters when their value is absent from the current week
+  // Clear a selected project filter only if that project leaves the roster
+  // (deleted/hidden). Filters otherwise persist across week navigation.
   useEffect(() => {
     const validIds = new Set(uniqueProjects.map((p) => p.id))
     setFilterProjects((prev) => {
@@ -255,22 +223,6 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
       return next.length === prev.length ? prev : next
     })
   }, [uniqueProjects])
-
-  useEffect(() => {
-    const valid = new Set(availableProducts)
-    setFilterProducts((prev) => {
-      const next = prev.filter((p) => valid.has(p))
-      return next.length === prev.length ? prev : next
-    })
-  }, [availableProducts])
-
-  useEffect(() => {
-    const valid = new Set(availableStatuses)
-    setFilterStatuses((prev) => {
-      const next = prev.filter((s) => valid.has(s))
-      return next.length === prev.length ? prev : next
-    })
-  }, [availableStatuses])
 
   const visibleWeekIndices = [centerWeekIndex]
 
@@ -309,6 +261,9 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
     }),
     [tasks, filterProducts, filterProjects, filterStatuses]
   )
+
+  const hasActiveFilters =
+    filterProducts.length > 0 || filterProjects.length > 0 || filterStatuses.length > 0
 
   const handleToggleProduct = useCallback((p: string) => {
     setFilterProducts((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])
@@ -368,8 +323,6 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
             onNext={() => setCenterWeekIndex((w) => w + 1)}
             onToday={() => setCenterWeekIndex(todayWeekIndex)}
             uniqueProjects={uniqueProjects}
-            availableProducts={availableProducts}
-            availableStatuses={availableStatuses}
             filterProducts={filterProducts}
             filterProjects={filterProjects}
             filterStatuses={filterStatuses}
@@ -403,8 +356,6 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
             onSearchClose={() => setShowSearchDropdown(false)}
             projectNameFn={projectName}
             uniqueProjects={uniqueProjects}
-            availableProducts={availableProducts}
-            availableStatuses={availableStatuses}
             filterProducts={filterProducts}
             filterProjects={filterProjects}
             filterStatuses={filterStatuses}
@@ -448,6 +399,7 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
                   weekSortModes={{}}
                   defaultSortMode={managerSortMode}
                   highlightedTaskId={highlightedTaskId}
+                  hasActiveFilters={hasActiveFilters}
                   onOpenPanel={handleOpenPanel}
                 />
               ) : (
@@ -458,6 +410,7 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
                   weekSortModes={weekSortModes}
                   defaultSortMode="product_project"
                   highlightedTaskId={highlightedTaskId}
+                  hasActiveFilters={hasActiveFilters}
                   onToggleComplete={toggleComplete}
                   onToggleFlag={toggleFlag}
                   onMove={moveTask}

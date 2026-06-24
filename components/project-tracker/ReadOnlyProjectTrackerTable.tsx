@@ -16,6 +16,7 @@ interface Props {
   defaultSortMode: SortMode
   filterProducts: string[]
   filterProjects: string[]
+  hasActiveFilters?: boolean
   onOpenPanel: (id: string) => void
   onOpenComments: (id: string) => void
 }
@@ -28,6 +29,7 @@ export default function ReadOnlyProjectTrackerTable({
   defaultSortMode,
   filterProducts,
   filterProjects,
+  hasActiveFilters = false,
   onOpenPanel,
   onOpenComments,
 }: Props) {
@@ -76,7 +78,7 @@ export default function ReadOnlyProjectTrackerTable({
           {displayEntries.length === 0 ? (
             <tr>
               <td colSpan={2 + visibleWeekIndices.length} className="px-4 py-8 text-center text-[13px] text-text-muted">
-                No entries for this week.
+                {hasActiveFilters ? 'No entries match the current filters.' : 'No entries for this week.'}
               </td>
             </tr>
           ) : (

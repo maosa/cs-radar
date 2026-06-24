@@ -27,8 +27,6 @@ interface ManagerControlBarProps {
   onToday: () => void
   // Filters
   uniqueProjects: UniqueProject[]
-  availableProducts?: string[]
-  availableStatuses?: string[]
   filterProducts: string[]
   filterProjects: string[]
   filterStatuses: string[]
@@ -83,11 +81,9 @@ function useDropdownClose(
 // ── Filter chip sub-components ───────────────────────────────────────────────
 
 function ProductChip({
-  availableProducts,
   filterProducts,
   onToggleProduct,
 }: {
-  availableProducts: string[]
   filterProducts: string[]
   onToggleProduct: (p: string) => void
 }) {
@@ -95,7 +91,6 @@ function ProductChip({
   const ref = useRef<HTMLDivElement>(null)
   useDropdownClose(ref, setOpen)
   const activeCount = filterProducts.length
-  const options = PRODUCT_OPTIONS.filter((v) => availableProducts.includes(v))
 
   return (
     <div ref={ref} className="relative">
@@ -114,9 +109,7 @@ function ProductChip({
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-border rounded-[6px] shadow-md py-1 min-w-[100px]">
-          {options.length === 0 ? (
-            <div className="px-3 py-2 text-[12px] text-text-muted italic whitespace-nowrap">No products this week</div>
-          ) : options.map((value) => (
+          {PRODUCT_OPTIONS.map((value) => (
             <label
               key={value}
               className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-surface text-[12px] text-navy"
@@ -168,7 +161,7 @@ function ProjectChip({
       {open && (
         <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-border rounded-[6px] shadow-md py-1 min-w-[140px] max-w-[240px]">
           {uniqueProjects.length === 0 ? (
-            <div className="px-3 py-2 text-[12px] text-text-muted italic whitespace-nowrap">No projects this week</div>
+            <div className="px-3 py-2 text-[12px] text-text-muted italic whitespace-nowrap">No projects yet</div>
           ) : uniqueProjects.map((proj) => (
             <label
               key={proj.id}
@@ -190,11 +183,9 @@ function ProjectChip({
 }
 
 function StatusChip({
-  availableStatuses,
   filterStatuses,
   onToggleStatus,
 }: {
-  availableStatuses: string[]
   filterStatuses: string[]
   onToggleStatus: (s: string) => void
 }) {
@@ -202,7 +193,6 @@ function StatusChip({
   const ref = useRef<HTMLDivElement>(null)
   useDropdownClose(ref, setOpen)
   const activeCount = filterStatuses.length
-  const options = STATUS_OPTIONS.filter((o) => availableStatuses.includes(o.value))
 
   return (
     <div ref={ref} className="relative">
@@ -221,9 +211,7 @@ function StatusChip({
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-border rounded-[6px] shadow-md py-1 min-w-[130px]">
-          {options.length === 0 ? (
-            <div className="px-3 py-2 text-[12px] text-text-muted italic whitespace-nowrap">No statuses this week</div>
-          ) : options.map(({ value, label }) => (
+          {STATUS_OPTIONS.map(({ value, label }) => (
             <label
               key={value}
               className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-surface text-[12px] text-navy"
@@ -252,8 +240,6 @@ export default function ManagerControlBar({
   onNext,
   onToday,
   uniqueProjects,
-  availableProducts = [],
-  availableStatuses = [],
   filterProducts,
   filterProjects,
   filterStatuses,
@@ -349,14 +335,14 @@ export default function ManagerControlBar({
       {/* ── Filter chips ────────────────────────────────────────────── */}
       <div className="flex items-center gap-1 flex-shrink-0">
         <Funnel size={13} className="text-text-muted flex-shrink-0" />
-        <ProductChip availableProducts={availableProducts} filterProducts={filterProducts} onToggleProduct={onToggleProduct} />
+        <ProductChip filterProducts={filterProducts} onToggleProduct={onToggleProduct} />
         <ProjectChip
           uniqueProjects={uniqueProjects}
           filterProjects={filterProjects}
           onToggleProject={onToggleProject}
         />
         {!hideStatus && (
-          <StatusChip availableStatuses={availableStatuses} filterStatuses={filterStatuses} onToggleStatus={onToggleStatus} />
+          <StatusChip filterStatuses={filterStatuses} onToggleStatus={onToggleStatus} />
         )}
         {hasActiveFilters && onClearFilters && (
           <button
