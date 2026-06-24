@@ -225,7 +225,29 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
     }))
   }, [readOnly, tasks, projects, visibleWeekDates])
 
-  // Auto-clear stale filters
+  // Products present in the visible week — scopes the product filter options
+  const availableProducts = useMemo(() => {
+    const seen = new Set<string>()
+    tasks
+      .filter((t) => visibleWeekDates.has(t.week_start_date))
+      .forEach((t) => seen.add(t.product))
+    return Array.from(seen)
+  }, [tasks, visibleWeekDates])
+
+  // Statuses present in the visible week — scopes the status filter options
+  const availableStatuses = useMemo(() => {
+    const seen = new Set<string>()
+    tasks
+      .filter((t) => visibleWeekDates.has(t.week_start_date))
+      .forEach((t) => {
+        if (t.status === 'open') seen.add('open')
+        if (t.status === 'complete') seen.add('complete')
+        if (t.is_flagged) seen.add('flagged')
+      })
+    return Array.from(seen)
+  }, [tasks, visibleWeekDates])
+
+  // Auto-clear stale filters when their value is absent from the current week
   useEffect(() => {
     const validIds = new Set(uniqueProjects.map((p) => p.id))
     setFilterProjects((prev) => {
@@ -235,12 +257,20 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
   }, [uniqueProjects])
 
   useEffect(() => {
-    const validProducts = new Set<string>(tasks.map((t) => t.product))
+    const valid = new Set(availableProducts)
     setFilterProducts((prev) => {
-      const next = prev.filter((p) => validProducts.has(p))
+      const next = prev.filter((p) => valid.has(p))
       return next.length === prev.length ? prev : next
     })
-  }, [tasks])
+  }, [availableProducts])
+
+  useEffect(() => {
+    const valid = new Set(availableStatuses)
+    setFilterStatuses((prev) => {
+      const next = prev.filter((s) => valid.has(s))
+      return next.length === prev.length ? prev : next
+    })
+  }, [availableStatuses])
 
   const visibleWeekIndices = [centerWeekIndex]
 
@@ -338,6 +368,8 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
             onNext={() => setCenterWeekIndex((w) => w + 1)}
             onToday={() => setCenterWeekIndex(todayWeekIndex)}
             uniqueProjects={uniqueProjects}
+            availableProducts={availableProducts}
+            availableStatuses={availableStatuses}
             filterProducts={filterProducts}
             filterProjects={filterProjects}
             filterStatuses={filterStatuses}
@@ -371,6 +403,8 @@ export default function TaskTableView({ readOnly = false, adminUserId, tabBar }:
             onSearchClose={() => setShowSearchDropdown(false)}
             projectNameFn={projectName}
             uniqueProjects={uniqueProjects}
+            availableProducts={availableProducts}
+            availableStatuses={availableStatuses}
             filterProducts={filterProducts}
             filterProjects={filterProjects}
             filterStatuses={filterStatuses}

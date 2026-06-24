@@ -118,7 +118,16 @@ export default function ProjectTrackerView() {
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [entries, projects, visibleWeekDates])
 
-  // Auto-clear stale project filters
+  // Products present in the visible week — scopes the product filter options
+  const availableProducts = useMemo(() => {
+    const seen = new Set<string>()
+    entries
+      .filter((e) => visibleWeekDates.has(e.week_start_date))
+      .forEach((e) => seen.add(e.product))
+    return Array.from(seen)
+  }, [entries, visibleWeekDates])
+
+  // Auto-clear stale filters when their value is absent from the current week
   useEffect(() => {
     const validIds = new Set(uniqueProjects.map((p) => p.id))
     setFilterProjects((prev) => {
@@ -126,6 +135,14 @@ export default function ProjectTrackerView() {
       return next.length === prev.length ? prev : next
     })
   }, [uniqueProjects])
+
+  useEffect(() => {
+    const valid = new Set(availableProducts)
+    setFilterProducts((prev) => {
+      const next = prev.filter((p) => valid.has(p))
+      return next.length === prev.length ? prev : next
+    })
+  }, [availableProducts])
 
   const handleToggleProduct = useCallback((p: string) => {
     setFilterProducts((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])
@@ -275,6 +292,7 @@ export default function ProjectTrackerView() {
         onSearchClose={() => setShowSearchDropdown(false)}
         projectNameFn={(e: ProjectTrackerEntry) => e.project_name ?? '—'}
         uniqueProjects={uniqueProjects}
+        availableProducts={availableProducts}
         filterProducts={filterProducts}
         filterProjects={filterProjects}
         filterStatuses={[]}
