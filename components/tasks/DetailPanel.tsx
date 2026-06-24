@@ -64,14 +64,17 @@ export default function DetailPanel({
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  // Form state
-  const initialWeekIndex = dateStringToWeekIndex(taskWeekStartDate)
-  const [form, setForm] = useState({
+  // Form state — `savedForm` is the baseline the dirty-check compares against;
+  // it advances on each successful save so the footer clears even when the
+  // parent doesn't feed back fresh props (the panel holds a frozen task snapshot).
+  const initialForm = {
     description: taskDescription,
     product: taskProduct as Product,
     projectId: taskProjectId,
-    weekIndex: initialWeekIndex,
-  })
+    weekIndex: dateStringToWeekIndex(taskWeekStartDate),
+  }
+  const [form, setForm] = useState(initialForm)
+  const [savedForm, setSavedForm] = useState(initialForm)
 
   // Notes state
   const [note, setNote] = useState<NoteRow | null>(null)
@@ -109,20 +112,22 @@ export default function DetailPanel({
   // ─── Dirty detection ─────────────────────────────────────────────────────
 
   const isDetailsDirty =
-    form.description !== taskDescription ||
-    form.product !== (taskProduct as Product) ||
-    form.projectId !== taskProjectId ||
-    form.weekIndex !== initialWeekIndex
+    form.description !== savedForm.description ||
+    form.product !== savedForm.product ||
+    form.projectId !== savedForm.projectId ||
+    form.weekIndex !== savedForm.weekIndex
 
+  // If the task's props change underneath us (e.g. an external update for the
+  // same task), advance the baseline — and the form too, unless it has edits.
   useEffect(() => {
-    if (!isDetailsDirty) {
-      setForm({
-        description: taskDescription,
-        product: taskProduct as Product,
-        projectId: taskProjectId,
-        weekIndex: initialWeekIndex,
-      })
+    const next = {
+      description: taskDescription,
+      product: taskProduct as Product,
+      projectId: taskProjectId,
+      weekIndex: dateStringToWeekIndex(taskWeekStartDate),
     }
+    setSavedForm(next)
+    if (!isDetailsDirty) setForm(next)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskDescription, taskProduct, taskProjectId, taskWeekStartDate])
 
@@ -225,6 +230,7 @@ export default function DetailPanel({
         updated_by: userId,
       }).eq('id', taskId)
       if (!error) {
+        setSavedForm(form)
         const projName = projects.find((p) => p.id === form.projectId)?.name ?? null
         onTaskUpdated?.({
           description: form.description,
@@ -263,14 +269,9 @@ export default function DetailPanel({
   // ─── Discard ─────────────────────────────────────────────────────────────
 
   const handleDiscard = useCallback(() => {
-    setForm({
-      description: taskDescription,
-      product: taskProduct as Product,
-      projectId: taskProjectId,
-      weekIndex: dateStringToWeekIndex(taskWeekStartDate),
-    })
+    setForm(savedForm)
     setNoteContent(lastSavedContent.current)
-  }, [taskDescription, taskProduct, taskProjectId, taskWeekStartDate])
+  }, [savedForm])
 
   // ─── Comment handlers ─────────────────────────────────────────────────────
 
