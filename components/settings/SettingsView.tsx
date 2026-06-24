@@ -50,6 +50,9 @@ export default function SettingsView({ initialProfile, initialHasManagerRole }: 
         <AccountSection onToast={addToast} initialProfile={initialProfile ?? null} initialHasManagerRole={initialHasManagerRole ?? false} />
       </SectionCard>
       <SectionCard title="Projects">
+        <p className="text-[12px] text-text-secondary mb-4">
+          These projects appear for selection in My Tasks and Project Tracker — hide or delete any that are no longer relevant. Drag to reorder them, and the same order carries across to both pages.
+        </p>
         <ProjectsSection onToast={addToast} />
       </SectionCard>
       <SectionCard title="Team Management">
@@ -64,7 +67,7 @@ export default function SettingsView({ initialProfile, initialHasManagerRole }: 
       {(accountHealthEnabled || buyerMatrixEnabled) && (
         <SectionCard title="Client Accounts">
           <p className="text-[12px] text-text-secondary mb-4">
-            Used in Account Health and Buyer Matrix to manage the clients in your workspace. Each account can be associated with a product.
+            Used in Account Health and Buyer Matrix to manage the clients in your workspace — hide or delete any that are no longer relevant. Drag to reorder them, and the same order carries across to both pages.
           </p>
           <ClientAccountsSection onToast={addToast} />
         </SectionCard>
