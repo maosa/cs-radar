@@ -5,9 +5,21 @@ import { Plus, Users } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
-import type { ClientAccountRow, BuyerMatrixContact, BuyerMatrixBuyerType } from '@/lib/supabase/types'
+import type { ClientAccountRow, BuyerMatrixStakeholder, BuyerMatrixBuyerType } from '@/lib/supabase/types'
 import BuyerMatrixTable from './BuyerMatrixTable'
 import AddEditContactModal, { type ContactFormData } from './AddEditContactModal'
+
+const ACCOUNT_FIELDS =
+  'id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at'
+
+const ROLE_KEYS: BuyerMatrixBuyerType[] = [
+  'economic_buyer', 'technical_buyer', 'user_buyer',
+  'coach_champion', 'gatekeeper', 'influencer',
+]
+
+/** sort_order is not unique, so tie-break on created_at to keep order stable. */
+const bySortOrder = (a: BuyerMatrixStakeholder, b: BuyerMatrixStakeholder) =>
+  a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at)
 
 interface BuyerMatrixViewProps {
   initialAccounts?: ClientAccountRow[]
@@ -23,44 +35,53 @@ export default function BuyerMatrixView({
   const { userId: loggedInUserId } = useAuth()
   const effectiveUserId = viewAsUserId ?? loggedInUserId
 
-  const [accounts, setAccounts]               = useState<ClientAccountRow[]>(initialAccounts ?? [])
+  const [accounts, setAccounts]                   = useState<ClientAccountRow[]>(initialAccounts ?? [])
   const [selectedAccountId, setSelectedAccountId] = useState('')
-  const [contacts, setContacts]               = useState<BuyerMatrixContact[]>([])
-  const [modalOpen, setModalOpen]             = useState(false)
-  const [editingContact, setEditingContact]   = useState<BuyerMatrixContact | null>(null)
+  const [stakeholders, setStakeholders]           = useState<BuyerMatrixStakeholder[]>([])
+  const [modalOpen, setModalOpen]                 = useState(false)
+  const [editingStakeholder, setEditingStakeholder] = useState<BuyerMatrixStakeholder | null>(null)
 
-  // Keep a ref so the realtime handler always sees the current selected account
-  // without recreating the subscription channel.
+  // Assigned during render, not in an effect: an effect-synced ref lags one
+  // commit, so a realtime event arriving between the state update and the sync
+  // would be tested against the previously selected account.
   const selectedAccountIdRef = useRef(selectedAccountId)
-  useEffect(() => { selectedAccountIdRef.current = selectedAccountId }, [selectedAccountId])
+  selectedAccountIdRef.current = selectedAccountId
 
   // ── Fetch accounts ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!effectiveUserId) return
     if (initialAccounts && !viewAsUserId) return
+    let ignore = false
     supabase
       .from('client_accounts')
-      .select('id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at')
+      .select(ACCOUNT_FIELDS)
       .eq('admin_user_id', effectiveUserId)
       .eq('is_visible', true)
       .is('deleted_at', null)
       .order('sort_order')
-      .then(({ data }) => setAccounts((data as ClientAccountRow[]) ?? []))
-  }, [effectiveUserId])
+      .then(({ data }) => { if (!ignore) setAccounts((data as ClientAccountRow[]) ?? []) })
+    return () => { ignore = true }
+  }, [effectiveUserId, initialAccounts, viewAsUserId])
 
-  // ── Fetch contacts when selected account changes ────────────────────────────
+  // ── Fetch stakeholders when selected account changes ────────────────────────
   useEffect(() => {
     if (!effectiveUserId || !selectedAccountId) {
-      setContacts([])
+      setStakeholders([])
       return
     }
+    // `ignore` guards against a slow response for account A landing after the
+    // user has already switched to B, which would also clobber any row the
+    // realtime handler added while the fetch was in flight.
+    let ignore = false
     supabase
-      .from('buyer_matrix_contacts')
+      .from('buyer_matrix_stakeholders')
       .select('*')
       .eq('admin_user_id', effectiveUserId)
       .eq('client_account_id', selectedAccountId)
       .order('sort_order')
-      .then(({ data }) => setContacts((data as BuyerMatrixContact[]) ?? []))
+      .order('created_at')
+      .then(({ data }) => { if (!ignore) setStakeholders((data as BuyerMatrixStakeholder[]) ?? []) })
+    return () => { ignore = true }
   }, [effectiveUserId, selectedAccountId])
 
   // ── Realtime: client_accounts (visibility / reorder) ───────────────────────
@@ -74,7 +95,7 @@ export default function BuyerMatrixView({
       }, () => {
         supabase
           .from('client_accounts')
-          .select('id, admin_user_id, name, product, sort_order, is_visible, created_at, updated_at, deleted_at')
+          .select(ACCOUNT_FIELDS)
           .eq('admin_user_id', effectiveUserId)
           .eq('is_visible', true)
           .is('deleted_at', null)
@@ -85,31 +106,29 @@ export default function BuyerMatrixView({
     return () => { supabase.removeChannel(channel) }
   }, [effectiveUserId])
 
-  // ── Realtime: buyer_matrix_contacts ────────────────────────────────────────
+  // ── Realtime: buyer_matrix_stakeholders ────────────────────────────────────
   useEffect(() => {
     if (!effectiveUserId) return
     const channel = supabase
-      .channel(`bmc:${effectiveUserId}`)
+      .channel(`bms:${effectiveUserId}`)
       .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'buyer_matrix_contacts',
+        event: '*', schema: 'public', table: 'buyer_matrix_stakeholders',
         filter: `admin_user_id=eq.${effectiveUserId}`,
       }, (payload) => {
         if (payload.eventType === 'DELETE') {
           const old = payload.old as { id: string }
-          setContacts(prev => prev.filter(c => c.id !== old.id))
+          setStakeholders(prev => prev.filter(s => s.id !== old.id))
           return
         }
-        const row = payload.new as BuyerMatrixContact
-        // Only update state if this contact belongs to the currently viewed account
+        const row = payload.new as BuyerMatrixStakeholder
+        // Ignore rows belonging to an account we're not currently viewing
         if (row.client_account_id !== selectedAccountIdRef.current) return
-        setContacts(prev => {
-          const idx = prev.findIndex(c => c.id === row.id)
-          if (idx >= 0) {
-            const next = [...prev]
-            next[idx] = row
-            return next
-          }
-          return [...prev, row]
+        setStakeholders(prev => {
+          const idx = prev.findIndex(s => s.id === row.id)
+          const next = idx >= 0
+            ? prev.map(s => (s.id === row.id ? row : s))
+            : [...prev, row]
+          return next.sort(bySortOrder)
         })
       })
       .subscribe()
@@ -118,144 +137,83 @@ export default function BuyerMatrixView({
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
+  // Deliberately not memoized: it reads `stakeholders` to compute the next
+  // sort_order, and a stale closure would hand every added stakeholder the
+  // same position.
   const handleModalSave = async (data: ContactFormData) => {
     if (!effectiveUserId || !selectedAccountId) return
-    const now = new Date().toISOString()
 
-    if (editingContact) {
-      const sharedFields = {
-        full_name:          data.full_name,
-        email:              data.email  || null,
-        role:               data.role   || null,
-        additional_details: data.additional_details || null,
-        updated_at:         now,
-        updated_by:         loggedInUserId,
-      }
+    const fields = {
+      full_name:          data.full_name,
+      email:              data.email  || null,
+      role:               data.role   || null,
+      additional_details: data.additional_details || null,
+      ...Object.fromEntries(ROLE_KEYS.map(k => [k, data.buyer_types.includes(k)])),
+    }
 
-      // Compute which columns are being added / removed
-      const prevTypes = contacts
-        .filter(c => c.person_id === editingContact.person_id)
-        .map(c => c.buyer_type)
-      const added   = data.buyer_types.filter(t => !prevTypes.includes(t))
-      const removed = prevTypes.filter(t => !data.buyer_types.includes(t))
-
-      // Update data fields on all existing rows for this person
-      const { error: dataError } = await supabase
-        .from('buyer_matrix_contacts')
-        .update(sharedFields)
-        .eq('person_id', editingContact.person_id)
-      if (dataError) throw dataError
-
-      // Remove unchecked columns
-      if (removed.length > 0) {
-        const { error: removeError } = await supabase
-          .from('buyer_matrix_contacts')
-          .delete()
-          .eq('person_id', editingContact.person_id)
-          .in('buyer_type', removed)
-        if (removeError) throw removeError
-      }
-
-      // Insert newly checked columns
-      const newRows = removed.length + added.length > 0
-        ? await Promise.all(
-            added.map(async (type) => {
-              const maxOrder = contacts
-                .filter(c => c.buyer_type === type)
-                .reduce((m, c) => Math.max(m, c.sort_order), -1)
-              const { data: inserted, error } = await supabase
-                .from('buyer_matrix_contacts')
-                .insert({
-                  client_account_id:  selectedAccountId,
-                  admin_user_id:      effectiveUserId,
-                  person_id:          editingContact.person_id,
-                  buyer_type:         type,
-                  sort_order:         maxOrder + 1,
-                  ...sharedFields,
-                })
-                .select()
-                .single()
-              if (error) throw error
-              return inserted as BuyerMatrixContact
-            })
-          )
-        : []
-
-      // Optimistic state: update data, remove dropped columns, append new ones
-      setContacts(prev => {
-        const updated = prev
-          .filter(c => !(c.person_id === editingContact.person_id && removed.includes(c.buyer_type)))
-          .map(c => c.person_id === editingContact.person_id ? { ...c, ...sharedFields } : c)
-        return [...updated, ...newRows]
-      })
-    } else {
-      // Generate one person_id shared across all selected columns
-      const personId = crypto.randomUUID()
-      const sharedFields = {
-        client_account_id:  selectedAccountId,
-        admin_user_id:      effectiveUserId,
-        person_id:          personId,
-        full_name:          data.full_name,
-        email:              data.email  || null,
-        role:               data.role   || null,
-        additional_details: data.additional_details || null,
-        updated_by:         loggedInUserId,
-      }
-      const newContacts = await Promise.all(
-        data.buyer_types.map(async (type) => {
-          const maxOrder = contacts
-            .filter(c => c.buyer_type === type)
-            .reduce((m, c) => Math.max(m, c.sort_order), -1)
-          const { data: inserted, error } = await supabase
-            .from('buyer_matrix_contacts')
-            .insert({ ...sharedFields, buyer_type: type, sort_order: maxOrder + 1 })
-            .select()
-            .single()
-          if (error) throw error
-          return inserted as BuyerMatrixContact
-        })
+    if (editingStakeholder) {
+      const patch = { ...fields, updated_at: new Date().toISOString(), updated_by: loggedInUserId }
+      const { error } = await supabase
+        .from('buyer_matrix_stakeholders')
+        .update(patch)
+        .eq('id', editingStakeholder.id)
+      if (error) throw error
+      setStakeholders(prev =>
+        prev.map(s => (s.id === editingStakeholder.id ? { ...s, ...patch } as BuyerMatrixStakeholder : s))
       )
-      setContacts(prev => [...prev, ...newContacts])
+    } else {
+      const maxOrder = stakeholders.reduce((m, s) => Math.max(m, s.sort_order), -1)
+      const { data: inserted, error } = await supabase
+        .from('buyer_matrix_stakeholders')
+        .insert({
+          client_account_id: selectedAccountId,
+          admin_user_id:     effectiveUserId,
+          sort_order:        maxOrder + 1,
+          updated_by:        loggedInUserId,
+          ...fields,
+        })
+        .select()
+        .single()
+      if (error) throw error
+      setStakeholders(prev => [...prev, inserted as BuyerMatrixStakeholder].sort(bySortOrder))
     }
   }
 
   const handleDelete = async () => {
-    if (!editingContact) return
-    // Delete all column appearances for this person
+    if (!editingStakeholder) return
     const { error } = await supabase
-      .from('buyer_matrix_contacts')
+      .from('buyer_matrix_stakeholders')
       .delete()
-      .eq('person_id', editingContact.person_id)
+      .eq('id', editingStakeholder.id)
     if (error) throw error
-    setContacts(prev => prev.filter(c => c.person_id !== editingContact.person_id))
+    setStakeholders(prev => prev.filter(s => s.id !== editingStakeholder.id))
   }
 
-  const handleReorder = useCallback(async (buyerType: BuyerMatrixBuyerType, orderedIds: string[]) => {
-    // Optimistic: update sort_order in local state immediately
-    setContacts(prev => {
-      const updated = [...prev]
-      orderedIds.forEach((id, index) => {
-        const idx = updated.findIndex(c => c.id === id)
-        if (idx >= 0) updated[idx] = { ...updated[idx], sort_order: index }
-      })
-      return updated
+  const handleReorder = useCallback(async (orderedIds: string[]) => {
+    // Optimistic: apply the new positions immediately
+    setStakeholders(prev => {
+      const pos = new Map(orderedIds.map((id, i) => [id, i]))
+      return prev
+        .map(s => (pos.has(s.id) ? { ...s, sort_order: pos.get(s.id)! } : s))
+        .sort(bySortOrder)
     })
-    // Persist in background — errors are silent (order will resync on next load)
-    await Promise.all(
-      orderedIds.map((id, index) =>
-        supabase.from('buyer_matrix_contacts').update({ sort_order: index }).eq('id', id)
-      )
-    )
+    // One atomic statement rather than N parallel updates — interleaved realtime
+    // echoes from per-row updates can re-deliver a stale sort_order and make the
+    // dragged row jump back.
+    await supabase.rpc('batch_update_bms_sort_order', {
+      stakeholder_ids: orderedIds,
+      sort_orders:     orderedIds.map((_, i) => i),
+    })
   }, [])
 
-  const openEditModal = (contact: BuyerMatrixContact) => {
-    setEditingContact(contact)
+  const openEditModal = (stakeholder: BuyerMatrixStakeholder) => {
+    setEditingStakeholder(stakeholder)
     setModalOpen(true)
   }
 
   const closeModal = () => {
     setModalOpen(false)
-    setEditingContact(null)
+    setEditingStakeholder(null)
   }
 
   const selectedAccount = accounts.find(a => a.id === selectedAccountId)
@@ -284,7 +242,7 @@ export default function BuyerMatrixView({
 
         {!readOnly && (
           <button
-            onClick={() => { setEditingContact(null); setModalOpen(true) }}
+            onClick={() => { setEditingStakeholder(null); setModalOpen(true) }}
             disabled={!selectedAccountId}
             className="flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium bg-navy text-white rounded-[6px] disabled:opacity-40 hover:bg-navy-hover transition-colors self-end"
           >
@@ -303,7 +261,7 @@ export default function BuyerMatrixView({
       ) : (
         <div className="px-6 py-6 bg-white">
           <BuyerMatrixTable
-            contacts={contacts}
+            stakeholders={stakeholders}
             readOnly={readOnly}
             onEdit={openEditModal}
             onReorder={handleReorder}
@@ -314,15 +272,10 @@ export default function BuyerMatrixView({
       {/* Add / Edit modal */}
       {modalOpen && (
         <AddEditContactModal
-          contact={editingContact}
-          initialSelectedTypes={
-            editingContact
-              ? contacts.filter(c => c.person_id === editingContact.person_id).map(c => c.buyer_type)
-              : []
-          }
+          stakeholder={editingStakeholder}
           onClose={closeModal}
           onSave={handleModalSave}
-          onDelete={editingContact ? handleDelete : undefined}
+          onDelete={editingStakeholder ? handleDelete : undefined}
         />
       )}
     </div>

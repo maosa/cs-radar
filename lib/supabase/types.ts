@@ -100,16 +100,24 @@ export type BuyerMatrixBuyerType =
   | 'gatekeeper'
   | 'influencer'
 
-export type BuyerMatrixContact = {
+/**
+ * One row per person. The six BuyerMatrixBuyerType keys double as the boolean
+ * field names, so `stakeholder[col.key]` indexes the role flags directly.
+ */
+export type BuyerMatrixStakeholder = {
   id: string
-  person_id: string
   client_account_id: string
   admin_user_id: string
-  buyer_type: BuyerMatrixBuyerType
   full_name: string
   email: string | null
   role: string | null
   additional_details: string | null
+  economic_buyer: boolean
+  technical_buyer: boolean
+  user_buyer: boolean
+  coach_champion: boolean
+  gatekeeper: boolean
+  influencer: boolean
   sort_order: number
   created_at: string
   updated_at: string | null

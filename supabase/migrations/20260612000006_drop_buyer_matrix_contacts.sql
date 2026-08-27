@@ -1,0 +1,21 @@
+-- buyer_matrix_contacts (one row per person-per-role) has been superseded by
+-- buyer_matrix_stakeholders (one row per person, six boolean role flags).
+--
+-- DO NOT RUN THIS UNTIL THE PIVOT IN 20260612000004 HAS BEEN VERIFIED against
+-- live data. Specifically, confirm:
+--
+--   -- these two should match
+--   SELECT count(DISTINCT person_id) FROM public.buyer_matrix_contacts;
+--   SELECT count(*) FROM public.buyer_matrix_stakeholders;
+--
+--   -- surfaces duplicate people created by the person_id backfill described
+--   -- in 20260612000004; merge these by hand before dropping
+--   SELECT client_account_id, full_name, count(*)
+--   FROM public.buyer_matrix_stakeholders
+--   GROUP BY 1, 2 HAVING count(*) > 1;
+--
+-- Same sequencing used when buyer_matrix_entries was retired in 20260612000002.
+-- Dropping also removes the table from the realtime publication and drops its
+-- RLS policies automatically.
+
+DROP TABLE IF EXISTS public.buyer_matrix_contacts;

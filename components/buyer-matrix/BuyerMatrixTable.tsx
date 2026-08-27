@@ -4,12 +4,14 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   KeyboardSensor,
   closestCenter,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -19,8 +21,8 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Info, Pencil, GripVertical } from 'lucide-react'
-import type { BuyerMatrixContact, BuyerMatrixBuyerType } from '@/lib/supabase/types'
+import { Info, Pencil, GripVertical, Check, Minus } from 'lucide-react'
+import type { BuyerMatrixStakeholder, BuyerMatrixBuyerType } from '@/lib/supabase/types'
 
 type Column = {
   key: BuyerMatrixBuyerType
@@ -62,52 +64,109 @@ const COLUMNS: Column[] = [
 ]
 
 interface BuyerMatrixTableProps {
-  contacts: BuyerMatrixContact[]
+  stakeholders: BuyerMatrixStakeholder[]
   readOnly?: boolean
-  onEdit: (contact: BuyerMatrixContact) => void
-  onReorder: (buyerType: BuyerMatrixBuyerType, orderedIds: string[]) => void
+  onEdit: (stakeholder: BuyerMatrixStakeholder) => void
+  onReorder: (orderedIds: string[]) => void
 }
 
 export default function BuyerMatrixTable({
-  contacts,
+  stakeholders,
   readOnly = false,
   onEdit,
   onReorder,
 }: BuyerMatrixTableProps) {
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null)
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIdx = stakeholders.findIndex(s => s.id === active.id)
+    const newIdx = stakeholders.findIndex(s => s.id === over.id)
+    if (oldIdx < 0 || newIdx < 0) return
+    onReorder(arrayMove(stakeholders, oldIdx, newIdx).map(s => s.id))
+  }
+
+  const activeStakeholder = activeId ? stakeholders.find(s => s.id === activeId) : null
+
   return (
-    <div className="w-full overflow-hidden rounded-[8px] border border-border">
-      <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
-        <thead>
-          <tr className="bg-[#E8E8E8]">
-            {COLUMNS.map((col, colIndex) => (
-              <ColumnHeader key={col.key} col={col} colIndex={colIndex} />
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            {COLUMNS.map((col) => {
-              const colContacts = contacts
-                .filter(c => c.buyer_type === col.key)
-                .sort((a, b) => a.sort_order - b.sort_order)
-              return (
-                <td
-                  key={col.key}
-                  className="border-r border-border last:border-r-0 align-top p-2"
-                >
-                  <ContactColumn
-                    contacts={colContacts}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
+      <div className="w-full rounded-[8px] border border-border overflow-hidden">
+        {/*
+          border-separate + border-spacing-0 + tableLayout:fixed + an explicit
+          colgroup are what stop the columns reflowing while a dragged row is
+          transformed. Fixed layout means column widths don't depend on the
+          transformed content.
+        */}
+        <table className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: 240, minWidth: 240 }} />
+            {COLUMNS.map(c => <col key={c.key} />)}
+          </colgroup>
+          <thead>
+            <tr className="bg-[#E8E8E8]">
+              <th className="text-left px-3 py-2.5 text-[13px] font-medium text-navy border-b border-r border-border">
+                Stakeholder
+              </th>
+              {COLUMNS.map((col, colIndex) => (
+                <ColumnHeader key={col.key} col={col} colIndex={colIndex} />
+              ))}
+            </tr>
+          </thead>
+          <tbody className="[&_tr:last-child_td]:border-b-0">
+            {stakeholders.length === 0 ? (
+              <tr>
+                <td colSpan={COLUMNS.length + 1} className="px-3 py-10 text-center text-[13px] text-text-muted">
+                  {readOnly
+                    ? 'No stakeholders have been added for this account.'
+                    : 'No stakeholders yet. Use Add Person to get started.'}
+                </td>
+              </tr>
+            ) : (
+              <SortableContext items={stakeholders.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                {stakeholders.map(s => (
+                  <SortableStakeholderRow
+                    key={s.id}
+                    stakeholder={s}
                     readOnly={readOnly}
                     onEdit={onEdit}
-                    onReorder={(orderedIds) => onReorder(col.key, orderedIds)}
+                    isDragActive={activeId !== null}
                   />
-                </td>
-              )
-            })}
-          </tr>
-        </tbody>
-      </table>
-    </div>
+                ))}
+              </SortableContext>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <DragOverlay>
+        {activeStakeholder && (
+          <div
+            className="flex items-center gap-2 px-3 py-2.5 rounded shadow-lg text-[13px] font-medium opacity-90"
+            style={{ backgroundColor: '#19153F', color: '#fff', width: 240 }}
+          >
+            <GripVertical size={12} className="opacity-50 flex-shrink-0" />
+            <span className="truncate">{activeStakeholder.full_name}</span>
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   )
 }
 
@@ -182,114 +241,125 @@ function ColumnHeader({ col, colIndex }: { col: Column; colIndex: number }) {
   )
 }
 
-// ─── ContactColumn ────────────────────────────────────────────────────────────
-// Manages the sortable list for one buyer-type column.
-// Local state is used so drag ordering updates instantly. It re-syncs from props
-// when the actual contact data changes (add / edit / delete / realtime), but NOT
-// when only sort_order changes (which we apply locally after a drag).
+// ─── SortableStakeholderRow ──────────────────────────────────────────────────
+// One table row per person: name + actions in the Stakeholder column, then a
+// check / dash indicator for each of the six buyer types.
+//
+// The transform from useSortable is applied to every <td>, NOT to the <tr> —
+// <tr> elements do not honour transform in table layout. Missing a single cell
+// shears the row visually mid-drag.
 
-interface ContactColumnProps {
-  contacts: BuyerMatrixContact[]
-  readOnly: boolean
-  onEdit: (contact: BuyerMatrixContact) => void
-  onReorder: (orderedIds: string[]) => void
-}
-
-function ContactColumn({ contacts, readOnly, onEdit, onReorder }: ContactColumnProps) {
-  const [items, setItems] = useState<BuyerMatrixContact[]>(contacts)
-
-  // Build a key from data fields (excluding sort_order) so we only re-sync on
-  // real content changes, not on the sort_order update that follows a drag.
-  const dataKey = contacts
-    .map(c => `${c.id}:${c.full_name}:${c.email ?? ''}:${c.role ?? ''}:${c.additional_details ?? ''}:${c.buyer_type}`)
-    .join('|')
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setItems(contacts) }, [dataKey])
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-    const oldIdx = items.findIndex(c => c.id === active.id)
-    const newIdx = items.findIndex(c => c.id === over.id)
-    if (oldIdx < 0 || newIdx < 0) return
-    const reordered = arrayMove(items, oldIdx, newIdx)
-    setItems(reordered)
-    onReorder(reordered.map(c => c.id))
-  }
-
-  if (readOnly) {
-    return (
-      <div className="flex flex-col gap-1.5 min-h-[48px]">
-        {items.map(c => <ContactCard key={c.id} contact={c} readOnly />)}
-      </div>
-    )
-  }
-
-  return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={items.map(c => c.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-col gap-1.5 min-h-[48px]">
-          {items.map(c => (
-            <SortableContactCard key={c.id} contact={c} onEdit={onEdit} />
-          ))}
-        </div>
-      </SortableContext>
-    </DndContext>
-  )
-}
-
-// ─── SortableContactCard ─────────────────────────────────────────────────────
-
-function SortableContactCard({
-  contact,
-  onEdit,
-}: {
-  contact: BuyerMatrixContact
-  onEdit: (c: BuyerMatrixContact) => void
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: contact.id,
-  })
-  return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
-    >
-      <ContactCard
-        contact={contact}
-        readOnly={false}
-        onEdit={onEdit}
-        dragHandleProps={{ ...attributes, ...listeners }}
-      />
-    </div>
-  )
-}
-
-// ─── ContactCard ─────────────────────────────────────────────────────────────
-// The info popover is rendered via createPortal with position:fixed so it
-// escapes the table wrapper's overflow:hidden and is never clipped.
-
-function ContactCard({
-  contact,
+function SortableStakeholderRow({
+  stakeholder,
   readOnly,
   onEdit,
-  dragHandleProps,
+  isDragActive,
 }: {
-  contact: BuyerMatrixContact
+  stakeholder: BuyerMatrixStakeholder
   readOnly: boolean
-  onEdit?: (c: BuyerMatrixContact) => void
-  dragHandleProps?: React.HTMLAttributes<HTMLSpanElement>
+  onEdit: (s: BuyerMatrixStakeholder) => void
+  isDragActive: boolean
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: stakeholder.id,
+    disabled: readOnly,
+  })
+
+  const tdStyle: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <tr ref={setNodeRef} className={`group${isDragging ? ' opacity-40' : ''}`}>
+      {/* Stakeholder — drag handle, name, edit, info */}
+      <td
+        className="border-r border-b border-border px-3 py-2.5 bg-white group-hover:bg-[#FAFAFA]"
+        style={tdStyle}
+      >
+        <div className="flex items-center gap-1">
+          {!readOnly && (
+            <span
+              {...attributes}
+              {...listeners}
+              className="opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing flex-shrink-0 text-text-muted"
+              title="Drag to reorder"
+            >
+              <GripVertical size={12} />
+            </span>
+          )}
+
+          <span className="text-[13px] text-navy font-medium flex-1 min-w-0 truncate">
+            {stakeholder.full_name}
+          </span>
+
+          <div className="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            {!readOnly && (
+              <button
+                onClick={() => onEdit(stakeholder)}
+                className="p-1 rounded text-text-muted hover:text-navy hover:bg-[#EBEBEB] transition-colors"
+                title="Edit"
+              >
+                <Pencil size={11} />
+              </button>
+            )}
+            <StakeholderInfoButton stakeholder={stakeholder} isDragActive={isDragActive} />
+          </div>
+        </div>
+      </td>
+
+      {/* Role indicators */}
+      {COLUMNS.map(col => {
+        const has = stakeholder[col.key]
+        return (
+          <td
+            key={col.key}
+            className="border-r border-b last:border-r-0 border-border px-3 py-2.5 text-center bg-white group-hover:bg-[#FAFAFA]"
+            style={tdStyle}
+          >
+            {has ? (
+              <Check
+                size={15}
+                strokeWidth={2.5}
+                className="text-teal inline-block"
+                aria-label={`${col.label}: yes`}
+              />
+            ) : (
+              <Minus
+                size={15}
+                className="text-border-hover inline-block"
+                aria-label={`${col.label}: no`}
+              />
+            )}
+          </td>
+        )
+      })}
+    </tr>
+  )
+}
+
+// ─── StakeholderInfoButton ───────────────────────────────────────────────────
+// Popover with the person's contact details. Positioned toward whichever side of
+// the button has more room, so a long email is never clipped.
+
+function StakeholderInfoButton({
+  stakeholder,
+  isDragActive,
+}: {
+  stakeholder: BuyerMatrixStakeholder
+  isDragActive: boolean
 }) {
   const [showInfo, setShowInfo] = useState(false)
   const [infoPos, setInfoPos] = useState<{ top: number; left?: number; right?: number; maxWidth: number }>({ top: 0, maxWidth: 400 })
   const infoBtnRef = useRef<HTMLButtonElement>(null)
   const infoPopRef = useRef<HTMLDivElement>(null)
+
+  // Coordinates are captured once at click time, so any movement of the anchor
+  // leaves the popover stranded. A drag transforms every row via CSS (which
+  // fires no scroll/resize event), so close on any drag anywhere in the table.
+  useEffect(() => {
+    if (isDragActive) setShowInfo(false)
+  }, [isDragActive])
 
   useEffect(() => {
     if (!showInfo) return
@@ -297,8 +367,15 @@ function ContactCard({
       if (infoBtnRef.current?.contains(e.target as Node)) return
       if (infoPopRef.current && !infoPopRef.current.contains(e.target as Node)) setShowInfo(false)
     }
+    const close = () => setShowInfo(false)
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
   }, [showInfo])
 
   const toggleInfo = (e: React.MouseEvent) => {
@@ -317,82 +394,58 @@ function ContactCard({
     setShowInfo(true)
   }
 
-  const hasInfo = !!(contact.email || contact.role || contact.additional_details)
+  const hasInfo = !!(stakeholder.email || stakeholder.role || stakeholder.additional_details)
 
   return (
-    <div className="group relative flex items-center gap-1 px-2 py-1.5 rounded-[6px] border border-border bg-white hover:border-border-hover hover:bg-[#FAFAFA] transition-colors">
-      {/* Drag handle — owner only */}
-      {!readOnly && dragHandleProps && (
-        <span
-          {...dragHandleProps}
-          className="opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing flex-shrink-0 text-text-muted"
+    <>
+      <button
+        ref={infoBtnRef}
+        onClick={toggleInfo}
+        className="p-1 rounded text-text-muted hover:text-navy hover:bg-[#EBEBEB] transition-colors"
+        title="View details"
+      >
+        <Info size={11} />
+      </button>
+      {/*
+        Must stay portalled to document.body. The parent <td> carries a
+        non-none transform during drag, which makes it the containing block for
+        position:fixed descendants — rendering this inline would reinterpret the
+        viewport coordinates below as td-relative and throw the popover offscreen.
+      */}
+      {showInfo && createPortal(
+        <div
+          ref={infoPopRef}
+          style={{ position: 'fixed', top: infoPos.top, ...(infoPos.left !== undefined ? { left: infoPos.left } : { right: infoPos.right }), maxWidth: infoPos.maxWidth, minWidth: Math.min(208, infoPos.maxWidth), zIndex: 9999 }}
+          className="bg-white rounded-[8px] shadow-lg border border-border p-3 w-max"
         >
-          <GripVertical size={12} />
-        </span>
+          <p className="text-[12px] font-medium text-navy mb-2 max-w-[208px]">{stakeholder.full_name}</p>
+          {hasInfo ? (
+            <div className="flex flex-col gap-1.5">
+              {stakeholder.email && (
+                <p className="text-[12px] whitespace-nowrap">
+                  <span className="text-text-muted">Email: </span>
+                  <span className="text-navy">{stakeholder.email}</span>
+                </p>
+              )}
+              {stakeholder.role && (
+                <p className="text-[12px] max-w-[208px]">
+                  <span className="text-text-muted">Role: </span>
+                  <span className="text-navy">{stakeholder.role}</span>
+                </p>
+              )}
+              {stakeholder.additional_details && (
+                <p className="text-[12px] max-w-[208px]">
+                  <span className="text-text-muted">Notes: </span>
+                  <span className="text-navy whitespace-pre-wrap">{stakeholder.additional_details}</span>
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-[12px] text-text-muted italic max-w-[208px]">No additional details.</p>
+          )}
+        </div>,
+        document.body
       )}
-
-      {/* Name */}
-      <span className="text-[12px] text-navy font-medium flex-1 min-w-0 truncate">
-        {contact.full_name}
-      </span>
-
-      {/* Hover actions */}
-      <div className="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        {/* Edit — owner only */}
-        {!readOnly && onEdit && (
-          <button
-            onClick={e => { e.stopPropagation(); onEdit(contact) }}
-            className="p-1 rounded text-text-muted hover:text-navy hover:bg-[#EBEBEB] transition-colors"
-            title="Edit"
-          >
-            <Pencil size={11} />
-          </button>
-        )}
-
-        {/* Info popover */}
-        <button
-          ref={infoBtnRef}
-          onClick={toggleInfo}
-          className="p-1 rounded text-text-muted hover:text-navy hover:bg-[#EBEBEB] transition-colors"
-          title="View details"
-        >
-          <Info size={11} />
-        </button>
-        {showInfo && createPortal(
-          <div
-            ref={infoPopRef}
-            style={{ position: 'fixed', top: infoPos.top, ...(infoPos.left !== undefined ? { left: infoPos.left } : { right: infoPos.right }), maxWidth: infoPos.maxWidth, minWidth: Math.min(208, infoPos.maxWidth), zIndex: 9999 }}
-            className="bg-white rounded-[8px] shadow-lg border border-border p-3 w-max"
-          >
-            <p className="text-[12px] font-medium text-navy mb-2 max-w-[208px]">{contact.full_name}</p>
-            {hasInfo ? (
-              <div className="flex flex-col gap-1.5">
-                {contact.email && (
-                  <p className="text-[12px] whitespace-nowrap">
-                    <span className="text-text-muted">Email: </span>
-                    <span className="text-navy">{contact.email}</span>
-                  </p>
-                )}
-                {contact.role && (
-                  <p className="text-[12px] max-w-[208px]">
-                    <span className="text-text-muted">Role: </span>
-                    <span className="text-navy">{contact.role}</span>
-                  </p>
-                )}
-                {contact.additional_details && (
-                  <p className="text-[12px] max-w-[208px]">
-                    <span className="text-text-muted">Notes: </span>
-                    <span className="text-navy whitespace-pre-wrap">{contact.additional_details}</span>
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-[12px] text-text-muted italic max-w-[208px]">No additional details.</p>
-            )}
-          </div>,
-          document.body
-        )}
-      </div>
-    </div>
+    </>
   )
 }

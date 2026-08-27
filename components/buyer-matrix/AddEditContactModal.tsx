@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { BuyerMatrixContact, BuyerMatrixBuyerType } from '@/lib/supabase/types'
+import type { BuyerMatrixStakeholder, BuyerMatrixBuyerType } from '@/lib/supabase/types'
 
 const BUYER_TYPE_OPTIONS: { value: BuyerMatrixBuyerType; label: string }[] = [
   { value: 'economic_buyer',  label: 'Economic Buyer'   },
@@ -21,30 +21,33 @@ export interface ContactFormData {
 }
 
 interface Props {
-  contact?: BuyerMatrixContact | null
-  /** All columns the person currently appears in — used to pre-check boxes in edit mode */
-  initialSelectedTypes?: BuyerMatrixBuyerType[]
+  stakeholder?: BuyerMatrixStakeholder | null
   onClose: () => void
   onSave: (data: ContactFormData) => Promise<void>
   onDelete?: () => Promise<void>
 }
 
 export default function AddEditContactModal({
-  contact,
-  initialSelectedTypes = [],
+  stakeholder,
   onClose,
   onSave,
   onDelete,
 }: Props) {
-  const isEdit = !!contact
+  const isEdit = !!stakeholder
 
+  // Initializer-only — safe because the caller mounts this conditionally, so it
+  // remounts per open. An always-mounted modal would need a reset effect.
   const [selectedTypes, setSelectedTypes] = useState<Set<BuyerMatrixBuyerType>>(
-    () => new Set(isEdit ? initialSelectedTypes : [])
+    () => new Set(
+      stakeholder
+        ? BUYER_TYPE_OPTIONS.filter(o => stakeholder[o.value]).map(o => o.value)
+        : []
+    )
   )
-  const [fullName, setFullName] = useState(contact?.full_name ?? '')
-  const [email, setEmail]       = useState(contact?.email ?? '')
-  const [role, setRole]         = useState(contact?.role ?? '')
-  const [notes, setNotes]       = useState(contact?.additional_details ?? '')
+  const [fullName, setFullName] = useState(stakeholder?.full_name ?? '')
+  const [email, setEmail]       = useState(stakeholder?.email ?? '')
+  const [role, setRole]         = useState(stakeholder?.role ?? '')
+  const [notes, setNotes]       = useState(stakeholder?.additional_details ?? '')
   const [saving, setSaving]     = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError]       = useState('')
@@ -181,13 +184,6 @@ export default function AddEditContactModal({
               className="px-3 py-2 text-[13px] border border-border rounded-[6px] bg-white text-navy focus:outline-none focus:border-navy placeholder:text-text-muted resize-none"
             />
           </div>
-
-          {/* Propagation hint — edit mode only */}
-          {isEdit && (
-            <p className="text-[11px] text-text-muted italic -mt-1">
-              Changes to name, email, role, and notes apply to all columns this person appears in.
-            </p>
-          )}
 
           {error && <p className="text-[12px] text-red-flag">{error}</p>}
 
