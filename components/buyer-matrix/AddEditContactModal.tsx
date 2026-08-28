@@ -70,8 +70,9 @@ export default function AddEditContactModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (selectedTypes.size === 0) { setError('Please select at least one column.'); return }
-    if (!fullName.trim())         { setError('Full name is required.');              return }
+    // Columns are optional — a stakeholder who hasn't been classified yet is a
+    // valid state, and shows as a row of dashes.
+    if (!fullName.trim()) { setError('Full name is required.'); return }
     setSaving(true)
     try {
       await onSave({
@@ -114,26 +115,6 @@ export default function AddEditContactModal({
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-          {/* Column checkboxes — same UI for add and edit */}
-          <div className="flex flex-col gap-2">
-            <label className="text-[12px] font-medium text-text-secondary">
-              Columns <span className="text-red-flag">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-1">
-              {BUYER_TYPE_OPTIONS.map(o => (
-                <label key={o.value} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedTypes.has(o.value)}
-                    onChange={() => toggleType(o.value)}
-                    className="w-3.5 h-3.5 accent-navy flex-shrink-0"
-                  />
-                  <span className="text-[13px] text-navy">{o.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
           {/* Full name */}
           <div className="flex flex-col gap-1">
             <label className="text-[12px] font-medium text-text-secondary">
@@ -171,6 +152,24 @@ export default function AddEditContactModal({
               placeholder="VP of Engineering"
               className="px-3 py-2 text-[13px] border border-border rounded-[6px] bg-white text-navy focus:outline-none focus:border-navy placeholder:text-text-muted"
             />
+          </div>
+
+          {/* Column checkboxes — optional; same UI for add and edit */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[12px] font-medium text-text-secondary">Columns</label>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-1">
+              {BUYER_TYPE_OPTIONS.map(o => (
+                <label key={o.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedTypes.has(o.value)}
+                    onChange={() => toggleType(o.value)}
+                    className="w-3.5 h-3.5 accent-navy flex-shrink-0"
+                  />
+                  <span className="text-[13px] text-navy">{o.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Additional details */}
