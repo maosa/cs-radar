@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import {
   DndContext,
@@ -63,6 +63,49 @@ const COLUMNS: Column[] = [
   },
 ]
 
+// ─── Column sizing ───────────────────────────────────────────────────────────
+// A role column's width is driven entirely by its header — the cell below only
+// ever holds a 15px icon. Measured against the real header markup (13px/500
+// label + 13px info icon + px-3 + gap-1.5), "Coach / Champion" needs 156px to
+// stay on one line; 158 leaves 2px for rendering variance. Headers must never
+// wrap or truncate, so this is a floor.
+const ROLE_MIN_WIDTH = 158
+const ROLES_MIN_TOTAL = ROLE_MIN_WIDTH * COLUMNS.length
+
+// Horizontal space the Stakeholder cell spends on everything but the name.
+// The action buttons are faded with opacity, not removed, so they always take
+// layout: px-3 (24) + grip 12 + gaps + pencil 19 + info 19 = 84. Read-only has
+// no grip or pencil: 24 + gap 4 + info 19 = 47.
+const NAME_CHROME_EDITABLE = 84
+const NAME_CHROME_READONLY = 47
+
+// Past this, one unusually long name would keep every screen in the
+// "Stakeholder takes the remainder" regime; longer names truncate instead.
+const STAKEHOLDER_MAX_TARGET = 420
+
+let measureCtx: CanvasRenderingContext2D | null = null
+function measureText(text: string, font: string): number {
+  measureCtx ??= document.createElement('canvas').getContext('2d')
+  if (!measureCtx) return 0
+  measureCtx.font = font
+  return measureCtx.measureText(text).width
+}
+
+/**
+ * Width for the Stakeholder column given the table width `w` and the width `t`
+ * the longest name needs.
+ *
+ * Below the point where Stakeholder can fit `t`, roles sit at their floor and
+ * Stakeholder takes the remainder (names truncate, as on small laptops). Past
+ * it, every further pixel is spread equally across all seven columns, so wide
+ * screens don't pile the slack into one column. The two branches meet exactly
+ * at w - ROLES_MIN_TOTAL = t, so min() selects the right one either way.
+ */
+function stakeholderWidth(w: number, t: number): number {
+  const remainder = w - ROLES_MIN_TOTAL
+  return Math.max(0, Math.min(remainder, t + (remainder - t) / (COLUMNS.length + 1)))
+}
+
 interface BuyerMatrixTableProps {
   stakeholders: BuyerMatrixStakeholder[]
   readOnly?: boolean
@@ -77,6 +120,36 @@ export default function BuyerMatrixTable({
   onReorder,
 }: BuyerMatrixTableProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const [tableWidth, setTableWidth] = useState<number | null>(null)
+
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => setTableWidth(entry.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // Width the longest displayed name needs, clamped to [header, max target].
+  const nameKey = stakeholders.map(s => s.full_name).join('\n')
+  const targetWidth = useMemo(() => {
+    if (typeof document === 'undefined') return null
+    const family = getComputedStyle(document.body).fontFamily
+    const font = `500 13px ${family}`
+    const chrome = readOnly ? NAME_CHROME_READONLY : NAME_CHROME_EDITABLE
+    const headerNeed = measureText('Stakeholder', font) + 24
+    const longest = nameKey
+      ? Math.max(...nameKey.split('\n').map(n => measureText(n, font)))
+      : 0
+    return Math.min(STAKEHOLDER_MAX_TARGET, Math.max(headerNeed, Math.ceil(longest + chrome)))
+  }, [nameKey, readOnly])
+
+  // null until measured (SSR / first paint) — falls back to the static layout.
+  const stakeholderColWidth =
+    tableWidth != null && targetWidth != null
+      ? Math.floor(stakeholderWidth(tableWidth, targetWidth))
+      : null
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -107,7 +180,7 @@ export default function BuyerMatrixTable({
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="w-full rounded-[8px] border border-border overflow-hidden">
+      <div ref={wrapperRef} className="w-full rounded-[8px] border border-border overflow-hidden">
         {/*
           border-separate + border-spacing-0 + tableLayout:fixed + an explicit
           colgroup are what stop the columns reflowing while a dragged row is
@@ -116,28 +189,26 @@ export default function BuyerMatrixTable({
         */}
         <table className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
           {/*
-            The six role columns are fixed; Stakeholder carries no width, so
-            under fixed layout it absorbs whatever is left. Total stays exactly
-            100% of the container.
-
-            A role column's width is driven entirely by its header — the cell
-            below only ever holds a 15px icon. Measured against the real header
-            markup (13px/500 label + 13px info icon + px-3 + gap-1.5), the
-            longest label "Coach / Champion" needs 156px to stay on one line;
-            every other label needs less. 158px gives 2px of slack for font
-            rendering variance. Headers must never wrap or truncate, so this is
-            a floor, not a preference.
-
-            Stakeholder therefore gets (container - 948px). That is the largest
-            it can be without breaking a header, so there is no better split:
-            any width handed back to the role columns is width they cannot use.
-            For reference, the name cell spends 84px on the grip, pencil and
-            info button (they occupy layout even while faded out), and
-            "Alexandra Franziska Gottswinter" renders at 200px.
+            Once measured, Stakeholder gets an explicit width (see
+            stakeholderWidth) and the role columns carry none, so fixed layout
+            splits the rest equally among them — exactly ROLE_MIN_WIDTH while
+            names are truncating, and ROLE_MIN_WIDTH plus the same share of
+            slack as Stakeholder on wide screens. Before measurement, roles are
+            pinned at the floor and Stakeholder absorbs the remainder, which is
+            the same layout as the small-screen case. Total is 100% either way.
           */}
           <colgroup>
-            <col />
-            {COLUMNS.map(c => <col key={c.key} style={{ width: 158 }} />)}
+            {stakeholderColWidth != null ? (
+              <>
+                <col style={{ width: stakeholderColWidth }} />
+                {COLUMNS.map(c => <col key={c.key} />)}
+              </>
+            ) : (
+              <>
+                <col />
+                {COLUMNS.map(c => <col key={c.key} style={{ width: ROLE_MIN_WIDTH }} />)}
+              </>
+            )}
           </colgroup>
           <thead>
             <tr className="bg-[#E8E8E8]">
