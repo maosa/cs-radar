@@ -2,6 +2,38 @@
 
 A week-oriented task management tool for structured personal productivity and team review.
 
+## Screenshots
+
+### My Tasks
+Weekly task list, tagged by product and project, with completed and flagged states.
+
+![My Tasks](docs/screenshots/my-tasks.png)
+
+### Project Tracker
+A weekly status line for each project.
+
+![Project Tracker](docs/screenshots/project-tracker.png)
+
+### Account Health
+A monthly risk assessment for each client account, with CS lead and client partner comments.
+
+![Account Health](docs/screenshots/account-health.png)
+
+### Buyer Matrix
+Stakeholders at a client account, mapped to buying roles.
+
+![Buyer Matrix](docs/screenshots/buyer-matrix.png)
+
+### Settings
+Account details and the project list used across My Tasks and Project Tracker.
+
+![Settings](docs/screenshots/settings.png)
+
+### Settings — Account Health
+Optional modules and the client accounts used in Account Health and Buyer Matrix.
+
+![Settings — Account Health](docs/screenshots/settings-account-health.png)
+
 ## What it does
 
 Task Tracker organises work into weekly columns, giving you a clear view of what you're working on, what's been completed, and what's carried forward. Each task is tagged by product area and project, making it easy to filter and review work by team or initiative.
