@@ -115,9 +115,29 @@ export default function BuyerMatrixTable({
           transformed content.
         */}
         <table className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+          {/*
+            The six role columns are fixed; Stakeholder carries no width, so
+            under fixed layout it absorbs whatever is left. Total stays exactly
+            100% of the container.
+
+            A role column's width is driven entirely by its header — the cell
+            below only ever holds a 15px icon. Measured against the real header
+            markup (13px/500 label + 13px info icon + px-3 + gap-1.5), the
+            longest label "Coach / Champion" needs 156px to stay on one line;
+            every other label needs less. 158px gives 2px of slack for font
+            rendering variance. Headers must never wrap or truncate, so this is
+            a floor, not a preference.
+
+            Stakeholder therefore gets (container - 948px). That is the largest
+            it can be without breaking a header, so there is no better split:
+            any width handed back to the role columns is width they cannot use.
+            For reference, the name cell spends 84px on the grip, pencil and
+            info button (they occupy layout even while faded out), and
+            "Alexandra Franziska Gottswinter" renders at 200px.
+          */}
           <colgroup>
-            <col style={{ width: 240, minWidth: 240 }} />
-            {COLUMNS.map(c => <col key={c.key} />)}
+            <col />
+            {COLUMNS.map(c => <col key={c.key} style={{ width: 158 }} />)}
           </colgroup>
           <thead>
             <tr className="bg-[#E8E8E8]">
